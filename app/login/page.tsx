@@ -7,17 +7,50 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 
+import { useRouter } from 'next/navigation'
+
 const inter = Inter({ subsets: ['latin'] })
 
 export default function LoginPage() {
+  const router = useRouter()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [token, setToken] = useState('') // dummy function for token
+
+  const submitLogin = async (e: React.FormEvent) => {
+    // Handle login logic here
+    console.log('Login attempted with:', email, password)
+
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    }
+
+    const response = await fetch('/api/auth/login', requestOptions)
+    const data = await response.json()
+
+    if (!response.ok) {
+      setErrorMessage(data.detail)
+      console.error(data.detail)
+      return;
+    }
+
+
+    setToken(data.token)
+    if (data.userType === 'tutor') {
+      router.push('/dashboard/tutor')
+    } else {
+      router.push('/dashboard/student')
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log('Login attempted with:', email, password)
+    submitLogin(e)
   }
 
   return (
