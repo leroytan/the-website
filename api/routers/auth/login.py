@@ -5,6 +5,8 @@ from app import app
 from routers.models import LoginRequest, LoginResponse, LoginPageResponse
 from auth.token import create_access_token, verify_token
 from auth.password import verify_password
+from db.user import get_user_by_email
+from exceptions import EmailNotFoundError
 
 # Dummy user database (replace with real DB in production)
 users_db = {
@@ -36,12 +38,16 @@ async def login_page(request: Request):
 
 @app.post("/api/auth/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest):
-    user = users_db.get(login_data.email)
-    if not user or not verify_password(login_data.password, user["password"]):
+    try:
+        user = get_user_by_email(login_data.email)
+    except EmailNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
-
-    token = create_access_token(data={"sub": login_data.email, "userType": user["userType"]})
-    return LoginResponse(token=token, userType=user["userType"])
+    
+    if not verify_password(login_data.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+    
+    token = create_access_token(data={"sub": login_data.email, "userType": user.user_type})
+    return LoginResponse(token=token, userType=user.user_type)
 
 @app.get("/api/protected")
 async def protected_route(current_user: dict = Depends(get_current_user)):

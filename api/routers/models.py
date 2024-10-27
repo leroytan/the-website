@@ -26,6 +26,7 @@ class SignupResponse(BaseModel):
     email: str
     name: str
     userType: str
+    token: str
 
 class HomepageResponse(BaseModel):
     userType: str

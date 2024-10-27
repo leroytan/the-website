@@ -5,6 +5,8 @@ from app import app
 from routers.models import SignupRequest, SignupResponse
 from auth.token import create_access_token, verify_token
 from auth.password import hash_password
+from db.user import create_user
+from exceptions import EmailAlreadyUsedError
 
 # Dummy user database (replace with real DB in production)
 users_db = {
@@ -30,18 +32,19 @@ async def signup(signup_data: SignupRequest):
     hashed_password = hash_password(signup_data.password)
 
     # Create a new user entry with a unique ID
-    user_id = str(1)
-    users_db[signup_data.email] = {
-        "id": user_id,
-        "email": signup_data.email,
-        "name": signup_data.name,
-        "password": hashed_password,
-        "userType": signup_data.userType,
-    }
+    try:
+        new_user = create_user(
+            email=signup_data.email,
+            name=signup_data.name,
+            password_hash=hashed_password,
+            user_type=signup_data.userType
+        )
+    except EmailAlreadyUsedError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
     # Return the created user's details (without the password)
     return SignupResponse(
-        id=user_id,
+        id=str(new_user.id),
         email=signup_data.email,
         name=signup_data.name,
         userType=signup_data.userType,

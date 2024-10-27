@@ -1,6 +1,7 @@
 from app import app
 
 import routers
+import db
 
 if __name__ == "__main__":
   import uvicorn
