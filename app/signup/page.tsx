@@ -1,24 +1,74 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Inter } from 'next/font/google'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { select } from 'framer-motion/client'
 
 const inter = Inter({ subsets: ['latin'] })
 
+const ROLES = ['Tutor', 'Tutee'] as const
+
 export default function SignupPage() {
+  const router = useRouter()
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedRole, setSelectedRole] = useState('Select Role');
+
+  const [errorMessage, setErrorMessage] = useState('')
+  const [token, setToken] = useState('') // dummy function for token
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleDropdown = () => setIsOpen((prev) => !prev);
+
+  const handleSelect = (role: string) => {
+    setSelectedRole(role);
+    setIsOpen(false);
+  };
+  
+
+  const submitSignup = async (e: React.FormEvent) => {
+
+    if (selectedRole === 'Select Role') {
+      setErrorMessage('Invalid role')
+      return;
+    }
+
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, userType: selectedRole }),
+    }
+
+    const response = await fetch('/api/auth/signup', requestOptions)
+    const data = await response.json()
+
+    if (!response.ok) {
+      setErrorMessage(data.detail)
+      console.error(data.detail)  // TODO: show the error message to the user
+      return;
+    }
+
+    setToken(data.token)
+    if (selectedRole === 'Tutor') {
+      router.push('/onboarding/tutor')
+    } else {
+      router.push('/onboarding/tutee')
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle signup logic here
-    console.log('Signup attempted with:', name, email, password)
+    console.log('Signup attempted with:', name, email, password, selectedRole)
+    submitSignup(e)
   }
 
   return (
@@ -86,6 +136,35 @@ export default function SignupPage() {
               </button>
             </div>
           </div>
+          I am a...
+          <div className="relative w-100">
+            {/* Dr`opdown Button */}
+            <button
+              onClick={toggleDropdown}
+              className="w-full px-4 py-2 bg-gray-200 rounded-lg text-left font-medium 
+                        hover:bg-gray-300 focus:outline-none transition-colors"
+            >
+              {selectedRole}
+            </button>
+
+            {/* Dropdown List */}
+            {isOpen && (
+              <ul
+                className="absolute w-full mt-2 bg-white shadow-md rounded-lg border border-gray-300 z-10"
+              >
+                {ROLES.map((role) => (
+                  <li
+                    key={role}
+                    onClick={() => handleSelect(role)}
+                    className="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer transition-colors"
+                  >
+                    {role}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <br></br>
           <motion.button
             type="submit"
             whileHover={{ scale: 1.05 }}
