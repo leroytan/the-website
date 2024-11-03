@@ -1,4 +1,10 @@
 {
-  "/signup/page": "app/signup/page.js",
-  "/page": "app/page.js"
+  "/dashboard/tutee/page": "app/dashboard/tutee/page.js",
+  "/page": "app/page.js",
+  "/tutors/page": "app/tutors/page.js",
+  "/[...slug]/page": "app/[...slug]/page.js",
+  "/tutors/[id]/page": "app/tutors/[id]/page.js",
+  "/dashboard/tutor/page": "app/dashboard/tutor/page.js",
+  "/profile/tutor/page": "app/profile/tutor/page.js",
+  "/profile/tutor/edit/page": "app/profile/tutor/edit/page.js"
 }
