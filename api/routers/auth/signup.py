@@ -19,15 +19,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
     return payload
 
 @app.post("/api/auth/signup", response_model=SignupResponse)
 async def signup(signup_data: SignupRequest):
-    # Check if the email is already registered
-    if signup_data.email in users_db:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-
     # Hash the password before storing it
     hashed_password = hash_password(signup_data.password)
 

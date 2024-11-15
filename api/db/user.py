@@ -3,6 +3,7 @@ from db.models import User
 from db.connection import engine
 from exceptions import EmailAlreadyUsedError, EmailNotFoundError
 
+
 def check_email_unused(email: str) -> None:
     with Session(engine) as session:
         # Check if the email already exists
@@ -14,7 +15,7 @@ def check_email_unused(email: str) -> None:
 
 
 def create_user(email: str, name: str, password_hash: str, user_type: str) -> User:
-    
+
     check_email_unused(email)
 
     # Step 1: Create a basic user entry with "tutor" as the user type
@@ -32,8 +33,6 @@ def create_user(email: str, name: str, password_hash: str, user_type: str) -> Us
         session.refresh(new_user)  # Get the assigned user ID
 
     return new_user
-
-
 
 
 def get_user_by_email(email: str) -> User:
@@ -60,7 +59,7 @@ if __name__ == "__main__":
 
     # Example usage
     try:
-        hashed_password = get_password_hash_by_email("tutor@example.com")
-        print(f"Password hash: {hashed_password}")
+        user = get_user_by_email("tutor@example.com")
+        print(f"Password hash: {user.password_hash}")
     except ValueError as e:
         print(e)

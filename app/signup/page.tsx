@@ -45,7 +45,7 @@ export default function SignupPage() {
     const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, userType: selectedRole }),
+      body: JSON.stringify({ name, email, password, userType: selectedRole.toLowerCase() }),
     }
 
     const response = await fetch('/api/auth/signup', requestOptions)

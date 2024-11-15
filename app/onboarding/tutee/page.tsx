@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Inter } from 'next/font/google'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function TuteeOnboarding() {
+  const router = useRouter() 
   const [currentStep, setCurrentStep] = useState(0)
 
   const steps = [
@@ -56,6 +58,8 @@ export default function TuteeOnboarding() {
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
+    } else {
+      router.push('/dashboard/tutee')
     }
   }
 

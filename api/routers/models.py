@@ -8,7 +8,6 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     token: str
-    userType: str
 
 class LoginPageResponse(BaseModel):
     title: str

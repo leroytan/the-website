@@ -18,33 +18,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [token, setToken] = useState('') // dummy function for token
 
   const submitLogin = async (e: React.FormEvent) => {
     // Handle login logic here
     console.log('Login attempted with:', email, password)
 
-    const requestOptions = {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
-    }
-
-    const response = await fetch('/api/auth/login', requestOptions)
+      credentials: 'same-origin'
+    })
     const data = await response.json()
 
     if (!response.ok) {
       setErrorMessage(data.detail)
-      console.error(data.detail)
+      console.error(data.detail)  // TODO: show the error message to the user
       return;
     }
 
-
-    setToken(data.token)
+    router.push('/dashboard/tutor')
+    return;  
     if (data.userType === 'tutor') {
       router.push('/dashboard/tutor')
     } else {
-      router.push('/dashboard/student')
+      router.push('/dashboard/tutee')
     }
   }
 

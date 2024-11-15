@@ -1,3 +1,5 @@
 node_modules/
 venv/
 .next/
+
+docs/node_modules
