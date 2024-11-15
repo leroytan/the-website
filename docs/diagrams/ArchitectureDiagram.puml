@@ -1,0 +1,32 @@
+@startuml
+!include <office/Concepts/globe_internet>
+!include <office/Concepts/documents>
+!include <office/Users/user>
+!include style.puml
+
+Package " "<<Rectangle>>{
+    Class Router ROUTER_COLOR
+    Class Auth AUTH_COLOR
+    Class Storage STORAGE_COLOR
+    Class Model MODEL_COLOR
+    Class Main #grey
+    Class Commons AUTH_COLOR_T2
+}
+
+Class "<$user>" as User MODEL_COLOR_T2
+Class "<$documents>" as File ROUTER_COLOR_T1
+
+Router -right[#green]> Auth
+Router -[#green]> Model
+Auth -[#blue]-> Storage
+Auth -down[#blue]-> Model
+Main -[#grey]-> Router
+Main -[#grey]-> Auth
+Main -[#grey]-> Storage
+Main -up[#grey]-> Model
+Main -down[hidden]-> Commons
+
+Storage -up[STORAGE_COLOR].> Model
+Storage .right[STORAGE_COLOR].>File
+User ..> Router
+@enduml

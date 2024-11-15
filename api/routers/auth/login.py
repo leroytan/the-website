@@ -1,10 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status, Response
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError
 
 from app import app
 from routers.models import LoginRequest, LoginResponse, LoginPageResponse
-from auth.token import create_access_token, verify_token
-from auth.password import verify_password
+from auth.config import ACCESS_TOKEN_EXPIRE_MINUTES
+from auth.token import verify_token
+from auth.user import authenticate_user
+from db.user import get_user_by_email
 
 # Dummy user database (replace with real DB in production)
 users_db = {
@@ -18,10 +21,25 @@ users_db = {
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    return payload
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = verify_token(token)
+    except JWTError:
+        raise credentials_exception
+    
+    email = payload.get("sub")
+    if email is None:
+        raise credentials_exception
+    
+    user = get_user_by_email(email)
+    if user is None:
+        raise credentials_exception
+    return user
+    
 
 @app.get("/api/auth/login", response_model=LoginPageResponse)
 async def login_page(request: Request):
@@ -35,14 +53,26 @@ async def login_page(request: Request):
     )
 
 @app.post("/api/auth/login", response_model=LoginResponse)
-async def login(login_data: LoginRequest):
-    user = users_db.get(login_data.email)
-    if not user or not verify_password(login_data.password, user["password"]):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+async def login(login_data: LoginRequest, response: Response):
+    user, token = authenticate_user(login_data)
 
-    token = create_access_token(data={"sub": login_data.email, "userType": user["userType"]})
-    return LoginResponse(token=token, userType=user["userType"])
+    # Set the token as an HTTP-only cookie
+    response.set_cookie(
+        key="auth_token",
+        value=token,
+        httponly=True,  # Prevent JavaScript access
+        secure=True,    # Use HTTPS in production
+        samesite="strict",  # CSRF protection
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
+    )
+
+    return LoginResponse(token=token)
+
+@app.post("/api/auth/logout")
+async def logout(response: Response):
+    response.delete_cookie("auth_token")
+    return {"message": "Logged out successfully"}
 
 @app.get("/api/protected")
 async def protected_route(current_user: dict = Depends(get_current_user)):
-    return {"message": f"Welcome, {current_user['sub']}!"}
+    return {"message": "You are logged in as " + current_user["email"]}

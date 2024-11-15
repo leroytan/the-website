@@ -106,7 +106,7 @@ export function AppPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-3xl sm:text-4xl font-extrabold mb-4 sm:mb-6 text-white"
+              className="text-3xl sm:text-4xl font-extrabold mb-4 sm:mb-6 text-orange-600"
             >
               Welcome to T.H.E.
             </motion.h2>
@@ -114,7 +114,7 @@ export function AppPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
-              className="mb-6 sm:mb-8 text-base sm:text-lg leading-relaxed text-white font-medium"
+              className="mb-6 sm:mb-8 text-base sm:text-lg leading-relaxed text-white font-medium text-orange-600"
             >
               <span className="font-bold">Teach . Honour . Excel</span> - Your path to educational excellence!
             </motion.p>

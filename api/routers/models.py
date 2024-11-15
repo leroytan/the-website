@@ -8,7 +8,6 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     token: str
-    userType: str
 
 class LoginPageResponse(BaseModel):
     title: str
@@ -26,6 +25,7 @@ class SignupResponse(BaseModel):
     email: str
     name: str
     userType: str
+    token: str
 
 class HomepageResponse(BaseModel):
     userType: str
