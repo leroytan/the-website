@@ -1,10 +1,10 @@
 {
   "pages": {
-    "/dashboard/tutee/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/dashboard/tutee/page.css",
-      "static/chunks/app/dashboard/tutee/page.js"
+      "static/css/app/page.css",
+      "static/chunks/app/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -12,11 +12,11 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/page": [
+    "/[...slug]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/page.css",
-      "static/chunks/app/page.js"
+      "static/css/app/[...slug]/page.css",
+      "static/chunks/app/[...slug]/page.js"
     ],
     "/tutors/page": [
       "static/chunks/webpack.js",
@@ -24,23 +24,17 @@
       "static/css/app/tutors/page.css",
       "static/chunks/app/tutors/page.js"
     ],
-    "/[...slug]/page": [
+    "/dashboard/tutee/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/[...slug]/page.css",
-      "static/chunks/app/[...slug]/page.js"
+      "static/css/app/dashboard/tutee/page.css",
+      "static/chunks/app/dashboard/tutee/page.js"
     ],
-    "/tutors/[id]/page": [
+    "/profile/tutee/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/tutors/[id]/page.css",
-      "static/chunks/app/tutors/[id]/page.js"
-    ],
-    "/dashboard/tutor/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/dashboard/tutor/page.css",
-      "static/chunks/app/dashboard/tutor/page.js"
+      "static/css/app/profile/tutee/page.css",
+      "static/chunks/app/profile/tutee/page.js"
     ],
     "/profile/tutor/page": [
       "static/chunks/webpack.js",
@@ -53,6 +47,18 @@
       "static/chunks/main-app.js",
       "static/css/app/profile/tutor/edit/page.css",
       "static/chunks/app/profile/tutor/edit/page.js"
+    ],
+    "/signup/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/signup/page.css",
+      "static/chunks/app/signup/page.js"
+    ],
+    "/courses/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/courses/page.css",
+      "static/chunks/app/courses/page.js"
     ]
   }
 }

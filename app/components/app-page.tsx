@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Menu, X, User, ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
+import { Menu, X, User, ChevronLeft, ChevronRight, LogOut, Router } from 'lucide-react'
 import { Inter } from 'next/font/google'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -184,7 +185,7 @@ const Subpage = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             <ul className="space-y-4">
               <li><a href="/" className="text-lg font-semibold hover:underline">Home</a></li>
               <li><a href="#" className="text-lg font-semibold hover:underline">THE Team</a></li>
-              <li><a href="#" className="text-lg font-semibold hover:underline">Courses</a></li>
+              <li><a href="#" className="text-lg font-semibold hover:underline">THE Courses</a></li>
               <li><a href="/tutors" className="text-lg font-semibold hover:underline">THE Tutors</a></li>
             </ul>
           </nav>
@@ -196,9 +197,18 @@ const Subpage = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
 export function AppPage() {
   const [isSubpageOpen, setIsSubpageOpen] = useState(false)
+  const router = useRouter();
 
   const toggleSubpage = () => {
     setIsSubpageOpen(!isSubpageOpen)
+  }
+
+  const handleRequestTutor = () => {
+    router.push('/tutors')
+  }
+
+  const handleJoinUs = () => {
+    router.push('/signup')
   }
 
   return (
@@ -251,6 +261,7 @@ export function AppPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="bg-[#fabb84] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-bold hover:bg-[#fc6453] transition-colors duration-200"
+                onClick={handleRequestTutor}
               >
                 Request a tutor
               </motion.button>
@@ -258,6 +269,7 @@ export function AppPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="bg-[#fabb84] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-bold hover:bg-[#fc6453] transition-colors duration-200"
+                onClick={handleJoinUs}
               >
                 Join Us
               </motion.button>
