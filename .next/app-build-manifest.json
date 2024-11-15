@@ -1,10 +1,10 @@
 {
   "pages": {
-    "/page": [
+    "/tutors/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/page.css",
-      "static/chunks/app/page.js"
+      "static/css/app/tutors/page.css",
+      "static/chunks/app/tutors/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -18,17 +18,11 @@
       "static/css/app/[...slug]/page.css",
       "static/chunks/app/[...slug]/page.js"
     ],
-    "/tutors/page": [
+    "/tutors/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/tutors/page.css",
-      "static/chunks/app/tutors/page.js"
-    ],
-    "/dashboard/tutee/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/dashboard/tutee/page.css",
-      "static/chunks/app/dashboard/tutee/page.js"
+      "static/css/app/tutors/[id]/page.css",
+      "static/chunks/app/tutors/[id]/page.js"
     ],
     "/profile/tutee/page": [
       "static/chunks/webpack.js",
@@ -36,17 +30,17 @@
       "static/css/app/profile/tutee/page.css",
       "static/chunks/app/profile/tutee/page.js"
     ],
-    "/profile/tutor/page": [
+    "/dashboard/tutee/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/profile/tutor/page.css",
-      "static/chunks/app/profile/tutor/page.js"
+      "static/css/app/dashboard/tutee/page.css",
+      "static/chunks/app/dashboard/tutee/page.js"
     ],
-    "/profile/tutor/edit/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/css/app/profile/tutor/edit/page.css",
-      "static/chunks/app/profile/tutor/edit/page.js"
+      "static/css/app/page.css",
+      "static/chunks/app/page.js"
     ],
     "/signup/page": [
       "static/chunks/webpack.js",
