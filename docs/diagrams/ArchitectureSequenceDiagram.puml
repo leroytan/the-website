@@ -2,38 +2,46 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-Actor User as user USER_COLOR
-Participant ":UI" as ui ROUTER_COLOR
-Participant ":Logic" as logic AUTH_COLOR
-Participant ":Model" as model MODEL_COLOR
+Participant Frontend as frontend FRONTEND_COLOR
+Participant ":Router" as router ROUTER_COLOR
+Participant ":Auth" as auth AUTH_COLOR
+Participant ":Logic" as logic LOGIC_COLOR
 Participant ":Storage" as storage STORAGE_COLOR
 
-user -[USER_COLOR]> ui : "delete 1"
-activate ui ROUTER_COLOR
+frontend -[FRONTEND_COLOR]> router : "API request"
+activate router ROUTER_COLOR
 
-ui -[ROUTER_COLOR]> logic : execute("delete 1")
-activate logic AUTH_COLOR
+router -[ROUTER_COLOR]> auth : checkAuthorization(token)
+activate auth AUTH_COLOR
 
-logic -[AUTH_COLOR]> model : deletePerson(p)
-activate model MODEL_COLOR
+auth -[AUTH_COLOR]> router : return authStatus
+deactivate auth
 
-model -[MODEL_COLOR]-> logic
-deactivate model
+alt Authorized
+    router -[ROUTER_COLOR]> logic : processRequest(data)
+    activate logic LOGIC_COLOR
 
-logic -[AUTH_COLOR]> storage : saveAddressBook(addressBook)
-activate storage STORAGE_COLOR
+    logic -[LOGIC_COLOR]> storage : saveData(data)
+    activate storage STORAGE_COLOR
 
-storage -[STORAGE_COLOR]> storage : Save to file
-activate storage STORAGE_COLOR_T1
-storage --[STORAGE_COLOR]> storage
-deactivate storage
+    storage -[STORAGE_COLOR]> storage : persist data
+    activate storage STORAGE_COLOR_T1
+    storage --[STORAGE_COLOR]> storage
+    deactivate storage
 
-storage --[STORAGE_COLOR]> logic
-deactivate storage
+    storage --[STORAGE_COLOR]> logic
+    deactivate storage
 
-logic --[AUTH_COLOR]> ui
-deactivate logic
+    logic --[LOGIC_COLOR]> router
+    deactivate logic
+else Unauthorized
+    router -[ROUTER_COLOR]> frontend : "return unauthorized error"
+    deactivate router
+end
 
-ui--[ROUTER_COLOR]> user
-deactivate ui
+router --[ROUTER_COLOR]> frontend : "return response"
+deactivate router
+
+frontend --[FRONTEND_COLOR]> frontend : "update UI"
+deactivate frontend
 @enduml

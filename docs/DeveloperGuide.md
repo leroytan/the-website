@@ -4,7 +4,7 @@ title: "Developer Guide"
 pageNav: 3
 ---
 
-# DLTbook Developer Guide
+# THE-Website Developer Guide
 
 <!-- * Table of Contents -->
 <page-nav-print />
@@ -32,48 +32,59 @@ Refer to the guide [_Setting up and getting started_](SettingUp.md).
 
 ### Architecture
 
+The **_Architecture Diagram_** below explains the high-level design of the application.
+
 <puml src="diagrams/ArchitectureDiagram.puml" width="280" />
 
-The **_Architecture Diagram_** given above explains the high-level design of the App.
+Given below is a quick overview of the main components and how they interact with each other.
 
-Given below is a quick overview of main components and how they interact with each other.
+**Main Components of the Architecture**
 
-**Main components of the architecture**
+The architecture is divided into a **Frontend** (Next.js with Tailwind CSS) and a **Backend** (Python-based server) that communicates via API calls.
 
-**`Main`** (consisting of classes [
-`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [
-`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in
-charge of the app launch and shut down.
+---
 
-- At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
-- At shut down, it shuts down the other components and invokes cleanup methods where necessary.
+### Frontend (Next.js + Tailwind CSS)
 
-The bulk of the app's work is done by the following four components:
+The **Frontend** is responsible for rendering the user interface and handling user interactions. It consists of:
 
-- [**`UI`**](#ui-component): The UI of the App.
-- [**`Logic`**](#logic-component): The command executor.
-- [**`Model`**](#model-component): Holds the data of the App in memory.
-- [**`Storage`**](#storage-component): Reads data from, and writes data to, the hard disk.
+- **Next.js**: A React-based framework used to build the app's pages and components.
+- **Tailwind CSS**: A utility-first CSS framework used to style the application and ensure a responsive design.
+- **Middleware.ts**: A middleware layer that processes requests, adds necessary headers, handles authentication, and interacts with the backend. This layer can also handle pre-request validation and authorization logic before routing requests to the backend.
 
-[**`Commons`**](#common-classes) represents a collection of classes used by multiple other components.
+**Frontend Responsibilities**:
+- Handles the user interface and routes.
+- Displays data retrieved from the backend.
+- Sends user input to the backend via API calls.
 
-**How the architecture components interact with each other**
+---
 
-The _Sequence Diagram_ below shows how the components interact with each other for the scenario where the user issues
-the command `delete 1`.
+### Backend (Python)
+
+The **Backend** is built in Python and is responsible for the core business logic and data management. It consists of the following components:
+
+- **Router**: The routing layer that defines the API endpoints and directs requests to the appropriate handlers. It ensures requests are routed to the correct component and that responses are returned to the frontend.
+- **Auth**: This component handles user authentication, such as login, registration, and managing authentication tokens. It ensures that only authorized users can access certain resources.
+- **Storage**: Responsible for handling persistent data storage, either using a database or a file system. It performs operations such as reading and writing data, as well as retrieving data when needed.
+- **Logic**: The core business logic of the application. It processes data, enforces application rules, and coordinates the flow of information between the Storage and other components.
+
+---
+
+### Interaction between Frontend and Backend
+
+- The **Frontend** makes API requests to the **Backend** (Router) via HTTP requests.
+- The **Router** directs the request to the appropriate component (Auth, Logic, Storage).
+- The **Auth** component ensures that the user is authorized to perform the requested action.
+- The **Logic** processes the data, and the **Storage** manages the persistence layer.
+- The response is sent back to the **Frontend**, which then updates the UI accordingly.
 
 <puml src="diagrams/ArchitectureSequenceDiagram.puml" width="574" />
 
-Each of the four main components (also shown in the diagram above),
+---
 
-- defines its _API_ in an `interface` with the same name as the Component.
-- implements its functionality using a concrete `{Component Name}Manager` class (which follows the corresponding API
-  `interface` mentioned in the previous point.
+### Common Layer
 
-For example, the `Logic` component defines its API in the `Logic.java` interface and implements its functionality using
-the `LogicManager.java` class which follows the `Logic` interface. Other components interact with a given component
-through its interface rather than the concrete class (reason: to prevent outside component's being coupled to the
-implementation of a component), as illustrated in the (partial) class diagram below.
+The **Common Layer** includes shared utilities, types, constants, and helper functions used by both the frontend and backend. This layer can also include error handling and logging utilities for both client and server-side code.
 
 <puml src="diagrams/ComponentManagers.puml" width="300" />
 

@@ -7,6 +7,12 @@
 
 'T1 through T4 are shades of the original color from lightest to darkest
 
+!define FRONTEND_COLOR #1D8900
+!define FRONTEND_COLOR_T1 #83E769
+!define FRONTEND_COLOR_T2 #3FC71B
+!define FRONTEND_COLOR_T3 #166800
+!define FRONTEND_COLOR_T4 #0E4100
+
 !define ROUTER_COLOR #1D8900
 !define ROUTER_COLOR_T1 #83E769
 !define ROUTER_COLOR_T2 #3FC71B
@@ -18,6 +24,12 @@
 !define AUTH_COLOR_T2 #6A6ADC
 !define AUTH_COLOR_T3 #1616B0
 !define AUTH_COLOR_T4 #101086
+
+!define LOGIC_COLOR #9D0012
+!define LOGIC_COLOR_T1 #F97181
+!define LOGIC_COLOR_T2 #E41F36
+!define LOGIC_COLOR_T3 #7B000E
+!define LOGIC_COLOR_T4 #51000A
 
 !define MODEL_COLOR #9D0012
 !define MODEL_COLOR_T1 #F97181
