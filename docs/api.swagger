@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: THE (Teach Learn Excel) API
+  description: API for a tutor agency website providing login, signup, profile, and tutoring functionalities for tutors and clients.
+  version: 1.0.0
+servers:
+  - url: https://api.teachlearnexcel.com/v1
+tags:
+  - name: auth
+    description: Authentication operations
+  - name: tutor
+    description: Tutor-specific operations
+  - name: course
+    description: Course-specific operations
+paths:
+  /api/auth/loginStatus:
+    get:
+      tags:
+        - auth
+      summary: Checks if the user is logged in
+      responses:
+        '200':
+          description: An object indicating if the user is logged in.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginStatus'
+    
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: Log in a user (tutor or client)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login. Both refresh and access tokens are stored as http cookies in the browser.
+        '401':
+          description: Invalid credentials
+
+  /api/auth/signup:
+    post:
+      tags:
+        - auth
+      summary: Sign up a new user (tutor or client)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: User created successfully and logged in. Both refresh and access tokens are stored as http cookies in the browser.
+        '400':
+          description: Invalid input or email already exists
+
+
+  /api/tutors:
+    get:
+      tags:
+        - tutor
+      summary: get the data to populate the page which shows all tutors
+      responses:
+        '200':
+          description: Successful retrieval of tutors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorPublicSummaryList'
+
+  /api/tutors/search:
+    post:
+      tags:
+        - tutor
+      summary: Search for tutors
+      requestBody:
+        required: true
+        description: parameters the tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TutorSearchQuery'
+      responses:
+        '200':
+          description: a list of tutor summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorPublicSummaryList'
+
+  /api/tutors/profile/:id:  
+  # https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes
+    get:
+      tags:
+        - tutor
+      summary: retrieves the details of a tutor specified by id
+      responses:
+        '200':
+          description: the details of a single tutor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorPublicSummaryList'
+
+  /api/courses:
+    get:
+      tags:
+        - course
+      summary: get the data to populate the page which shows all courses
+      responses:
+        '200':
+          description: Successful retrieval of courses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoursePublicSummaryList'
+
+components:
+  schemas:
+    CoursePublicSummaryList:
+      type: array
+      items:
+        type: object
+        required:
+          - id
+          - name
+          - description
+          - progress
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          description:
+            type: string
+          progress:
+            type: number
+          fileLink:
+            type: string
+    TutorSearchQuery:
+      type: object
+      required:
+        - query
+        - subjects
+        - levels
+      properties:
+        query:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        levels:
+          type: array
+          items:
+            type: string
+    TutorPublicSummaryList:
+      type: array
+      items:
+        type: object
+        required:
+        - id
+        - name
+        - photo
+        - rate
+        - rating
+        - subjectsTeachable
+        - levelsTeachable
+        - experience
+        - availability
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          photo:
+            type: string
+          rate:
+            type: string
+          rating:
+            type: number
+          subjectsTeachable:
+            type: array
+            items:
+              type: string
+          levelsTeachable:
+            type: array
+            items:
+              type: string
+          experience:
+            type: string
+          availability:
+            type: string
+    TutorPublicProfile:
+      type: object
+      required:
+        - id
+        - name
+        - photo
+        - highestEducation
+        - rate
+        - location
+        - rating
+        - aboutMe
+        - subjectsTeachable
+        - levelsTeachable
+        - specialSkills
+        - resume
+        - experience
+        - availability
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        photo:
+          type: string
+        highestEducation:
+          type: string
+        rate:
+          type: string
+        location:
+          type: string
+        rating:
+          type: number
+        aboutMe:
+          type: string
+        subjectsTeachable:
+          type: array
+          items:
+            type: string
+        levelsTeachable:
+          type: array
+          items:
+            type: string
+        specialSkills:
+          type: array
+          items:
+            type: string
+        resume:
+          type: object
+          format: file
+        experience:
+          type: string
+        availability:
+          type: string
+        
+    LoginStatus:
+      type: object
+      required:
+        - isLoggedIn
+      properties:
+        isLoggedIn:
+          type: boolean
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        userType:
+          type: string
+          enum: [tutor, client]
+    SignupRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+        - userType
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        name:
+          type: string
+        userType:
+          type: string
+          enum: [tutor, client]
