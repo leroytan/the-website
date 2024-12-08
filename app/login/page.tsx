@@ -7,9 +7,13 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 
+import { useRouter } from 'next/navigation'
+
 const inter = Inter({ subsets: ['latin'] })
 
 export default function LoginPage() {
+  const router = useRouter()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
