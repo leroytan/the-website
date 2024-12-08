@@ -1,17 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Star, DollarSign, Book, Filter, X, GraduationCap } from 'lucide-react'
+import { Search, Star, DollarSign, Book, Filter, GraduationCap } from 'lucide-react'
 import { Header } from '../components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
-// Mock data for tutors (expanded with levels)
-const mockTutors = [
+type Tutor = {
+  id: number
+  name: string
+  subjects: string[]
+  levels: string[]
+  rating: number
+  ratePerHour: number
+  imageUrl: string
+  experience: string
+  availability: string
+}
+
+// Mock data for tutors
+const mockTutors: Tutor[] = [
   {
     id: 1,
     name: 'John Doe',
@@ -19,7 +31,7 @@ const mockTutors = [
     levels: ['Primary 5', 'Primary 6', 'Secondary 1'],
     rating: 4.8,
     ratePerHour: 30,
-    imageUrl: '/placeholder.svg?height=100&width=100',
+    imageUrl: '/placeholder.svg',
     experience: '5 years',
     availability: 'Weekdays, Evenings',
   },
@@ -30,7 +42,7 @@ const mockTutors = [
     levels: ['Primary 3', 'Primary 4', 'Primary 5'],
     rating: 4.9,
     ratePerHour: 35,
-    imageUrl: '/placeholder.svg?height=100&width=100',
+    imageUrl: '/placeholder.svg',
     experience: '7 years',
     availability: 'Weekends, Mornings',
   },
@@ -41,7 +53,7 @@ const mockTutors = [
     levels: ['Secondary 2', 'Secondary 3', 'Secondary 4'],
     rating: 4.7,
     ratePerHour: 28,
-    imageUrl: '/placeholder.svg?height=100&width=100',
+    imageUrl: '/placeholder.svg',
     experience: '3 years',
     availability: 'Flexible',
   },
@@ -52,7 +64,7 @@ const mockTutors = [
     levels: ['Primary 4', 'Primary 5', 'Primary 6'],
     rating: 4.6,
     ratePerHour: 25,
-    imageUrl: '/placeholder.svg?height=100&width=100',
+    imageUrl: '/placeholder.svg',
     experience: '4 years',
     availability: 'Weekdays, Afternoons',
   },
@@ -63,35 +75,23 @@ const mockTutors = [
     levels: ['Secondary 3', 'Secondary 4', 'Junior College'],
     rating: 4.9,
     ratePerHour: 40,
-    imageUrl: '/placeholder.svg?height=100&width=100',
+    imageUrl: '/placeholder.svg',
     experience: '8 years',
     availability: 'Evenings, Weekends',
   },
-  {
-    id: 6,
-    name: 'Emily Brown',
-    subjects: ['Art', 'Design'],
-    levels: ['Primary 1', 'Primary 2', 'Primary 3'],
-    rating: 4.8,
-    ratePerHour: 32,
-    imageUrl: '/placeholder.svg?height=100&width=100',
-    experience: '6 years',
-    availability: 'Weekends',
-  },
 ]
 
-const TutorCard = ({ tutor }) => (
+const TutorCard = ({ tutor }: { tutor: Tutor }) => (
   <motion.div
     layout="position"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    transition={{ duration: 0.2, ease: "linear" }}
     className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
   >
     <div className="flex items-center mb-4">
       <Image
-        src={tutor.imageUrl}
+        src={tutor.imageUrl || '/fallback.svg'}
         alt={tutor.name}
         width={80}
         height={80}
@@ -140,39 +140,42 @@ const TutorCard = ({ tutor }) => (
 )
 
 export default function TutorBrowsePage() {
-  const [tutors, setTutors] = useState(mockTutors)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedSubjects, setSelectedSubjects] = useState([])
-  const [selectedLevels, setSelectedLevels] = useState([])
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [selectedLevels, setSelectedLevels] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    setTutors(mockTutors)
-  }, [])
+  const allSubjects = Array.from(new Set(mockTutors.flatMap((tutor) => tutor.subjects)))
+  const allLevels = Array.from(new Set(mockTutors.flatMap((tutor) => tutor.levels)))
 
-  const allSubjects = Array.from(new Set(mockTutors.flatMap(tutor => tutor.subjects)))
-  const allLevels = Array.from(new Set(mockTutors.flatMap(tutor => tutor.levels)))
-
-  const filteredTutors = tutors.filter(tutor =>
-    (tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tutor.subjects.some(subject => subject.toLowerCase().includes(searchTerm.toLowerCase()))) &&
-    (selectedSubjects.length === 0 || tutor.subjects.some(subject => selectedSubjects.includes(subject))) &&
-    (selectedLevels.length === 0 || tutor.levels.some(level => selectedLevels.includes(level)))
-  )
-
-  const toggleSubpage = () => {
-    setIsSidebarOpen(!isSidebarOpen)
+  const toggleSubject = (subject: string) => {
+    setSelectedSubjects((prev) =>
+      prev.includes(subject) ? prev.filter((s) => s !== subject) : [...prev, subject]
+    )
   }
+
+  const toggleLevel = (level: string) => {
+    setSelectedLevels((prev) =>
+      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
+    )
+  }
+
+  const filteredTutors = mockTutors.filter(
+    (tutor) =>
+      (tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tutor.subjects.some((subject) =>
+          subject.toLowerCase().includes(searchTerm.toLowerCase())
+        )) &&
+      (selectedSubjects.length === 0 || tutor.subjects.some((subject) => selectedSubjects.includes(subject))) &&
+      (selectedLevels.length === 0 || tutor.levels.some((level) => selectedLevels.includes(level)))
+  )
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
-      <Header toggleSubpage={toggleSubpage} />
-      
+      <Header toggleSubpage={() => {}} />
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold text-[#4a58b5] mb-8 text-center">THE Tutors</h1>
-          
           <div className="mb-8 flex flex-col sm:flex-row items-center gap-4">
             <div className="relative flex-grow">
               <input
@@ -194,19 +197,17 @@ export default function TutorBrowsePage() {
               Filters
             </motion.button>
           </div>
-
           <AnimatePresence>
             {showFilters && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: "linear" }}
                 className="mb-8 bg-white p-4 rounded-md shadow-md overflow-hidden"
               >
                 <h3 className="text-lg font-semibold text-[#4a58b5] mb-4">Filter by Subject:</h3>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {allSubjects.map(subject => (
+                  {allSubjects.map((subject) => (
                     <motion.button
                       key={subject}
                       whileHover={{ scale: 1.05 }}
@@ -224,7 +225,7 @@ export default function TutorBrowsePage() {
                 </div>
                 <h3 className="text-lg font-semibold text-[#4a58b5] mb-4">Filter by Level:</h3>
                 <div className="flex flex-wrap gap-2">
-                  {allLevels.map(level => (
+                  {allLevels.map((level) => (
                     <motion.button
                       key={level}
                       whileHover={{ scale: 1.05 }}
@@ -243,24 +244,21 @@ export default function TutorBrowsePage() {
               </motion.div>
             )}
           </AnimatePresence>
-
-          <motion.div 
+          <motion.div
             layout
-            transition={{ duration: 0.2, ease: "linear" }}
+            transition={{ duration: 0.2, ease: 'linear' }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             <AnimatePresence>
-              {filteredTutors.map(tutor => (
+              {filteredTutors.map((tutor) => (
                 <TutorCard key={tutor.id} tutor={tutor} />
               ))}
             </AnimatePresence>
           </motion.div>
-
           {filteredTutors.length === 0 && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2, ease: "linear" }}
               className="text-center text-[#4a58b5] mt-8 text-lg"
             >
               No tutors found. Try adjusting your search or filters.
@@ -268,10 +266,11 @@ export default function TutorBrowsePage() {
           )}
         </div>
       </main>
-
       <footer className="bg-[#4a58b5] text-white py-4 sm:py-6">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs sm:text-sm">&copy; 2024 Teach . Honour . Excel. All rights reserved.</p>
+          <p className="text-xs sm:text-sm">
+            &copy; 2024 Teach . Honour . Excel. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
