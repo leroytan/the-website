@@ -13,11 +13,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [userType, setUserType] = useState('tutee')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic here
-    console.log('Login attempted with:', email, password)
+    console.log('Login attempted with:', { email, password, userType })
   }
 
   return (
@@ -30,15 +30,42 @@ export default function LoginPage() {
       >
         <div className="flex justify-center mb-6">
           <Image
-            src=""
-            alt="T.H.E. Logo"
-            width={150}
+            src="/images/logo.png"
+            alt="THE Logo"
+          width={150}
             height={75}
             className="w-32 sm:w-40"
           />
         </div>
-        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">Login to T.H.E.</h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">Login to THE</h2>
         <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-[#4a58b5] mb-2">I am logging in as:</label>
+            <div className="flex space-x-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="form-radio text-[#fabb84]"
+                  name="userType"
+                  value="tutee"
+                  checked={userType === 'tutee'}
+                  onChange={(e) => setUserType(e.target.value)}
+                />
+                <span className="ml-2 text-[#4a58b5]">Tutee</span>
+              </label>
+              <label className="inline-flex items-center">
+                <input
+                  type="radio"
+                  className="form-radio text-[#fabb84]"
+                  name="userType"
+                  value="tutor"
+                  checked={userType === 'tutor'}
+                  onChange={(e) => setUserType(e.target.value)}
+                />
+                <span className="ml-2 text-[#4a58b5]">Tutor</span>
+              </label>
+            </div>
+          </div>
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-[#4a58b5] mb-1">Email</label>
             <input

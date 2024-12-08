@@ -58,11 +58,8 @@ const UserMenu = () => {
             transition={{ duration: 0.2 }}
             className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10"
           >
-            <Link href="/profile" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
+            <Link href="/profile/tutor" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
               Profile
-            </Link>
-            <Link href="/settings" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
-              Settings
             </Link>
             <Link href="/logout" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
               Log Out
@@ -106,10 +103,10 @@ const Subpage = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           <nav className="p-6 text-[#4a58b5]">
             <ul className="space-y-4">
               <li><Link href="/dashboard/tutor" className="text-lg font-semibold hover:underline">Dashboard</Link></li>
-              <li><Link href="/students" className="text-lg font-semibold hover:underline">My Students</Link></li>
               <li><Link href="/schedule" className="text-lg font-semibold hover:underline">Schedule</Link></li>
               <li><Link href="/messages" className="text-lg font-semibold hover:underline">Messages</Link></li>
               <li><Link href="/earnings" className="text-lg font-semibold hover:underline">Earnings</Link></li>
+              <li><Link href="/tutors" className="text-lg font-semibold hover:underline">THE Tutors</Link></li>
             </ul>
           </nav>
         </motion.div>

@@ -58,12 +58,10 @@ const UserMenu = () => {
             transition={{ duration: 0.2 }}
             className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10"
           >
-            <Link href="/profile" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
+            <Link href="/profile/tutee" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
               Profile
             </Link>
-            <Link href="/settings" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
-              Settings
-            </Link>
+            
             <Link href="/logout" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
               Log Out
             </Link>
@@ -106,10 +104,10 @@ const Subpage = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           <nav className="p-6 text-[#4a58b5]">
             <ul className="space-y-4">
               <li><Link href="/dashboard/tutee" className="text-lg font-semibold hover:underline">Dashboard</Link></li>
-              <li><Link href="/courses" className="text-lg font-semibold hover:underline">My Courses</Link></li>
-              <li><Link href="/schedule" className="text-lg font-semibold hover:underline">Schedule</Link></li>
+              <li><Link href="/courses" className="text-lg font-semibold hover:underline">THE Courses</Link></li>
+              <li><Link href="/tutors" className="text-lg font-semibold hover:underline">THE Tutors</Link></li>
+              <li><Link href="/schedule" className="text-lg font-semibold hover:underline">My Schedule</Link></li>
               <li><Link href="/messages" className="text-lg font-semibold hover:underline">Messages</Link></li>
-              <li><Link href="/progress" className="text-lg font-semibold hover:underline">My Progress</Link></li>
             </ul>
           </nav>
         </motion.div>
@@ -132,7 +130,7 @@ export default function TuteeDashboard() {
       <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
         <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
           <BurgerMenu toggleSubpage={toggleSubpage} />
-          <Image src="" alt="THE Logo" width={100} height={50} className="w-16 sm:w-20 md:w-24 lg:w-28" />
+          <Image src="/images/logo.png" alt="THE Logo" width={100} height={50} className="w-16 sm:w-20 md:w-24 lg:w-28" />
           <UserMenu />
         </div>
       </header>
