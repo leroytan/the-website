@@ -9,7 +9,6 @@ import { Header } from '../components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
-// Define a type for courses
 type Course = {
   id: number
   title: string
@@ -18,7 +17,6 @@ type Course = {
   completed: boolean
 }
 
-// Mock data for courses
 const mockCourses: Course[] = [
   {
     id: 1,
@@ -37,7 +35,7 @@ const mockCourses: Course[] = [
   {
     id: 3,
     title: 'Student Psychology',
-    description: 'Understand student behavior and motivation to improve learning outcomes.',
+    description: 'Understand student behaviour and motivation to improve learning outcomes.',
     progress: 30,
     completed: false,
   },
@@ -140,9 +138,7 @@ export default function CoursesPage() {
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
-      <Header toggleSubpage={function (): void {
-              throw new Error('Function not implemented.')
-          } } />
+      <Header toggleSubpage={() => {}} />
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8 relative">
@@ -175,40 +171,42 @@ export default function CoursesPage() {
             </motion.p>
           )}
 
-          {showCertificate && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-white rounded-lg p-8 max-w-md w-full">
-                <h2 className="text-2xl font-bold text-[#4a58b5] mb-4">Congratulations!</h2>
-                <p className="text-[#4a58b5] mb-6">
-                  You have completed the course: {courses.find((c) => c.id === completedCourseId)?.title}
-                </p>
-                <div className="flex justify-between">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleAddToLinkedIn}
-                    className="bg-[#0077b5] text-white px-4 py-2 rounded-md hover:bg-[#006097] transition-colors duration-200 flex items-center"
-                  >
-                    <Linkedin size={20} className="mr-2" />
-                    Add to LinkedIn
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowCertificate(false)}
-                    className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200"
-                  >
-                    Close
-                  </motion.button>
+          <AnimatePresence>
+            {showCertificate && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+              >
+                <div className="bg-white rounded-lg p-8 max-w-md w-full">
+                  <h2 className="text-2xl font-bold text-[#4a58b5] mb-4">Congratulations!</h2>
+                  <p className="text-[#4a58b5] mb-6">
+                    You have completed the course: {courses.find((c) => c.id === completedCourseId)?.title}
+                  </p>
+                  <div className="flex justify-between">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleAddToLinkedIn}
+                      className="bg-[#0077b5] text-white px-4 py-2 rounded-md hover:bg-[#006097] transition-colors duration-200 flex items-center"
+                    >
+                      <Linkedin size={20} className="mr-2" />
+                      Add to LinkedIn
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowCertificate(false)}
+                      className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200"
+                    >
+                      Close
+                    </motion.button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>
