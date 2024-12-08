@@ -1,8 +1,0 @@
-{
-  "/tutors/page": "app/tutors/page.js",
-  "/tutors/[id]/page": "app/tutors/[id]/page.js",
-  "/profile/tutee/page": "app/profile/tutee/page.js",
-  "/page": "app/page.js",
-  "/dashboard/tutee/page": "app/dashboard/tutee/page.js",
-  "/courses/page": "app/courses/page.js"
-}
