@@ -81,42 +81,15 @@ export default function SignupPage() {
       >
         <div className="flex justify-center mb-6">
           <Image
-            src="/images/logo.png"
-            alt="THE Logo"
+            src=""
+            alt="T.H.E. Logo"
             width={150}
             height={75}
             className="w-32 sm:w-40"
           />
         </div>
-        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">Sign Up for THE</h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">Sign Up for T.H.E.</h2>
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[#4a58b5] mb-2">I am signing up as a:</label>
-            <div className="flex space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-[#fabb84]"
-                  name="userType"
-                  value="tutee"
-                  checked={userType === 'tutee'}
-                  onChange={(e) => setUserType(e.target.value)}
-                />
-                <span className="ml-2 text-[#4a58b5]">Tutee</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-[#fabb84]"
-                  name="userType"
-                  value="tutor"
-                  checked={userType === 'tutor'}
-                  onChange={(e) => setUserType(e.target.value)}
-                />
-                <span className="ml-2 text-[#4a58b5]">Tutor</span>
-              </label>
-            </div>
-          </div>
           <div className="mb-4">
             <label htmlFor="name" className="block text-sm font-medium text-[#4a58b5] mb-1">Name</label>
             <input
@@ -198,7 +171,7 @@ export default function SignupPage() {
             whileTap={{ scale: 0.95 }}
             className="w-full bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200"
           >
-            Next
+            Sign Up
           </motion.button>
         </form>
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
