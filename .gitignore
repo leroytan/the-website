@@ -2,4 +2,6 @@ node_modules/
 venv/
 .next/
 
+**/__pycache__/
+
 docs/node_modules

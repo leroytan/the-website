@@ -16,16 +16,10 @@ Package " "<<Rectangle>>{
 Class Frontend FRONTEND_COLOR
 Class "<$documents>" as File ROUTER_COLOR_T1
 
-Router -right[#green]> Auth
-Router -[#green]> Logic
-Auth -[#blue]-> Storage
-Logic .down[#blue]-> Auth
-Main -[#grey]-> Router
-Main -[#grey]-> Auth
-Main -[#grey]-> Storage
-Main -up[#grey]-> Logic
-Main -down[hidden]-> Commons
+Router -down[#green]-> Logic
+Logic -left[LOGIC_COLOR]-> Auth
 Logic -down[LOGIC_COLOR]-> Storage
+Main -down[hidden]-> Commons
 
 Storage .right[STORAGE_COLOR].>File
 Frontend ..> Router
