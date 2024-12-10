@@ -1,4 +1,3 @@
-import auth.config
-import auth.password
-import auth.token
-import auth.user
+import api.auth.auth_interface
+import api.auth.auth_service
+import api.auth.config

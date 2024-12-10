@@ -1,7 +1,13 @@
-from app import app
+from fastapi import FastAPI
 
-import routers
-import db
+# Import the routers
+from api.router.auth import router as auth_router
+
+# Create FastAPI instance with custom docs and openapi url
+app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+# Attach the routers to the app
+app.include_router(auth_router)
 
 if __name__ == "__main__":
   import uvicorn

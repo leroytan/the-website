@@ -1,4 +1,6 @@
 node_modules
 .next/
 
+**/__pycache__/
+
 docs/node_modules
