@@ -1,6 +1,4 @@
-from sqlmodel import create_engine, SQLModel, Session
-
-from api.storage.models import Client, Tutor
+from sqlalchemy import create_engine
 
 DATABASE_USERNAME = "postgres"
 DATABASE_PASSWORD = "postgres"
