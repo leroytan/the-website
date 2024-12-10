@@ -18,7 +18,7 @@ class Utils:
         # For example, you can add checks for empty tuples or other objects if necessary.
 
     @classmethod
-    def validate_non_empty_multiple(cls, **kwargs: dict) -> None:
+    def validate_non_empty(cls, **kwargs: dict) -> None:
         """Validate multiple arguments at once."""
         for field_name, value in kwargs.items():
             cls.__validate_non_empty(value, field_name)

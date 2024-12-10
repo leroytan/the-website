@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Dict
 
 
 class AuthInterface(ABC):
@@ -48,6 +48,22 @@ class AuthInterface(ABC):
         Returns:
             str: The encoded JWT access token.
         """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        """
+        Creates an refresh token using the provided data and optional expiration time.
+
+        Args:
+            data (dict): A dictionary of data to encode into the JWT.
+            expires_delta (Optional[timedelta], optional): The expiration time for the token.
+                If None, the token will expire in 15 minutes. Defaults to None.
+
+        Returns:
+            str: The encoded JWT access token.
+        """
         pass 
 
     @staticmethod
@@ -64,5 +80,19 @@ class AuthInterface(ABC):
 
         Returns:
             dict: The payload of the decoded JWT token.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+        """
+        Refreshes the access and refresh tokens using the provided refresh token.
+
+        Args:
+            refresh_token (str): The refresh token to use for token refresh.
+
+        Returns:
+            dict: A dictionary containing the new access and refresh tokens.
         """
         pass

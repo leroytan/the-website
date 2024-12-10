@@ -28,7 +28,7 @@ class StorageService(StorageInterface):
             
         if not user:
             try:
-                Utils.validate_non_empty_multiple(query=query)
+                Utils.validate_non_empty(query=query)
             except ValueError:
                 raise TableEmptyError(User.__tablename__)
             raise UserNotFoundError(email=query.get("email"), userType=query.get("userType"))
