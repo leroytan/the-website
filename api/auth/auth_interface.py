@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Optional
 
+
 class AuthInterface(ABC):
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def hash_password(cls, password: str) -> str:
+    def hash_password(password: str) -> str:
         """
         Hashes the provided password using bcrypt.
 
@@ -18,9 +19,9 @@ class AuthInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
         """
         Checks if the provided plain text password matches the hashed password.
 
@@ -33,9 +34,9 @@ class AuthInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def create_access_token(cls, data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
         """
         Creates an access token using the provided data and optional expiration time.
 
@@ -49,9 +50,9 @@ class AuthInterface(ABC):
         """
         pass 
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def verify_token(cls, token: str):
+    def verify_token(token: str):
         """
         Verifies the JWT token and returns its payload.
 

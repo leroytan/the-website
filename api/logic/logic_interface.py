@@ -7,9 +7,9 @@ from fastapi import Response
 
 class LogicInterface(ABC):
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def handle_login(cls, login_data: LoginRequest) -> str:
+    def handle_login(login_data: LoginRequest) -> str:
         """
         Authenticates the user by verifying their email and password, and generates an access token if successful.
 
@@ -24,9 +24,9 @@ class LogicInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def handle_signup(cls, signup_data: SignupRequest) -> str:
+    def handle_signup(signup_data: SignupRequest) -> str:
         """
         Handles the signup request by creating a new user and returning an access token.
 
@@ -41,7 +41,7 @@ class LogicInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
     def handle_logout(cls):
         """
@@ -49,9 +49,9 @@ class LogicInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def handle_token(cls, token: str, response: Response):
+    def handle_token(token: str, response: Response):
         """
         Sets the token as an HTTP-only cookie in the response in-place.
 
@@ -64,9 +64,9 @@ class LogicInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def get_current_user(cls, token: str):
+    def get_current_user(token: str):
         """
         Verifies the token and returns the user data.
 

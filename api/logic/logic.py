@@ -16,8 +16,8 @@ from api.storage.storage_service import StorageService
 
 class Logic(LogicInterface):
 
-    @classmethod
-    def handle_login(cls, login_data: LoginRequest) -> str:
+    @staticmethod
+    def handle_login(login_data: LoginRequest) -> str:
         try:
             user = StorageService.find_one_user({"email": login_data.email, "userType": login_data.userType})
         except UserNotFoundError:
@@ -30,8 +30,8 @@ class Logic(LogicInterface):
         
         return token
 
-    @classmethod
-    def handle_signup(cls, signup_data: SignupRequest) -> str:
+    @staticmethod
+    def handle_signup(signup_data: SignupRequest) -> str:
 
         hashed_password = AuthService.hash_password(signup_data.password)
 
@@ -49,12 +49,12 @@ class Logic(LogicInterface):
 
         return token
     
-    @classmethod
+    @staticmethod
     def handle_logout(cls):
         pass
 
-    @classmethod
-    def handle_token(cls, token: str, response):
+    @staticmethod
+    def handle_token(token: str, response):
 
         response.set_cookie(
             key="auth_token",
@@ -65,8 +65,8 @@ class Logic(LogicInterface):
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
         )
 
-    @classmethod
-    def get_current_user(cls, token: str):
+    @staticmethod
+    def get_current_user(token: str):
         credentials_exception = HTTPException(
             status_code=401,
             detail="Could not validate credentials",

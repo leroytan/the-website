@@ -3,9 +3,17 @@ from api.storage.models import User
 
 class StorageInterface(ABC):
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def find_one_user(cls, query: dict) -> User:
+    def init_db() -> None:
+        """
+        Initializes the database.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def find_one_user(query: dict) -> User:
         """
         Finds a single user that matches the provided query.
 
@@ -17,9 +25,9 @@ class StorageInterface(ABC):
         """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def create_user(cls, email: str, name: str, password_hash: str, userType: str) -> User:
+    def create_user(email: str, name: str, password_hash: str, userType: str) -> User:
         """
         Creates a new user with the provided data.
 
