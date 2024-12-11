@@ -6,6 +6,9 @@ from api.auth.config import JWT_SECRET_KEY, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_M
 from jose import jwt
 import bcrypt
 
+from api.auth.models import TokenData
+from api.storage.models import UserType
+
 class TestAuthService(unittest.TestCase):
 
     @patch('bcrypt.gensalt')  # Mock the gensalt function in bcrypt
@@ -48,7 +51,7 @@ class TestAuthService(unittest.TestCase):
         # Mock the JWT encoding
         mock_encode.return_value = "mocked_jwt_token"
 
-        data = {"user_id": 1, "role": "admin"}
+        data = TokenData(email="user@example.com", userType=UserType.CLIENT)
         expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         token = AuthService.create_access_token(data, expires_delta)
 
@@ -61,7 +64,7 @@ class TestAuthService(unittest.TestCase):
         # Mock the JWT encoding
         mock_encode.return_value = "mocked_jwt_token"
 
-        data = {"user_id": 1, "role": "admin"}
+        data = TokenData(email="user@example.com", userType=UserType.CLIENT)
         expires_delta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
         token = AuthService.create_refresh_token(data, expires_delta)
 
@@ -72,15 +75,15 @@ class TestAuthService(unittest.TestCase):
     @patch('api.auth.auth_service.jwt.decode')
     def test_verify_token(self, mock_decode):
         # Mock the JWT decode
-        mock_decode.return_value = {"user_id": 1, "role": "admin", "exp": datetime.now() + timedelta(minutes=30), "type": "access"}
+        mock_decode.return_value = {'email': 'user@example.com', 'userType': 'CLIENT', 'exp': datetime.now() + timedelta(minutes=5), 'type': 'access'}
 
         token = "mocked_jwt_token"
-        payload = AuthService.verify_token(token)
+        token_data = AuthService.verify_token(token)
 
         # Check if jwt.decode was called correctly
         mock_decode.assert_called_once_with(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        self.assertEqual(payload["user_id"], 1)
-        self.assertEqual(payload["role"], "admin")
+        self.assertEqual(token_data.email, "user@example.com")
+        self.assertEqual(token_data.userType, UserType.CLIENT)
 
         # Test invalid token (JWT decoding fails)
         mock_decode.side_effect = jwt.ExpiredSignatureError("token has expired")
@@ -105,7 +108,7 @@ class TestAuthService(unittest.TestCase):
         # Test the create_access_token method with default expiration time
         mock_encode.return_value = "mocked_jwt_token"
 
-        data = {"user_id": 1, "role": "admin"}
+        data = TokenData(email="user@example.com", userType=UserType.CLIENT)
         token = AuthService.create_access_token(data)
 
         mock_encode.assert_called_once()

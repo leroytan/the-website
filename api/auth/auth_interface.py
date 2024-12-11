@@ -2,8 +2,41 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Optional, Dict
 
+from api.auth.models import TokenData
+from api.common.utils import Utils
 
 class AuthInterface(ABC):
+
+    @staticmethod
+    @abstractmethod
+    def serialize_token_data(token_data: TokenData) -> dict:
+        """
+        Serializes the token data into a dictionary.
+
+        Args:
+            token_data (TokenData): The token data to serialize.
+
+        Returns:
+            dict: The serialized token data.
+        """
+        pass
+    
+    @staticmethod
+    @abstractmethod
+    def deserialize_token(token: dict) -> TokenData:
+        """
+        Deserializes the token data from a dictionary.
+
+        Args:
+            token (dict): The dictionary containing the token data.
+
+        Raises:
+            ValidationError: If the token data is invalid.
+
+        Returns:
+            TokenData: The deserialized token data.
+        """
+        pass
 
     @staticmethod
     @abstractmethod
@@ -91,6 +124,10 @@ class AuthInterface(ABC):
 
         Args:
             refresh_token (str): The refresh token to use for token refresh.
+
+        Raises:
+            jwt.JWTError: If the token is invalid or expired.
+            pydantic.ValidationError: If the token data is in the wrong format.
 
         Returns:
             dict: A dictionary containing the new access and refresh tokens.

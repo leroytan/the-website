@@ -54,6 +54,8 @@ class StorageService(StorageInterface):
             if existing_user:
                 raise UserAlreadyExistsError(email, userType)
             
+            print(f"Creating {userType} user with email: {email}")
+            
             # Create a new user instance
             new_user = CurrentUser(
                 email=email,
