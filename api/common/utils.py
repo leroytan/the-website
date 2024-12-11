@@ -27,6 +27,9 @@ class Utils:
 
     @staticmethod
     def str_to_user_type(userType: str) -> UserType:
+        # Convert "TUTEE" to "CLIENT" for consistency
+        if userType.upper() == "TUTEE":
+            userType = "CLIENT"
         try:
             return UserType(userType)
         except ValueError:

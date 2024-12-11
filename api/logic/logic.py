@@ -75,22 +75,18 @@ class Logic(LogicInterface):
         try:
             payload = AuthService.verify_token(token)
         except JWTError:
-            print("JWTError")
             raise credentials_exception
         
         email = payload.email
         if email is None:
-            print("Email Exception")
             raise credentials_exception
         
         userType = payload.userType
         if userType is None:
-            print("UserType Exception")
             raise credentials_exception
         
         user = StorageService.find_one_user({"email": email, "userType": userType})
         if user is None:
-            print("User Exception")
             raise credentials_exception
         return user
     

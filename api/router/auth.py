@@ -76,8 +76,6 @@ async def login(request: Request, response: Response):
     tokens = Logic.handle_login(login_data=login_data)
     update_tokens(tokens, response)
 
-    response.status_code = 200
-
     return {"message": "Logged in successfully"}
 
 @router.post("/api/auth/signup")
@@ -137,8 +135,6 @@ async def refresh(request: Request, response: Response):
 
     tokens = Logic.refresh_tokens(refresh_token)
     update_tokens(tokens, response)
-
-    response.status_code = 200
 
     return {"message": "Tokens refreshed successfully"}
 

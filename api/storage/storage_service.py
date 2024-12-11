@@ -1,3 +1,4 @@
+from typing import Optional, Type
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -17,21 +18,31 @@ class StorageService(StorageInterface):
             create_database(engine.url)
         # SQLAlchemy automatically creates tables from the Base metadata
         Base.metadata.create_all(engine)
+
+    @staticmethod
+    def find_one_tutor(query: dict) -> Tutor:
+        return StorageService.find_one_user(query, Tutor)
     
     @staticmethod
-    def find_one_user(query: dict) -> User:
+    def find_one_client(query: dict) -> Client:
+        return StorageService.find_one_user(query, Client)
+    
+    @staticmethod
+    def find_one_user(query: dict, TableClass: Optional[Type[User]]) -> User:
+        TableClass = TableClass or User
+
         # Use SQLAlchemy session for querying
         with Session(engine) as session:
-            # Assuming query is a dictionary like {'email': 'user@example.com'}
-            statement = select(User).filter_by(**query)
+            statement = select(TableClass).filter_by(**query)
             user = session.execute(statement).scalars().first()  # Use .scalars().first() to get the result
             
         if not user:
             try:
                 Utils.validate_non_empty(query=query)
             except ValueError:
-                raise TableEmptyError(User.__tablename__)
-            raise UserNotFoundError(email=query.get("email"), userType=query.get("userType"))
+                # query is empty
+                raise TableEmptyError(TableClass.__tablename__)
+            raise UserNotFoundError(query=query, TableClass=TableClass)
         
         return user
     
@@ -53,8 +64,6 @@ class StorageService(StorageInterface):
 
             if existing_user:
                 raise UserAlreadyExistsError(email, userType)
-            
-            print(f"Creating {userType} user with email: {email}")
             
             # Create a new user instance
             new_user = CurrentUser(

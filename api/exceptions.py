@@ -1,3 +1,6 @@
+from typing import Type
+from api.storage.models import User
+
 class TableEmptyError(Exception):
     """Exception raised when the table is empty."""
     def __init__(self, table: str):
@@ -5,10 +8,8 @@ class TableEmptyError(Exception):
 
 class UserNotFoundError(Exception):
     """Exception raised when the user with a certain email and a specific type is not found."""
-    def __init__(self, email: str, userType: str):
-        super().__init__(f"User with email '{email}' and type '{userType}' not found.")
-        self.email = email
-        self.userType = userType
+    def __init__(self, query: dict, TableClass: Type[User] = User):
+        super().__init__(f"{TableClass} with the following details not found: {query}")
 
 class UserAlreadyExistsError(Exception):
     """Exception raised when the user with a certain email and a specific type already exists."""
