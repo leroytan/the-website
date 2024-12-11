@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
 
+from typing import Dict
+
 from api.router.models import LoginRequest
 from api.router.models import SignupRequest
+
+from api.storage.models import User
 
 from fastapi import Response
 
@@ -9,7 +13,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def handle_login(login_data: LoginRequest) -> str:
+    def handle_login(login_data: LoginRequest) -> Dict[str, str]:
         """
         Authenticates the user by verifying their email and password, and generates an access token if successful.
 
@@ -26,7 +30,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def handle_signup(signup_data: SignupRequest) -> str:
+    def handle_signup(signup_data: SignupRequest) -> Dict[str, str]:
         """
         Handles the signup request by creating a new user and returning an access token.
 
@@ -43,7 +47,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def handle_logout(cls):
+    def handle_logout(cls) -> None:
         """
         Logs out the user by invalidating the current access token.
         """
@@ -51,22 +55,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def handle_token(token: str, response: Response):
-        """
-        Sets the token as an HTTP-only cookie in the response in-place.
-
-        Args:
-            token (str): The JWT access token.
-            response (Response): The response object used to set the token as a cookie.
-
-        Returns:
-            None
-        """
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def get_current_user(token: str):
+    def get_current_user(token: str) -> User:
         """
         Verifies the token and returns the user data.
 
@@ -75,5 +64,19 @@ class LogicInterface(ABC):
 
         Returns:
             User: The user data.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+        """
+        Refreshes the access and refresh tokens using the provided refresh token.
+
+        Args:
+            refresh_token (str): The refresh token.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the new access and refresh tokens.
         """
         pass

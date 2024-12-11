@@ -1,38 +1,57 @@
-from fastapi import Depends, Response, APIRouter
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, Request, Response, APIRouter
+
+from typing import Dict
 
 from api.router.models import LoginRequest
 from api.router.models import SignupRequest
 
 from api.logic.logic import Logic
 
+from api.auth.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
+
+from api.common.utils import Utils
+
+from api.storage.models import User
+
 router = APIRouter()
 
-# Dummy user database (replace with real DB in production)
-users_db = {
-    "user@example.com": {
-        "password": "$2b$12$wsyxh9HogoHWD6Sp1EmhSeKeBwC5zrsdxHFo87ZwGSPxzuwtwlZY6",  # hashed password for "password123"
-        "userType": "tutor"
-    }
-}
+def update_tokens(tokens: Dict[str, str], response: Response) -> None:
+    response.set_cookie(
+        key="access_token",
+        value=tokens["access_token"],
+        httponly=True,  # Prevent JavaScript access
+        secure=True,    # Use HTTPS in production
+        samesite="strict",  # CSRF protection
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=tokens["refresh_token"],
+        httponly=True,  # Prevent JavaScript access
+        secure=True,    # Use HTTPS in production
+        samesite="strict",  # CSRF protection
+        max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
+    )
 
-# OAuth2 scheme for bearer token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+def clear_tokens(response: Response) -> None:
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(request: Request) -> User:
+    token = request.cookies.get("access_token")
+    print(token)
     user = Logic.get_current_user(token)
     return user
 
 @router.post("/api/auth/login")
-async def login(login_data: LoginRequest, response: Response):
+async def login(request: Request, response: Response):
     """
     Handles user login by validating the provided credentials and generating 
     an authentication token. The token is then set as an HTTP-only cookie in 
     the response for secure and persistent access.
 
     Args:
-        login_data (LoginRequest): The login credentials provided by the user, 
-                                    including username/email and password.
+        request (Request): The request object containing the login data
         response (Response): The response object used to set the authentication 
                               token as a secure HTTP-only cookie.
 
@@ -47,17 +66,23 @@ async def login(login_data: LoginRequest, response: Response):
         HTTPException: If the login credentials are invalid or the login process 
                         fails, an HTTP error is raised with an appropriate status code.
     """
+    data = await request.json()
 
-    token = Logic.handle_login(login_data=login_data)
+    login_data = LoginRequest(
+        email=data["email"],
+        password=data["password"],
+        userType=Utils.str_to_user_type(data["userType"])
+    )
 
-    Logic.handle_token(token, response)
+    tokens = Logic.handle_login(login_data=login_data)
+    update_tokens(tokens, response)
 
     response.status_code = 200
 
-    return "yay all is good" # not necessary
+    return {"message": "Logged in successfully"}
 
 @router.post("/api/auth/signup")
-async def signup(signup_data: SignupRequest, response: Response):
+async def signup(request: Request, response: Response):
     """
     Handles user registration by processing the provided signup data, 
     creating a new user account, and generating an authentication token. 
@@ -65,9 +90,7 @@ async def signup(signup_data: SignupRequest, response: Response):
     and persistent access.
 
     Args:
-        signup_data (SignupRequest): The registration data provided by the 
-                                      user, including necessary details like 
-                                      username, email, and password.
+        request (Request): The request object containing the signup data
         response (Response): The response object used to set the authentication 
                               token as a secure HTTP-only cookie.
 
@@ -83,21 +106,39 @@ async def signup(signup_data: SignupRequest, response: Response):
                         or a conflict with existing accounts), an HTTP error is 
                         raised with an appropriate status code.
     """
-    
-    token = Logic.handle_signup(signup_data=signup_data)
+    data = await request.json()
 
-    Logic.handle_token(token, response)
+    signup_data = SignupRequest(
+        name=data["name"],
+        email=data["email"],
+        password=data["password"],
+        userType=Utils.str_to_user_type(data["userType"])
+    )
+    
+    tokens = Logic.handle_signup(signup_data=signup_data)
+    update_tokens(tokens, response)
 
     response.status_code = 201
 
-    return "yay all is good"
+    return {"message": "Signed up successfully"}
     
 
 @router.post("/api/auth/logout")
 async def logout(response: Response):
-    response.delete_cookie("auth_token")
+    clear_tokens(response)
     return {"message": "Logged out successfully"}
 
 @router.get("/api/protected")
-async def protected_route(current_user: dict = Depends(get_current_user)):
-    return {"message": "You are logged in as " + current_user["email"]}
+async def protected_route(current_user: User = Depends(get_current_user)):
+    return {"message": "You are logged in as " + current_user.email}
+
+@router.post("/api/auth/refresh")
+async def refresh(request: Request, response: Response):
+    refresh_token = request.cookies.get("refresh_token")
+
+    tokens = Logic.refresh_tokens(refresh_token)
+    update_tokens(tokens, response)
+
+    response.status_code = 200
+
+    return {"message": "Tokens refreshed successfully"}

@@ -11,8 +11,8 @@ class UserType(enum.Enum):
     """
     Enum for user types
     """
-    CLIENT = "client"
-    TUTOR = "tutor"
+    CLIENT = 'CLIENT'
+    TUTOR = 'TUTOR'
 
 class User(Base):
     """

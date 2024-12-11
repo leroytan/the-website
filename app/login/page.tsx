@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { Inter } from 'next/font/google'
-import Link from 'next/link'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
+import { Inter } from 'next/font/google'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -19,9 +19,29 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState('tutee')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     console.log('Login attempted with:', { email, password, userType })
+
+    console.log('Sending login request...')
+    
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, userType: userType.toUpperCase() })
+    })
+
+    console.log('Login response:', res)
+
+    // if status code 401, show error message
+    if (res.status === 401) {
+      alert('Invalid email or password')
+      return
+    }
+
+    // if successful, redirect to protected page
+    router.push('/protected')
   }
 
   return (

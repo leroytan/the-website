@@ -1,5 +1,7 @@
 from typing import Any
 
+from api.storage.models import UserType
+
 class Utils:
 
     @staticmethod
@@ -18,7 +20,18 @@ class Utils:
         # For example, you can add checks for empty tuples or other objects if necessary.
 
     @classmethod
-    def validate_non_empty_multiple(cls, **kwargs: dict) -> None:
+    def validate_non_empty(cls, **kwargs: dict) -> None:
         """Validate multiple arguments at once."""
         for field_name, value in kwargs.items():
             cls.__validate_non_empty(value, field_name)
+
+    @staticmethod
+    def str_to_user_type(userType: str) -> UserType:
+        try:
+            return UserType(userType)
+        except ValueError:
+            raise ValueError("Invalid user type")
+        
+    @staticmethod
+    def user_type_to_str(userType: UserType) -> str:
+        return userType.name

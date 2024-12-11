@@ -2,9 +2,12 @@ import unittest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
 from api.auth.auth_service import AuthService
-from api.auth.config import JWT_SECRET_KEY, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from api.auth.config import JWT_SECRET_KEY, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
 from jose import jwt
 import bcrypt
+
+from api.auth.models import TokenData
+from api.storage.models import UserType
 
 class TestAuthService(unittest.TestCase):
 
@@ -48,31 +51,39 @@ class TestAuthService(unittest.TestCase):
         # Mock the JWT encoding
         mock_encode.return_value = "mocked_jwt_token"
 
-        data = {"user_id": 1, "role": "admin"}
-        expires_delta = timedelta(minutes=30)
+        data = TokenData(email="user@example.com", userType=UserType.CLIENT)
+        expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         token = AuthService.create_access_token(data, expires_delta)
 
         # Check if the mock was called correctly
         mock_encode.assert_called_once()
         self.assertEqual(token, "mocked_jwt_token")
 
-        # Check that the token includes the expiration time
-        to_encode = data.copy()
-        expire_time = datetime.now() + expires_delta
-        to_encode.update({"exp": expire_time})
+    @patch('api.auth.auth_service.jwt.encode')
+    def test_create_refresh_token(self, mock_encode):
+        # Mock the JWT encoding
+        mock_encode.return_value = "mocked_jwt_token"
+
+        data = TokenData(email="user@example.com", userType=UserType.CLIENT)
+        expires_delta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+        token = AuthService.create_refresh_token(data, expires_delta)
+
+        # Check if the mock was called correctly
+        mock_encode.assert_called_once()
+        self.assertEqual(token, "mocked_jwt_token")
 
     @patch('api.auth.auth_service.jwt.decode')
     def test_verify_token(self, mock_decode):
         # Mock the JWT decode
-        mock_decode.return_value = {"user_id": 1, "role": "admin", "exp": datetime.now() + timedelta(minutes=30)}
+        mock_decode.return_value = {'email': 'user@example.com', 'userType': 'CLIENT', 'exp': datetime.now() + timedelta(minutes=5), 'type': 'access'}
 
         token = "mocked_jwt_token"
-        payload = AuthService.verify_token(token)
+        token_data = AuthService.verify_token(token)
 
         # Check if jwt.decode was called correctly
         mock_decode.assert_called_once_with(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        self.assertEqual(payload["user_id"], 1)
-        self.assertEqual(payload["role"], "admin")
+        self.assertEqual(token_data.email, "user@example.com")
+        self.assertEqual(token_data.userType, UserType.CLIENT)
 
         # Test invalid token (JWT decoding fails)
         mock_decode.side_effect = jwt.ExpiredSignatureError("token has expired")
@@ -97,7 +108,7 @@ class TestAuthService(unittest.TestCase):
         # Test the create_access_token method with default expiration time
         mock_encode.return_value = "mocked_jwt_token"
 
-        data = {"user_id": 1, "role": "admin"}
+        data = TokenData(email="user@example.com", userType=UserType.CLIENT)
         token = AuthService.create_access_token(data)
 
         mock_encode.assert_called_once()
@@ -109,6 +120,32 @@ class TestAuthService(unittest.TestCase):
         data = {}
         with self.assertRaises(ValueError):
             AuthService.create_access_token(data)
+
+    @patch('api.auth.auth_service.AuthService.verify_token')
+    @patch('api.auth.auth_service.AuthService.create_access_token')
+    @patch('api.auth.auth_service.AuthService.create_refresh_token')
+    def test_refresh_tokens(self, mock_create_refresh_token, mock_create_access_token, mock_verify_token):
+        # Setup mock return values
+        mock_verify_token.return_value = {'user_id': 123, 'username': 'testuser'}
+        mock_create_access_token.return_value = 'new_access_token'
+        mock_create_refresh_token.return_value = 'new_refresh_token'
+
+        # Existing refresh token
+        existing_refresh_token = 'old_refresh_token'
+
+        # Call the method
+        result = AuthService.refresh_tokens(existing_refresh_token)
+
+        # Assertions
+        mock_verify_token.assert_called_once_with(existing_refresh_token, is_refresh=True)
+        mock_create_access_token.assert_called_once_with({'user_id': 123, 'username': 'testuser'})
+        mock_create_refresh_token.assert_called_once_with({'user_id': 123, 'username': 'testuser'})
+        
+        # Check return value
+        self.assertEqual(result, {
+            'access_token': 'new_access_token', 
+            'refresh_token': 'new_refresh_token'
+        })
 
 if __name__ == '__main__':
     unittest.main()
