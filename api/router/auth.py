@@ -39,7 +39,6 @@ def clear_tokens(response: Response) -> None:
 
 async def get_current_user(request: Request) -> User:
     token = request.cookies.get("access_token")
-    print(token)
     user = Logic.get_current_user(token)
     return user
 
@@ -142,3 +141,7 @@ async def refresh(request: Request, response: Response):
     response.status_code = 200
 
     return {"message": "Tokens refreshed successfully"}
+
+@router.post("/api/auth/check")
+async def check(_: User = Depends(get_current_user)):
+    return {"message": "Valid token"}
