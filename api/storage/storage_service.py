@@ -1,5 +1,5 @@
 from typing import Optional, Type
-from sqlalchemy import select
+from sqlalchemy import select 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from api.storage.connection import engine
@@ -52,7 +52,7 @@ class StorageService(StorageInterface):
             statement = select(TableClass).filter_by(**query)
             res = session.execute(statement).scalars()
             if find_one:
-                user = res.first()  # Use .scalars().first() to get the result
+                user = res.first()  # Use .first() to get the result
             else:
                 user = res.all()
             

@@ -1,9 +1,4 @@
-from fastapi import Depends, Request, Response, APIRouter
-
-from typing import Dict
-
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
+from fastapi import APIRouter
 
 from api.logic.tutor_logic import TutorLogic
 
@@ -13,5 +8,5 @@ router = APIRouter()
 
 @router.get("/api/tutors")
 async def get_tutors():
-    tutors = TutorLogic.get_all_tutors()
+    tutors = TutorLogic.get_public_summaries()
     return tutors

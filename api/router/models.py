@@ -13,3 +13,14 @@ class SignupRequest(BaseModel):
     password: str
     name: str
     userType: UserType
+
+class TutorPublicSummary(BaseModel):
+    id: int
+    name: str
+    photoUrl: Optional[str]
+    rate: Optional[float]
+    rating: Optional[int]
+    subjectsTeachable: List[str]
+    levelsTeachable: List[str]
+    experience: Optional[str]
+    availability: Optional[str]

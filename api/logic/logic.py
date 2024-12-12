@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from jose import JWTError
-from typing import Dict
 
 from pydantic import ValidationError
 
@@ -22,7 +21,7 @@ from api.auth.models import TokenData
 class Logic(LogicInterface):
 
     @staticmethod
-    def handle_login(login_data: LoginRequest) -> Dict[str, str]:
+    def handle_login(login_data: LoginRequest) -> dict[str, str]:
         try:
             user = StorageService.find_one_user({"email": login_data.email, "userType": login_data.userType})
         except UserNotFoundError:
@@ -39,7 +38,7 @@ class Logic(LogicInterface):
         return {"access_token": access_token, "refresh_token": refresh_token}
 
     @staticmethod
-    def handle_signup(signup_data: SignupRequest) -> Dict[str, str]:
+    def handle_signup(signup_data: SignupRequest) -> dict[str, str]:
 
         hashed_password = AuthService.hash_password(signup_data.password)
 
@@ -91,7 +90,7 @@ class Logic(LogicInterface):
         return user
     
     @staticmethod
-    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> dict[str, str]:
         try:
             return AuthService.refresh_tokens(refresh_token)
         except JWTError:

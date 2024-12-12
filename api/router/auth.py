@@ -1,7 +1,5 @@
 from fastapi import Depends, Request, Response, APIRouter
 
-from typing import Dict
-
 from api.router.models import LoginRequest
 from api.router.models import SignupRequest
 
@@ -15,7 +13,7 @@ from api.storage.models import User
 
 router = APIRouter()
 
-def update_tokens(tokens: Dict[str, str], response: Response) -> None:
+def update_tokens(tokens: dict[str, str], response: Response) -> None:
     response.set_cookie(
         key="access_token",
         value=tokens["access_token"],
