@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 # Import the routers
 from api.router.auth import router as auth_router
+from api.router.tutor import router as tutor_router
 
 from api.storage.storage_service import StorageService
 
@@ -10,9 +11,9 @@ app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 # Attach the routers to the app
 app.include_router(auth_router)
+app.include_router(tutor_router)
 
 StorageService.init_db()
-
 
 if __name__ == "__main__":
   import uvicorn

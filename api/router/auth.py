@@ -70,7 +70,7 @@ async def login(request: Request, response: Response):
     login_data = LoginRequest(
         email=data["email"],
         password=data["password"],
-        userType=Utils.str_to_user_type(data["userType"])
+        userType=Utils.str_to_user_type(data["userType"].upper())
     )
 
     tokens = Logic.handle_login(login_data=login_data)
@@ -109,7 +109,7 @@ async def signup(request: Request, response: Response):
         name=data["name"],
         email=data["email"],
         password=data["password"],
-        userType=Utils.str_to_user_type(data["userType"])
+        userType=Utils.str_to_user_type(data["userType"].upper())
     )
     
     tokens = Logic.handle_signup(signup_data=signup_data)

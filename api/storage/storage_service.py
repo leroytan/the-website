@@ -29,12 +29,32 @@ class StorageService(StorageInterface):
     
     @staticmethod
     def find_one_user(query: dict, TableClass: Optional[Type[User]]) -> User:
+        return StorageService.find_users(query, TableClass, find_one=True)
+    
+    @staticmethod
+    def find_many_tutors(query: dict) -> list[Tutor]:
+        return StorageService.find_many_users(query, Tutor)
+    
+    @staticmethod
+    def find_many_clients(query: dict) -> list[Client]:
+        return StorageService.find_many_users(query, Client)
+    
+    @staticmethod
+    def find_many_users(query: dict, TableClass: Optional[Type[User]]) -> list[User]:
+        return StorageService.find_users(query, TableClass, find_one=False)
+
+    @staticmethod
+    def find_users(query: dict, TableClass: Optional[Type[User]], find_one: bool = False) -> list[User]:
         TableClass = TableClass or User
 
         # Use SQLAlchemy session for querying
         with Session(engine) as session:
             statement = select(TableClass).filter_by(**query)
-            user = session.execute(statement).scalars().first()  # Use .scalars().first() to get the result
+            res = session.execute(statement).scalars()
+            if find_one:
+                user = res.first()  # Use .scalars().first() to get the result
+            else:
+                user = res.all()
             
         if not user:
             try:
