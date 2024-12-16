@@ -169,7 +169,6 @@ export default function ModuleReviewPage() {
             <div className="md:col-span-2">
               {selectedMajor && (
                 <>
-                  <h2 className="text-xl font-semibold text-[#4a58b5] mb-4">{selectedMajor.name} Modules</h2>
                   <div className="grid gap-4">
                     {filteredModules.map((module) => (
                       <motion.div
