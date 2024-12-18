@@ -4,4 +4,4 @@ class TutorLogic:
 
     @staticmethod
     def get_public_summaries():
-        return StorageService.find_many_tutors({})
+        return StorageService.get_tutor_summaries()

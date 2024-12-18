@@ -16,5 +16,6 @@ app.include_router(tutor_router)
 StorageService.init_db()
 
 if __name__ == "__main__":
+  print(StorageService.get_tutor_summaries())
   import uvicorn
   uvicorn.run(app, host="0.0.0.0", port=8000)
