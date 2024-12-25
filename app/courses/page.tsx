@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Book, CheckCircle, Award, Linkedin, ArrowRight, Search, X } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { CheckCircle, ArrowRight, Search } from 'lucide-react'
 import { Inter } from 'next/font/google'
 import { Header } from '../components/Header'
 
@@ -15,44 +15,25 @@ type Course = {
   description: string
   progress: number
   completed: boolean
+  totalModules: number
+  completedModules: number
 }
 
-const mockCourses: Course[] = [
-  {
-    id: 1,
-    title: 'Effective Teaching Strategies',
-    description: 'Learn modern teaching techniques to engage students effectively.',
-    progress: 75,
-    completed: false,
-  },
-  {
-    id: 2,
-    title: 'Digital Tools for Education',
-    description: 'Master the latest digital tools to enhance your teaching methods.',
-    progress: 100,
-    completed: true,
-  },
-  {
-    id: 3,
-    title: 'Student Psychology',
-    description: 'Understand student behaviour and motivation to improve learning outcomes.',
-    progress: 30,
-    completed: false,
-  },
-  {
-    id: 4,
-    title: 'Curriculum Development',
-    description: 'Learn how to design and implement effective educational curricula.',
-    progress: 0,
-    completed: false,
-  },
-]
+const course: Course = {
+  id: 1,
+  title: 'PSLE English',
+  description: 'Master English language skills and prepare effectively for PSLE examination.',
+  progress: 0,
+  completed: false,
+  totalModules: 8,
+  completedModules: 0
+}
 
-const CourseCard = ({ course, onComplete }: { course: Course; onComplete: (id: number) => void }) => {
+const CourseCard = ({ course }: { course: Course }) => {
   const router = useRouter()
 
   const handleContinueCourse = () => {
-    router.push(`/courses/${course.id}`)
+    router.push(`/courses/psle-english/module`)
   }
 
   return (
@@ -85,7 +66,6 @@ const CourseCard = ({ course, onComplete }: { course: Course; onComplete: (id: n
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onComplete(course.id)}
             className="bg-[#4a58b5] text-white px-4 py-2 rounded-md hover:bg-[#3a4795] transition-colors duration-200 text-sm font-medium"
           >
             Get Certificate
@@ -109,28 +89,7 @@ const CourseCard = ({ course, onComplete }: { course: Course; onComplete: (id: n
 }
 
 export default function CoursesPage() {
-  const [courses] = useState<Course[]>(mockCourses)
   const [searchTerm, setSearchTerm] = useState('')
-  const [showCertificate, setShowCertificate] = useState(false)
-  const [completedCourseId, setCompletedCourseId] = useState<number | null>(null)
-
-  const filteredCourses = useMemo(
-    () =>
-      courses.filter((course) =>
-        `${course.title} ${course.description}`.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [searchTerm, courses]
-  )
-
-  const handleCompleteCourse = (courseId: number) => {
-    setCompletedCourseId(courseId)
-    setShowCertificate(true)
-  }
-
-  const handleAddToLinkedIn = () => {
-    alert('Certificate added to LinkedIn successfully!')
-    setShowCertificate(false)
-  }
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value)
@@ -141,74 +100,12 @@ export default function CoursesPage() {
       <Header toggleSubpage={() => {}} />
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8 relative">
-            <input
-              type="text"
-              placeholder="Search courses..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="w-full px-4 py-2 pl-10 pr-4 text-[#4a58b5] bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84] shadow-sm"
-              aria-label="Search courses"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {filteredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} onComplete={handleCompleteCourse} />
-              ))}
-            </AnimatePresence>
+            <CourseCard course={course} />
           </div>
-
-          {filteredCourses.length === 0 && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-[#4a58b5] mt-8 text-lg"
-            >
-              No courses found. Try adjusting your search.
-            </motion.p>
-          )}
-
-          <AnimatePresence>
-            {showCertificate && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-              >
-                <div className="bg-white rounded-lg p-8 max-w-md w-full">
-                  <h2 className="text-2xl font-bold text-[#4a58b5] mb-4">Congratulations!</h2>
-                  <p className="text-[#4a58b5] mb-6">
-                    You have completed the course: {courses.find((c) => c.id === completedCourseId)?.title}
-                  </p>
-                  <div className="flex justify-between">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleAddToLinkedIn}
-                      className="bg-[#0077b5] text-white px-4 py-2 rounded-md hover:bg-[#006097] transition-colors duration-200 flex items-center"
-                    >
-                      <Linkedin size={20} className="mr-2" />
-                      Add to LinkedIn
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowCertificate(false)}
-                      className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200"
-                    >
-                      Close
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </main>
     </div>
   )
 }
+
