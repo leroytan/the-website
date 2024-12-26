@@ -1,52 +1,52 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const reviews = [
   { id: 1, text: "T.H.E. tutors have been instrumental in my academic growth. Their patience and expertise are unmatched.", author: "Emily S.", grade: "11th Grade" },
   { id: 2, text: "The personalized approach to learning has boosted my confidence in subjects I once struggled with.", author: "Michael L.", grade: "9th Grade" },
   { id: 3, text: "Flexible scheduling and top-notch instructors make T.H.E. the perfect choice for busy students.", author: "Sarah K.", grade: "12th Grade" },
   { id: 4, text: "I've seen a significant improvement in my grades since starting with T.H.E. Highly recommended!", author: "David W.", grade: "10th Grade" },
-]
+];
 
-export default function ReviewCarousel() {
-  const [currentReview, setCurrentReview] = useState(0)
-  const [direction, setDirection] = useState(0)
+const variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 1000 : -1000,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? 1000 : -1000,
+    opacity: 0,
+  }),
+};
+
+const ReviewCarousel = () => {
+  const [currentReview, setCurrentReview] = useState(0);
+  const [direction, setDirection] = useState(0);
 
   const nextReview = useCallback(() => {
-    setDirection(1)
-    setCurrentReview((prev) => (prev + 1) % reviews.length)
-  }, [])
+    setDirection(1);
+    setCurrentReview((prev) => (prev + 1) % reviews.length);
+  }, []);
 
   const prevReview = useCallback(() => {
-    setDirection(-1)
-    setCurrentReview((prev) => (prev - 1 + reviews.length) % reviews.length)
-  }, [])
+    setDirection(-1);
+    setCurrentReview((prev) => (prev - 1 + reviews.length) % reviews.length);
+  }, []);
 
   useEffect(() => {
-    const interval = setInterval(nextReview, 5000)
-    return () => clearInterval(interval)
-  }, [nextReview])
-
-  const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction: number) => ({
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0,
-    }),
-  }
+    const interval = setInterval(nextReview, 5000);
+    return () => clearInterval(interval);
+  }, [nextReview]);
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto px-4 py-12">
+    <div className="relative w-full max-w-4xl mx-auto px-4 py-12" aria-live="polite">
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-[200px] sm:h-[180px]">
           <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -59,6 +59,7 @@ export default function ReviewCarousel() {
               exit="exit"
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="absolute inset-0 flex flex-col justify-center p-6 sm:p-8"
+              aria-live="assertive"
             >
               <p className="text-[#4a58b5] mb-4 text-base sm:text-lg italic">"{reviews[currentReview].text}"</p>
               <div className="flex justify-between items-center">
@@ -74,8 +75,8 @@ export default function ReviewCarousel() {
           <button
             key={index}
             onClick={() => {
-              setDirection(index > currentReview ? 1 : -1)
-              setCurrentReview(index)
+              setDirection(index > currentReview ? 1 : -1);
+              setCurrentReview(index);
             }}
             className={`w-2 h-2 rounded-full transition-colors duration-200 ${
               index === currentReview ? 'bg-[#fc6453]' : 'bg-[#fabb84] hover:bg-[#fc6453]'
@@ -99,5 +100,7 @@ export default function ReviewCarousel() {
         <ChevronRight size={20} />
       </button>
     </div>
-  )
-}
+  );
+};
+
+export default ReviewCarousel;

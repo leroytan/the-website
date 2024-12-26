@@ -1,17 +1,20 @@
-'use client'
+'use client';
 
 import { useState, useEffect, useRef } from 'react'
+import localFont from "next/font/local";
+import "./layout.css"; // Separate CSS file for component-specific styles
+import Sidebar from "./sideBar";
+import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X, User, Book, Calendar, MessageSquare } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Menu, User } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 
-const BurgerMenu = ({ toggleSubpage }: { toggleSubpage: () => void }) => {
+const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
     <motion.button
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
-      onClick={toggleSubpage}
+      onClick={togglesideBar}
       className="text-[#4a58b5]"
     >
       <Menu size={24} />
@@ -58,6 +61,7 @@ const UserMenu = () => {
             <Link href="/profile/tutee" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
               Profile
             </Link>
+            
             <Link href="/logout" className="block px-4 py-2 text-sm text-[#4a58b5] hover:bg-[#fabb84] hover:text-white">
               Log Out
             </Link>
@@ -68,14 +72,51 @@ const UserMenu = () => {
   )
 }
 
-export const Header = ({ toggleSubpage }: { toggleSubpage: () => void }) => {
+const geistSans = localFont({
+  src: "../app/fonts/GeistVF.woff", // Adjust the path if necessary
+  variable: "--font-geist-sans",
+  weight: "100 900",
+});
+const geistMono = localFont({
+  src: "../app/fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+});
+
+export default function ComponentLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSideBar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
   return (
-    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
-      <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
-        <BurgerMenu toggleSubpage={toggleSubpage} />
-        <Image src="/images/logo.png" alt="THE Logo" width={100} height={50} className="w-16 sm:w-20 md:w-24 lg:w-28" />
-        <UserMenu />
-      </div>
-    </header>
-  )
+    <div
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+    >
+      <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
+        <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
+          <BurgerMenu togglesideBar={toggleSideBar} />
+          <Image src="/images/logo.png" alt="THE Logo" width={100} height={50} className="w-16 sm:w-20 md:w-24 lg:w-28" />
+          <UserMenu />
+        </div>
+      </header>
+
+      {/* Sidebar */}
+      <Sidebar isOpen={isSidebarOpen} onClose={toggleSideBar} />
+
+      {/* Main Content */}
+      <main
+        className={`pt-16 transition-transform ${
+          isSidebarOpen ? "ml-64" : "ml-0"
+        }`}
+      >
+        {children}
+      </main>
+    </div>
+  );
 }

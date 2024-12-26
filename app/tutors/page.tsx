@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Star, DollarSign, Book, Filter, GraduationCap } from 'lucide-react'
-import { Header } from '../components/Header'
+import Header from '@/components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -147,6 +147,13 @@ export default function TutorBrowsePage() {
 
   const allSubjects = Array.from(new Set(mockTutors.flatMap((tutor) => tutor.subjects)))
   const allLevels = Array.from(new Set(mockTutors.flatMap((tutor) => tutor.levels)))
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true); // Ensures rendering happens only on the client.
+  }, []);
+  
+  if (!isClient) return null; // Prevents hydration mismatch
 
   const toggleSubject = (subject: string) => {
     setSelectedSubjects((prev) =>
@@ -170,9 +177,10 @@ export default function TutorBrowsePage() {
       (selectedLevels.length === 0 || tutor.levels.some((level) => selectedLevels.includes(level)))
   )
 
+
+
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
-      <Header toggleSubpage={() => {}} />
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold text-[#4a58b5] mb-8 text-center">THE Tutors</h1>

@@ -1,23 +1,22 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { CheckCircle, ArrowRight, Search } from 'lucide-react'
-import { Inter } from 'next/font/google'
-import { Header } from '../components/Header'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { CheckCircle, ArrowRight } from 'lucide-react';
+import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
 type Course = {
-  id: number
-  title: string
-  description: string
-  progress: number
-  completed: boolean
-  totalModules: number
-  completedModules: number
-}
+  id: number;
+  title: string;
+  description: string;
+  progress: number;
+  completed: boolean;
+  totalModules: number;
+  completedModules: number;
+};
 
 const course: Course = {
   id: 1,
@@ -26,15 +25,15 @@ const course: Course = {
   progress: 0,
   completed: false,
   totalModules: 8,
-  completedModules: 0
-}
+  completedModules: 0,
+};
 
 const CourseCard = ({ course }: { course: Course }) => {
-  const router = useRouter()
+  const router = useRouter();
 
   const handleContinueCourse = () => {
-    router.push(`/courses/psle-english/module`)
-  }
+    router.push(`/courses/psle-english/module`);
+  };
 
   return (
     <motion.div
@@ -85,19 +84,25 @@ const CourseCard = ({ course }: { course: Course }) => {
         </div>
       )}
     </motion.div>
-  )
-}
+  );
+};
 
 export default function CoursesPage() {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true); // Ensures rendering happens only on the client.
+  }, []);
+  
+  if (!isClient) return null; // Prevents hydration mismatch
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value)
-  }
+    setSearchTerm(event.target.value);
+  };
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
-      <Header toggleSubpage={() => {}} />
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -106,6 +111,5 @@ export default function CoursesPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
-

@@ -36,7 +36,7 @@ export default function ModulePage() {
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <Link href="/courses" className="text-[#4a58b5] hover:underline flex items-center">
             <ChevronLeft size={20} className="mr-1" />

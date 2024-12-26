@@ -1,0 +1,25 @@
+/* Ensure fonts are properly scoped to layout */
+:root {
+    --font-geist-sans: "Arial, sans-serif";
+    --font-geist-mono: "Courier, monospace";
+  }
+  
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  .antialiased {
+    font-family: var(--font-geist-sans);
+  }
+  
+  .bg-white {
+    background-color: white;
+  }
+  
+  .bg-[#4a58b5] {
+    background-color: #4a58b5;
+  }
+  
