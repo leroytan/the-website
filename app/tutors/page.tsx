@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Star, DollarSign, Book, Filter, GraduationCap } from 'lucide-react'
-import { Header } from '../components/Header'
+import Header from '@/components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
