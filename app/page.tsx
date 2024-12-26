@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Layout from '@/components/Layout';
+import Layout from '@/components/layout';
 import ReviewCarousel from '@/components/ReviewCarousel';
 
 export default function AppPage() {

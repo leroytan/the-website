@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { Inter } from 'next/font/google';
-import Header from '../components/Header';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -90,6 +89,13 @@ const CourseCard = ({ course }: { course: Course }) => {
 
 export default function CoursesPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true); // Ensures rendering happens only on the client.
+  }, []);
+  
+  if (!isClient) return null; // Prevents hydration mismatch
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
