@@ -10,8 +10,8 @@ from api.exceptions import UserNotFoundError
 
 from api.logic.logic_interface import LogicInterface
 
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
+from api.common.models import LoginRequest
+from api.common.models import SignupRequest
 
 from api.storage.storage_service import StorageService
 from api.storage.models import User

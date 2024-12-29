@@ -1,13 +1,16 @@
 from typing import Optional, Type
+
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy_utils import create_database, database_exists
+
+from api.exceptions import (TableEmptyError, UserAlreadyExistsError,
+                            UserNotFoundError)
 from api.storage.connection import engine
+from api.storage.models import (Base, Client, Subject, Tutor, TutorSubject,
+                                User, UserType)
 from api.storage.storage_interface import StorageInterface
-from api.storage.models import Base, User, Client, Tutor, UserType, TutorSubject, Subject
-from api.exceptions import UserAlreadyExistsError, UserNotFoundError, TableEmptyError
-from sqlalchemy_utils import database_exists, create_database
-from api.common.utils import Utils
 
 
 class StorageService(StorageInterface):
@@ -46,6 +49,8 @@ class StorageService(StorageInterface):
 
     @staticmethod
     def find_users(query: dict, TableClass: Optional[Type[User]] = User, find_one: bool = False) -> list[User]:
+        from api.common.utils import Utils
+
         # Use SQLAlchemy session for querying
         with Session(engine) as session:
             statement = select(TableClass).filter_by(**query)
@@ -61,27 +66,28 @@ class StorageService(StorageInterface):
             except ValueError:
                 # query is empty
                 raise TableEmptyError(TableClass.__tablename__)
-            raise UserNotFoundError(query=query, TableClass=TableClass)
+            raise UserNotFoundError(query=query, userType=TableClass)
 
         return user
 
     @staticmethod
     def get_tutor_summaries() -> dict:
         with Session(engine) as session:
-            statement = select(Tutor).join(TutorSubject).join(Subject).options(
-                # Ensuring subjects are loaded correctly
-                joinedload(Tutor.subjects)
-            ).with_only_columns(
-                Tutor.id,
-                Tutor.name,
-                Tutor.photoUrl,
-                Tutor.rate,
-                Tutor.rating,
-                Tutor.subjects,
-                Tutor.experience,
-                Tutor.availability,
-            )
+            statement = select(Tutor)
             tutors = session.execute(statement).scalars().all()
+            tutors = [
+                {
+                    "id": tutor.id,
+                    "name": tutor.name,
+                    "photoUrl": tutor.photoUrl,
+                    "rate": tutor.rate,
+                    "rating": tutor.rating,
+                    "subjects": [subject.name for subject in tutor.subjects],
+                    "experience": tutor.experience,
+                    "availability": tutor.availability
+                }
+                for tutor in tutors # Iterate over the tutors
+            ]
 
         return tutors
 

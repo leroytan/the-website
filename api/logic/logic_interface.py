@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
+from api.common.models import LoginRequest
+from api.common.models import SignupRequest
 
 from api.storage.models import User
 

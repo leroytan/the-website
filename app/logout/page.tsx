@@ -1,10 +1,15 @@
 'use client'
  
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
  
 export default function Logout() {
 
   const router = useRouter()
+
+  useEffect(() => {
+    logout()
+  }, [])
 
   const logout = async () => {
     const response = await fetch('/api/auth/logout', { method: 'POST' })
@@ -18,6 +23,4 @@ export default function Logout() {
       router.push('/')
     }, 5000)
   }
-
-  logout()
 }

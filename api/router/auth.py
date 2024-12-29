@@ -1,14 +1,10 @@
-from fastapi import Depends, Request, Response, APIRouter
+from fastapi import APIRouter, Depends, Request, Response
 
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
-
-from api.logic.logic import Logic
-
-from api.auth.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
-
+from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
+                             REFRESH_TOKEN_EXPIRE_MINUTES)
+from api.common.models import LoginRequest, SignupRequest
 from api.common.utils import Utils
-
+from api.logic.logic import Logic
 from api.storage.models import User
 
 router = APIRouter()
@@ -139,3 +135,7 @@ async def refresh(request: Request, response: Response):
 @router.post("/api/auth/check")
 async def check(_: User = Depends(get_current_user)):
     return {"message": "Valid token"}
+
+@router.get("/api/auth/idk")
+def auth_idk():
+    return {"message": "Hello from FastAPI auth router"}

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Calendar, ChevronLeft, ChevronRight, DollarSign, Menu, MessageSquare, User, Users, X } from 'lucide-react'
+import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Menu, X, User, ChevronLeft, ChevronRight, Users, Calendar, MessageSquare, DollarSign } from 'lucide-react'
-import { Inter } from 'next/font/google'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 

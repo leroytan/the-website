@@ -1,2 +1,2 @@
 import api.router.auth
-import api.router.models
+import api.router.tutor

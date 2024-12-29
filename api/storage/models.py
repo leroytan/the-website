@@ -1,8 +1,9 @@
-from sqlalchemy import Column, ForeignKey, String, Integer, Float, Table
-from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.dialects.postgresql import ENUM
 import enum
+
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table
+from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declarative_base, relationship
 
 # Create a base class for declarative models
 Base = declarative_base()
