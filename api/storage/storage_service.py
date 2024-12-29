@@ -71,7 +71,7 @@ class StorageService(StorageInterface):
         return user
 
     @staticmethod
-    def get_tutor_summaries() -> dict:
+    def get_tutor_summaries() -> list[dict]:
         with Session(engine) as session:
             statement = select(Tutor)
             tutors = session.execute(statement).scalars().all()
@@ -90,6 +90,15 @@ class StorageService(StorageInterface):
             ]
 
         return tutors
+
+    @staticmethod
+    def search_tutors(query: dict) -> list[dict]:
+        # TODO: implement searching based on OR condition
+        return []
+
+    @staticmethod
+    def get_course_summaries() -> list[dict]:
+        return []
 
     @staticmethod
     def create_user(email: str, name: str, password_hash: str, userType: UserType) -> User:
