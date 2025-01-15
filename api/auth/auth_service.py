@@ -1,7 +1,7 @@
 import bcrypt
 from datetime import datetime, timedelta, timezone
 from jose import jwt
-from typing import Optional, Dict
+from typing import Optional
 from pydantic import ValidationError
 
 from api.auth.auth_interface import AuthInterface
@@ -77,7 +77,7 @@ class AuthService(AuthInterface):
         return AuthService.deserialize_token(payload)
 
     @staticmethod
-    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> dict[str, str]:
         # Verify refresh token
         token_data = AuthService.verify_token(refresh_token, is_refresh=True)
         

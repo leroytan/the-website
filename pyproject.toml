@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "the-website"
+version = "0.1.0"
+description = ""
+authors = ["chongtzezhao <47619363+chongtzezhao@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.6"
+sqlalchemy = "^2.0.36"
+psycopg2 = "~2.9.9"
+sqlalchemy-utils = "^0.41.2"
+python-jose = "^3.3.0"
+bcrypt = "^4.2.1"
+pytest = "^8.3.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

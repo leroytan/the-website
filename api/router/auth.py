@@ -1,21 +1,15 @@
-from fastapi import Depends, Request, Response, APIRouter
+from fastapi import APIRouter, Depends, Request, Response
 
-from typing import Dict
-
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
-
-from api.logic.logic import Logic
-
-from api.auth.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
-
+from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
+                             REFRESH_TOKEN_EXPIRE_MINUTES)
+from api.common.models import LoginRequest, SignupRequest
 from api.common.utils import Utils
-
+from api.logic.logic import Logic
 from api.storage.models import User
 
 router = APIRouter()
 
-def update_tokens(tokens: Dict[str, str], response: Response) -> None:
+def update_tokens(tokens: dict[str, str], response: Response) -> None:
     response.set_cookie(
         key="access_token",
         value=tokens["access_token"],
@@ -70,13 +64,11 @@ async def login(request: Request, response: Response):
     login_data = LoginRequest(
         email=data["email"],
         password=data["password"],
-        userType=Utils.str_to_user_type(data["userType"])
+        userType=Utils.str_to_user_type(data["userType"].upper())
     )
 
     tokens = Logic.handle_login(login_data=login_data)
     update_tokens(tokens, response)
-
-    response.status_code = 200
 
     return {"message": "Logged in successfully"}
 
@@ -111,7 +103,7 @@ async def signup(request: Request, response: Response):
         name=data["name"],
         email=data["email"],
         password=data["password"],
-        userType=Utils.str_to_user_type(data["userType"])
+        userType=Utils.str_to_user_type(data["userType"].upper())
     )
     
     tokens = Logic.handle_signup(signup_data=signup_data)
@@ -138,10 +130,12 @@ async def refresh(request: Request, response: Response):
     tokens = Logic.refresh_tokens(refresh_token)
     update_tokens(tokens, response)
 
-    response.status_code = 200
-
     return {"message": "Tokens refreshed successfully"}
 
 @router.post("/api/auth/check")
 async def check(_: User = Depends(get_current_user)):
     return {"message": "Valid token"}
+
+@router.get("/api/auth/idk")
+def auth_idk():
+    return {"message": "Hello from FastAPI auth router"}

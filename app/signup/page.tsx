@@ -41,7 +41,7 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, userType: userType.toUpperCase() })
+      body: JSON.stringify({ name, email, password, userType })
     })
 
     if (res.status === 400) {

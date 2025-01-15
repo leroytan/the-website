@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 from api.storage.models import User
+
 
 class StorageInterface(ABC):
 

@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from jose import JWTError
-from typing import Dict
 
 from pydantic import ValidationError
 
@@ -11,8 +10,8 @@ from api.exceptions import UserNotFoundError
 
 from api.logic.logic_interface import LogicInterface
 
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
+from api.common.models import LoginRequest
+from api.common.models import SignupRequest
 
 from api.storage.storage_service import StorageService
 from api.storage.models import User
@@ -22,7 +21,7 @@ from api.auth.models import TokenData
 class Logic(LogicInterface):
 
     @staticmethod
-    def handle_login(login_data: LoginRequest) -> Dict[str, str]:
+    def handle_login(login_data: LoginRequest) -> dict[str, str]:
         try:
             user = StorageService.find_one_user({"email": login_data.email, "userType": login_data.userType})
         except UserNotFoundError:
@@ -39,7 +38,7 @@ class Logic(LogicInterface):
         return {"access_token": access_token, "refresh_token": refresh_token}
 
     @staticmethod
-    def handle_signup(signup_data: SignupRequest) -> Dict[str, str]:
+    def handle_signup(signup_data: SignupRequest) -> dict[str, str]:
 
         hashed_password = AuthService.hash_password(signup_data.password)
 
@@ -75,27 +74,23 @@ class Logic(LogicInterface):
         try:
             payload = AuthService.verify_token(token)
         except JWTError:
-            print("JWTError")
             raise credentials_exception
         
         email = payload.email
         if email is None:
-            print("Email Exception")
             raise credentials_exception
         
         userType = payload.userType
         if userType is None:
-            print("UserType Exception")
             raise credentials_exception
         
         user = StorageService.find_one_user({"email": email, "userType": userType})
         if user is None:
-            print("User Exception")
             raise credentials_exception
         return user
     
     @staticmethod
-    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> dict[str, str]:
         try:
             return AuthService.refresh_tokens(refresh_token)
         except JWTError:

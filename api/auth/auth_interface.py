@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Optional, Dict
+from typing import Optional
 
 from api.auth.models import TokenData
 from api.common.utils import Utils
@@ -118,7 +118,7 @@ class AuthInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> dict[str, str]:
         """
         Refreshes the access and refresh tokens using the provided refresh token.
 

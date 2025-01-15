@@ -29,7 +29,7 @@ export default function LoginPage() {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, userType: userType.toUpperCase() })
+      body: JSON.stringify({ email, password, userType })
     })
 
     console.log('Login response:', res)

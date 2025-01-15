@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 
-from typing import Dict
-
-from api.router.models import LoginRequest
-from api.router.models import SignupRequest
+from api.common.models import LoginRequest
+from api.common.models import SignupRequest
 
 from api.storage.models import User
 
@@ -13,7 +11,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def handle_login(login_data: LoginRequest) -> Dict[str, str]:
+    def handle_login(login_data: LoginRequest) -> dict[str, str]:
         """
         Authenticates the user by verifying their email and password, and generates an access token if successful.
 
@@ -30,7 +28,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def handle_signup(signup_data: SignupRequest) -> Dict[str, str]:
+    def handle_signup(signup_data: SignupRequest) -> dict[str, str]:
         """
         Handles the signup request by creating a new user and returning an access token.
 
@@ -69,7 +67,7 @@ class LogicInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def refresh_tokens(refresh_token: str) -> Dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> dict[str, str]:
         """
         Refreshes the access and refresh tokens using the provided refresh token.
 
@@ -77,6 +75,6 @@ class LogicInterface(ABC):
             refresh_token (str): The refresh token.
 
         Returns:
-            Dict[str, str]: A dictionary containing the new access and refresh tokens.
+            dict[str, str]: A dictionary containing the new access and refresh tokens.
         """
         pass

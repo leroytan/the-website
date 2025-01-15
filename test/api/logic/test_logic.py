@@ -72,7 +72,7 @@ class TestLogic(unittest.TestCase):
     def test_handle_login_user_not_found(self, mock_find_one_user):
         # Arrange
         login_data = LoginRequest(email="nonexistent@example.com", password="password", userType=UserType.CLIENT)
-        mock_find_one_user.side_effect = UserNotFoundError(email="nonexistent@example.com", userType=UserType.CLIENT)
+        mock_find_one_user.side_effect = UserNotFoundError(query={"email": "nonexistent@example.com", "userType": UserType.CLIENT})
 
         # Act & Assert
         with self.assertRaises(HTTPException) as context:
