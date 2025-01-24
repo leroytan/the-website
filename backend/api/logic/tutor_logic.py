@@ -10,9 +10,9 @@ class TutorLogic:
     @staticmethod
     def search_tutors(search_query: TutorSearchQuery):
         query_dict = {
-            "name": search_query.query  # TODO: perform some object transformation; query -> name, address, description????
-            "subjects": search_query.subjects
-            "levels": search_query.levels
+            "name": search_query.query,  # TODO: perform some object transformation; query -> name, address, description????
+            "subjects": search_query.subjects,
+            "levels": search_query.levels,
         }
         return StorageService.search_tutors(query_dict)
     
