@@ -13,19 +13,6 @@ tags:
   - name: course
     description: Course-specific operations
 paths:
-  /api/auth/loginStatus:
-    get:
-      tags:
-        - auth
-      summary: Checks if the user is logged in
-      responses:
-        '200':
-          description: An object indicating if the user is logged in.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginStatus'
-    
   /api/auth/login:
     post:
       tags:
@@ -42,7 +29,6 @@ paths:
           description: Successful login. Both refresh and access tokens are stored as http cookies in the browser.
         '401':
           description: Invalid credentials
-
   /api/auth/signup:
     post:
       tags:
@@ -59,8 +45,6 @@ paths:
           description: User created successfully and logged in. Both refresh and access tokens are stored as http cookies in the browser.
         '400':
           description: Invalid input or email already exists
-
-
   /api/tutors:
     get:
       tags:
@@ -73,7 +57,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
-
   /api/tutors/search:
     post:
       tags:
@@ -93,9 +76,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
-
-  /api/tutors/profile/:id:  
-  # https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes
+  /api/tutors/profile/{id}:
     get:
       tags:
         - tutor
@@ -107,7 +88,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
-
   /api/courses:
     get:
       tags:
@@ -120,9 +100,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CoursePublicSummaryList'
-
+  /api/courses/{course-id}:
+    get:
+      tags:
+        - course
+      summary: Get the data to populate the page which shows all modules in a course
+      responses:
+        '200':
+          description: Successful retrieval of modules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseModuleList'
+  /api/courses/{course-id}/{module-id}:
+    get:
+      tags:
+        - module
+      summary: Get data of each module specified by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the module
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of module
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseModule'
+  /api/nus-course-reviews:
+    get:
+      tags:
+        - reviews
+      summary: Retrieve a list of all nus courses with their majors
+      responses:
+        '200':
+          description: A list of nus courses with their corresponding majors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MajorList'
+  /api/nus-course-reviews/{nusCourseCode}:
+    get:
+      tags:
+        - reviews
+      summary: Retrieve reviews for a specific nus course
+      responses:
+        '200':
+          description: Details and reviews for the specified course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
 components:
   schemas:
+    MajorList:
+      type: array
+      items:
+        type: object
+        required:
+          - name
+          - modules
+        properties:
+          name:
+            type: string
+          modules:
+            type: array
+            items:
+              $ref: '#/components/schemas/Module'
+    Module:
+      type: object
+      items:
+        type: object
+        required:
+          - code
+          - name
+          - reviews
+        properties:
+          code:
+            type: string
+          name:
+            type: string
+          reviews:
+            type: array
+            items:
+              $ref: '#/components/schemas/Review'
+    Review:
+      items:
+        type: object
+        required:
+          - yearSem
+          - workload
+          - difficulty
+          - overview
+          - otherPoints
+          - reviewer
+        properties:
+          yearSem:
+            type: string
+          workload:
+            type: number
+          difficulty:
+            type: number
+          overview:
+            type: string
+          otherPoints:
+            type: string
+          reviewer:
+            items:
+              type: object
+              required:
+                - year
+                - course
+                - specialisation
+              properties:
+                year:
+                  type: number
+                course:
+                  type: string
+                specialization:
+                  type: string
     CoursePublicSummaryList:
       type: array
       items:
@@ -142,6 +242,36 @@ components:
           progress:
             type: number
           fileLink:
+            type: string
+    CourseModuleList:
+      type: array
+      items:
+        $ref: '#/components/schemas/CourseModule'
+    CourseModule:
+      items:
+        type: object
+        required:
+          - courseOverview
+          - progress
+          - id
+          - title
+          - completed
+          - locked
+          - videoUrl
+        properties:
+          courseOverview:
+            type: string
+          progress:
+            type: number
+          id:
+            type: number
+          name:
+            type: string
+          completed:
+            type: boolean
+          locked:
+            type: boolean
+          videoUrl:
             type: string
     TutorSearchQuery:
       type: object
@@ -165,15 +295,15 @@ components:
       items:
         type: object
         required:
-        - id
-        - name
-        - photo
-        - rate
-        - rating
-        - subjectsTeachable
-        - levelsTeachable
-        - experience
-        - availability
+          - id
+          - name
+          - photo
+          - rate
+          - rating
+          - subjectsTeachable
+          - levelsTeachable
+          - experience
+          - availability
         properties:
           id:
             type: string
@@ -250,14 +380,6 @@ components:
           type: string
         availability:
           type: string
-        
-    LoginStatus:
-      type: object
-      required:
-        - isLoggedIn
-      properties:
-        isLoggedIn:
-          type: boolean
     LoginRequest:
       type: object
       required:
@@ -272,7 +394,9 @@ components:
           format: password
         userType:
           type: string
-          enum: [tutor, client]
+          enum:
+            - tutor
+            - client
     SignupRequest:
       type: object
       required:
@@ -291,4 +415,6 @@ components:
           type: string
         userType:
           type: string
-          enum: [tutor, client]
+          enum:
+            - tutor
+            - client
