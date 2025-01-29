@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Layout from '@/components/layout';
 import ReviewCarousel from '@/components/ReviewCarousel';
+
 
 export default function AppPage() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function AppPage() {
   };
 
   return (
-    <Layout>
+    <div>
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -126,6 +126,6 @@ export default function AppPage() {
           <ReviewCarousel />
         </div>
       </motion.section>
-    </Layout>
+    </div>
   );
 }
