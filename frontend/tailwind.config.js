@@ -10,7 +10,13 @@ theme: {
   extend: {
     colors: {
       background: 'var(--background)',
-      foreground: 'var(--foreground)'
+      foreground: 'var(--foreground)',
+      customDarkBlue: '#4A58B5',
+      customlightBlue: '#C0EDF0',
+      customOrange: '#FC6453',
+      customYellow: '#FABB84',
+      customLightYellow: '#FFF2DE',
+
     },
     borderRadius: {
       lg: 'var(--radius)',
@@ -19,5 +25,8 @@ theme: {
     }
   }
 },
-plugins: [require("tailwindcss-animate")],
+plugins: [
+  require("tailwindcss-animate"),
+  require('tailwind-scrollbar'),
+],
 };

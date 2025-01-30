@@ -98,7 +98,7 @@ export default function ComponentLayout({
     <div
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
+      <header id="appbar" className="bg-white shadow-md sticky top-0 left-0 right-0 z-10">
         <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
           <BurgerMenu togglesideBar={toggleSideBar} />
           <Image src="/images/logo.png" alt="THE Logo" width={100} height={50} className="w-16 sm:w-20 md:w-24 lg:w-28" />
@@ -111,7 +111,7 @@ export default function ComponentLayout({
 
       {/* Main Content */}
       <main
-        className={`pt-16 transition-transform ${
+        className={`pt-0 transition-transform ${
           isSidebarOpen ? "ml-64" : "ml-0"
         }`}
       >
