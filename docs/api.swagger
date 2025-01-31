@@ -1,15 +1,19 @@
 openapi: 3.0.3
 info:
-  title: THE (Teach Learn Excel) API
+  title: THE (Teach Honor Excel) API
   description: API for a tutor agency website providing login, signup, profile, and tutoring functionalities for tutors and clients.
   version: 1.0.0
 servers:
-  - url: https://api.teachlearnexcel.com/v1
+  - url: https://api.teachhonorexcel.com/v1
 tags:
   - name: auth
     description: Authentication operations
   - name: tutor
     description: Tutor-specific operations
+  - name: client
+    description: Client-specific operations
+  - name: assignment
+    description: Assignment-specific operations
   - name: course
     description: Course-specific operations
 paths:
@@ -83,11 +87,78 @@ paths:
       summary: retrieves the details of a tutor specified by id
       responses:
         '200':
-          description: the details of a single tutor
+          description: the details of a single tutor, with fields depending on the authorization level of the user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TutorPublicSummaryList'
+                $ref: '#/components/schemas/TutorProfile'
+    post:
+      tags:
+        - tutor
+      summary: updates details of a tutor profile
+      requestBody:
+        required: true
+        description: parameters the tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TutorProfile'
+      responses:
+        '200':
+          description: confirmation of successful update
+  /api/tutors/request:
+    post:
+      tags:
+        - tutor
+      summary: submits a client request of a specific tutor
+      requestBody:
+        required: true
+        description: parameters the tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientTutorRequest'
+      responses:
+        '200':
+          description: confirmation of successful request
+  /api/assignments:
+    get:
+      tags:
+        - assignment
+      summary: get the data to populate the page which shows all courses
+      responses:
+        '200':
+          description: Successful retrieval of assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentSummaryList'
+  /api/clients/profile/{id}:
+    get:
+      tags:
+        - client
+      summary: retrieves the details of a client specified by id
+      responses:
+        '200':
+          description: the details of a single client, with fields depending on the authorization level of the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientProfile'
+    post:
+      tags:
+        - client
+      summary: updates details of a client profile
+      requestBody:
+        required: true
+        description: parameters the clients are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientProfile'
+      responses:
+        '200':
+          description: confirmation of successful update
   /api/courses:
     get:
       tags:
@@ -248,31 +319,34 @@ components:
       items:
         $ref: '#/components/schemas/CourseModule'
     CourseModule:
-      items:
-        type: object
-        required:
-          - courseOverview
-          - progress
-          - id
-          - title
-          - completed
-          - locked
-          - videoUrl
-        properties:
-          courseOverview:
-            type: string
-          progress:
-            type: number
-          id:
-            type: number
-          name:
-            type: string
-          completed:
-            type: boolean
-          locked:
-            type: boolean
-          videoUrl:
-            type: string
+      type: object
+      required:
+        - courseOverview
+        - mode
+        - progress
+        - id
+        - title
+        - completed
+        - locked
+      properties:
+        courseOverview:
+          type: string
+        mode:
+          type: string [video, quiz, test]
+        progress:
+          type: number
+        id:
+          type: number
+        name:
+          type: string
+        completed:
+          type: boolean
+        locked:
+          type: boolean
+        videoUrl:
+          type: string
+        score:
+          type: number
     TutorSearchQuery:
       type: object
       required:
@@ -327,7 +401,27 @@ components:
             type: string
           availability:
             type: string
-    TutorPublicProfile:
+    ClientPublicSummaryList:
+      type: array
+      items:
+        type: object
+        required:
+          - id
+          - name
+          - school
+          - subjects
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          school:
+            type: string
+          subjects:
+            type: array
+            items:
+              type: string
+    TutorProfile:
       type: object
       required:
         - id
@@ -348,6 +442,10 @@ components:
         id:
           type: string
         name:
+          type: string
+        phone number:
+          type: number
+        email:
           type: string
         photo:
           type: string
@@ -380,6 +478,65 @@ components:
           type: string
         availability:
           type: string
+    ClientProfile:
+      type: object
+      required:
+        - id
+        - name
+        - school
+        - level
+        - subjects
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        school:
+          type: string
+        level:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        phone number:
+          type: number
+        email:
+          type: string
+    ClientTutorRequest:
+      type: object
+      required:
+      - id
+      - tutorId
+      - clientId
+      - datetime
+      properties:
+        id:
+          type: string
+        tutorId:
+          type: string
+        clientId:
+          type: string
+        datetime:
+          type: string
+    AssignmentSummaryList:
+      type: array
+      items:
+        type: object
+        required:
+          - frequency (per week)
+          - available slots
+          - budget
+          - special requests
+        properties:
+          frequency:
+            type: number
+          available slots:
+            type: string
+          budget:
+            type: string
+          special requests:
+            type: number
     LoginRequest:
       type: object
       required:
