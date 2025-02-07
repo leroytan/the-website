@@ -1,31 +1,22 @@
 openapi: 3.0.3
 info:
-  title: THE (Teach Learn Excel) API
+  title: THE (Teach Honor Excel) API
   description: API for a tutor agency website providing login, signup, profile, and tutoring functionalities for tutors and clients.
   version: 1.0.0
 servers:
-  - url: https://api.teachlearnexcel.com/v1
+  - url: https://api.teachhonorexcel.com/v1
 tags:
   - name: auth
     description: Authentication operations
   - name: tutor
     description: Tutor-specific operations
+  - name: client
+    description: Client-specific operations
+  - name: assignment
+    description: Assignment-specific operations
   - name: course
     description: Course-specific operations
 paths:
-  /api/auth/loginStatus:
-    get:
-      tags:
-        - auth
-      summary: Checks if the user is logged in
-      responses:
-        '200':
-          description: An object indicating if the user is logged in.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginStatus'
-    
   /api/auth/login:
     post:
       tags:
@@ -42,7 +33,6 @@ paths:
           description: Successful login. Both refresh and access tokens are stored as http cookies in the browser.
         '401':
           description: Invalid credentials
-
   /api/auth/signup:
     post:
       tags:
@@ -59,8 +49,6 @@ paths:
           description: User created successfully and logged in. Both refresh and access tokens are stored as http cookies in the browser.
         '400':
           description: Invalid input or email already exists
-
-
   /api/tutors:
     get:
       tags:
@@ -73,41 +61,132 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
-
   /api/tutors/search:
-    post:
+    get:
       tags:
         - tutor
       summary: Search for tutors
-      requestBody:
-        required: true
-        description: parameters the tutors are expected to have
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TutorSearchQuery'
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: The search query for tutors
+          schema:
+            type: string
+        - name: subjects
+          in: query
+          required: true
+          description: List of subjects to filter by
+          schema:
+            type: array
+            items:
+              type: string
+        - name: levels
+          in: query
+          required: true
+          description: List of levels to filter by
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '200':
-          description: a list of tutor summaries
+          description: A list of tutor summaries
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
-
-  /api/tutors/profile/:id:  
-  # https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes
+  /api/tutors/profile/{id}:
     get:
       tags:
         - tutor
       summary: retrieves the details of a tutor specified by id
       responses:
         '200':
-          description: the details of a single tutor
+          description: the details of a single tutor, with fields depending on the authorization level of the user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TutorPublicSummaryList'
-
+                $ref: '#/components/schemas/TutorProfile'
+    post:
+      tags:
+        - tutor
+      summary: updates details of a tutor profile
+      requestBody:
+        required: true
+        description: parameters the tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TutorProfile'
+      responses:
+        '200':
+          description: confirmation of successful update
+  /api/tutors/request:
+    post:
+      tags:
+        - tutor
+      summary: submits a client request of a specific tutor
+      requestBody:
+        required: true
+        description: parameters the tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientTutorRequest'
+      responses:
+        '200':
+          description: confirmation of successful request
+  /api/assignments:
+    get:
+      tags:
+        - assignment
+      summary: get the data to populate the page which shows all courses
+      responses:
+        '200':
+          description: Successful retrieval of assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentSummaryList'
+  /api/assignments/search:
+    post:
+      tags:
+        - assignment
+      summary: get the data to populate the page which shows all courses
+      responses:
+        '200':
+          description: Successful retrieval of assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentSummaryList'
+  /api/clients/profile/{id}:
+    get:
+      tags:
+        - client
+      summary: retrieves the details of a client specified by id
+      responses:
+        '200':
+          description: the details of a single client, with fields depending on the authorization level of the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientProfile'
+    post:
+      tags:
+        - client
+      summary: updates details of a client profile
+      requestBody:
+        required: true
+        description: parameters the clients are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientProfile'
+      responses:
+        '200':
+          description: confirmation of successful update
   /api/courses:
     get:
       tags:
@@ -120,9 +199,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CoursePublicSummaryList'
-
+  /api/courses/{course-id}:
+    get:
+      tags:
+        - course
+      summary: Get the data to populate the page which shows all modules in a course
+      responses:
+        '200':
+          description: Successful retrieval of modules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseModuleList'
+  /api/courses/{course-id}/{module-id}:
+    get:
+      tags:
+        - module
+      summary: Get data of each module specified by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the module
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval of module
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseModule'
+  /api/nus-course-reviews:
+    get:
+      tags:
+        - reviews
+      summary: Retrieve a list of all nus courses with their majors
+      responses:
+        '200':
+          description: A list of nus courses with their corresponding majors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MajorList'
+  /api/nus-course-reviews/{nusCourseCode}:
+    get:
+      tags:
+        - reviews
+      summary: Retrieve reviews for a specific nus course
+      responses:
+        '200':
+          description: Details and reviews for the specified course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
 components:
   schemas:
+    MajorList:
+      type: array
+      items:
+        type: object
+        required:
+          - name
+          - modules
+        properties:
+          name:
+            type: string
+          modules:
+            type: array
+            items:
+              $ref: '#/components/schemas/Module'
+    Module:
+      type: object
+      items:
+        type: object
+        required:
+          - code
+          - name
+          - reviews
+        properties:
+          code:
+            type: string
+          name:
+            type: string
+          reviews:
+            type: array
+            items:
+              $ref: '#/components/schemas/Review'
+    Review:
+      items:
+        type: object
+        required:
+          - yearSem
+          - workload
+          - difficulty
+          - overview
+          - otherPoints
+          - reviewer
+        properties:
+          yearSem:
+            type: string
+          workload:
+            type: number
+          difficulty:
+            type: number
+          overview:
+            type: string
+          otherPoints:
+            type: string
+          reviewer:
+            items:
+              type: object
+              required:
+                - year
+                - course
+                - specialisation
+              properties:
+                year:
+                  type: number
+                course:
+                  type: string
+                specialization:
+                  type: string
     CoursePublicSummaryList:
       type: array
       items:
@@ -143,6 +342,39 @@ components:
             type: number
           fileLink:
             type: string
+    CourseModuleList:
+      type: array
+      items:
+        $ref: '#/components/schemas/CourseModule'
+    CourseModule:
+      type: object
+      required:
+        - courseOverview
+        - mode
+        - progress
+        - id
+        - title
+        - completed
+        - locked
+      properties:
+        courseOverview:
+          type: string
+        mode:
+          type: string [video, quiz, test]
+        progress:
+          type: number
+        id:
+          type: number
+        name:
+          type: string
+        completed:
+          type: boolean
+        locked:
+          type: boolean
+        videoUrl:
+          type: string
+        score:
+          type: number
     TutorSearchQuery:
       type: object
       required:
@@ -165,15 +397,15 @@ components:
       items:
         type: object
         required:
-        - id
-        - name
-        - photo
-        - rate
-        - rating
-        - subjectsTeachable
-        - levelsTeachable
-        - experience
-        - availability
+          - id
+          - name
+          - photo
+          - rate
+          - rating
+          - subjectsTeachable
+          - levelsTeachable
+          - experience
+          - availability
         properties:
           id:
             type: string
@@ -197,7 +429,27 @@ components:
             type: string
           availability:
             type: string
-    TutorPublicProfile:
+    ClientPublicSummaryList:
+      type: array
+      items:
+        type: object
+        required:
+          - id
+          - name
+          - school
+          - subjects
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          school:
+            type: string
+          subjects:
+            type: array
+            items:
+              type: string
+    TutorProfile:
       type: object
       required:
         - id
@@ -218,6 +470,10 @@ components:
         id:
           type: string
         name:
+          type: string
+        phone number:
+          type: number
+        email:
           type: string
         photo:
           type: string
@@ -250,14 +506,65 @@ components:
           type: string
         availability:
           type: string
-        
-    LoginStatus:
+    ClientProfile:
       type: object
       required:
-        - isLoggedIn
+        - id
+        - name
+        - school
+        - level
+        - subjects
       properties:
-        isLoggedIn:
-          type: boolean
+        id:
+          type: string
+        name:
+          type: string
+        school:
+          type: string
+        level:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        phone number:
+          type: number
+        email:
+          type: string
+    ClientTutorRequest:
+      type: object
+      required:
+      - id
+      - tutorId
+      - clientId
+      - datetime
+      properties:
+        id:
+          type: string
+        tutorId:
+          type: string
+        clientId:
+          type: string
+        datetime:
+          type: string
+    AssignmentSummaryList:
+      type: array
+      items:
+        type: object
+        required:
+          - frequency (per week)
+          - available slots
+          - budget
+          - special requests
+        properties:
+          frequency:
+            type: number
+          available slots:
+            type: string
+          budget:
+            type: string
+          special requests:
+            type: number
     LoginRequest:
       type: object
       required:
@@ -272,7 +579,9 @@ components:
           format: password
         userType:
           type: string
-          enum: [tutor, client]
+          enum:
+            - tutor
+            - client
     SignupRequest:
       type: object
       required:
@@ -291,4 +600,6 @@ components:
           type: string
         userType:
           type: string
-          enum: [tutor, client]
+          enum:
+            - tutor
+            - client
