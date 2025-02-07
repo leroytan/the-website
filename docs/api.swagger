@@ -62,20 +62,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
   /api/tutors/search:
-    post:
+    get:
       tags:
         - tutor
       summary: Search for tutors
-      requestBody:
-        required: true
-        description: parameters the tutors are expected to have
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TutorSearchQuery'
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: The search query for tutors
+          schema:
+            type: string
+        - name: subjects
+          in: query
+          required: true
+          description: List of subjects to filter by
+          schema:
+            type: array
+            items:
+              type: string
+        - name: levels
+          in: query
+          required: true
+          description: List of levels to filter by
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '200':
-          description: a list of tutor summaries
+          description: A list of tutor summaries
           content:
             application/json:
               schema:
@@ -123,6 +139,18 @@ paths:
           description: confirmation of successful request
   /api/assignments:
     get:
+      tags:
+        - assignment
+      summary: get the data to populate the page which shows all courses
+      responses:
+        '200':
+          description: Successful retrieval of assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentSummaryList'
+  /api/assignments/search:
+    post:
       tags:
         - assignment
       summary: get the data to populate the page which shows all courses
