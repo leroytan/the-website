@@ -53,29 +53,17 @@ paths:
     get:
       tags:
         - tutor
-      summary: get the data to populate the page which shows all tutors
-      responses:
-        '200':
-          description: Successful retrieval of tutors
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TutorPublicSummaryList'
-  /api/tutors/search:
-    get:
-      tags:
-        - tutor
       summary: Search for tutors
       parameters:
         - name: query
           in: query
-          required: true
+          required: false
           description: The search query for tutors
           schema:
             type: string
         - name: subjects
           in: query
-          required: true
+          required: false
           description: List of subjects to filter by
           schema:
             type: array
@@ -83,7 +71,7 @@ paths:
               type: string
         - name: levels
           in: query
-          required: true
+          required: false
           description: List of levels to filter by
           schema:
             type: array
@@ -142,18 +130,13 @@ paths:
       tags:
         - assignment
       summary: get the data to populate the page which shows all courses
-      responses:
-        '200':
-          description: Successful retrieval of assignments
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AssignmentSummaryList'
-  /api/assignments/search:
-    post:
-      tags:
-        - assignment
-      summary: get the data to populate the page which shows all courses
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          required: false
+          description: query string to search
       responses:
         '200':
           description: Successful retrieval of assignments
@@ -192,6 +175,13 @@ paths:
       tags:
         - course
       summary: get the data to populate the page which shows all courses
+      parameters:
+        - name: query
+          in: query
+          required: false
+          description: The search query. Omitting means all results are returned.
+          schema:
+            type: string
       responses:
         '200':
           description: Successful retrieval of courses
