@@ -1,46 +1,51 @@
-from fastapi import APIRouter, Request, Response
-
 from api.logic.tutor_logic import TutorLogic
-
-from api.router.models import TutorSearchQuery
+from api.router.models import (TutorProfile, TutorPublicSummary,
+                               TutorSearchQuery)
+from fastapi import APIRouter, Request, Response
 
 router = APIRouter()
 
 @router.get("/api/tutors")
-async def get_tutors():
-    tutors = TutorLogic.get_public_summaries()
-    return tutors
-
-@router.post("/api/tutors/search")
-async def search_tutors(request: Request, response: Response):
+async def search_tutors(query: str = None, subjects: list = [], levels: list = []) -> list[TutorPublicSummary]:
     """
-    Handles the searching of specific tutors using fields
-
-    Args:
-        request (Request): The request object containing the login data
-        response (Response): The response object used to indicate if the search
-                            was successful.
+    Handles the searching of specific tutors using fields such as subjects and levels.
 
     Returns:
-        str: A success message confirming the search process.
+        list[TutorPublicSummary]: A list of tutor public summaries that match the search query.
 
     Raises: (TBC)
-        HTTPException: IfIf the login credentials are invalid or the login process 
+        HTTPException: If the login credentials are invalid or the login process 
                         fails, an HTTP error is raised with an appropriate status code.
     """
 
-    data = await request.json()
-
     search_query = TutorSearchQuery(
-        query=data["query"],
-        subjects=data["subjects"],
-        levels=data["levels"],
+        query=query,
+        subjects=subjects,
+        levels=levels,
     )
 
     results = TutorLogic.search_tutors(search_query)
 
     return results
 
-@router.get("/api/tutors/profile/:id")  # TODO: figure out how to handle dynamic routes in fastapi
-async def tutor_public_profile(request: Request, response: Response):
-    return TutorLogic.find_tutor_by_id(":id") 
+@router.get("/api/tutors/profile/{id}")
+async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile | None:
+    # TODO: find a way to use login authorization to differentiate between public and private profiles
+    return TutorLogic.find_tutor_by_id(id)
+
+@router.post("/api/tutors/profile/{id}")
+async def update_tutor_profile(id: str = None) -> TutorProfile:
+    # TODO: Enforce login authorization to access private profiles
+    # Returns the updated private profile
+    return TutorLogic.find_tutor_by_id(id)
+
+@router.post("/api/tutors/request")
+async def request_tutor(request: Request) -> Response:
+    # TODO: Enforce login authentication for clients
+
+    data = await request.json()
+    TutorLogic.request_tutor(data)
+
+    return Response(status_code=200)
+
+

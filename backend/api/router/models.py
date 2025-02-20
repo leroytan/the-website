@@ -1,6 +1,8 @@
-from pydantic import BaseModel
 from typing import List, Optional
+
 from api.storage.models import UserType
+from pydantic import BaseModel
+
 
 # Pydantic models
 class LoginRequest(BaseModel):
@@ -17,13 +19,31 @@ class SignupRequest(BaseModel):
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
-    photoUrl: Optional[str]
-    rate: Optional[float]
-    rating: Optional[int]
-    subjectsTeachable: List[str]
-    levelsTeachable: List[str]
-    experience: Optional[str]
-    availability: Optional[str]
+    photoUrl: str | None
+    rate: float | None
+    rating: int | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    experience: str | None
+    availability: str | None
+
+class TutorProfile(BaseModel):
+    id: int
+    name: str
+    contact: str
+    email: str
+    photoUrl: str | None
+    highestEducation: str | None
+    rate: float | None
+    location: str | None
+    rating: int | None
+    aboutMe: str | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    specialSkills: list[str]
+    resumeUrl: str | None
+    experience: str | None
+    availability: str | None
 
 class TutorSearchQuery(BaseModel):
     query: str
@@ -35,7 +55,7 @@ class CoursePublicSummary(BaseModel):
     name: str
     description: str
     progress: float
-    fileLink: Optional[str]
+    fileLink: str | None
 
 class CourseModule(BaseModel):
     courseOverview: str
@@ -64,4 +84,11 @@ class Module(BaseModel):
     name: str
     reviews: list[Review]
 
-    
+class ClientProfile(BaseModel):
+    id: int
+    name: str
+    school: str | None
+    level: str | None
+    subjects: list[str]
+    contact: str
+    email: str

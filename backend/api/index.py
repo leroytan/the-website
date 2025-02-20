@@ -1,10 +1,11 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 # Import the routers
 from api.router.auth import router as auth_router
 from api.router.tutor import router as tutor_router
 from api.storage.storage_service import StorageService
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 StorageService.init_db()
 
@@ -14,12 +15,14 @@ app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 app.include_router(tutor_router)
 app.include_router(auth_router)
 
-@app.get("/api/helloFastApi")
-def hello_fast_api():
-    d = {
-        "message": "Hello from FastAPI"
-    }
-    return d
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return JSONResponse(
+            status_code=404,
+            content={"message": "Error: The requested route or method does not exist."}
+        )
+    return await app.default_exception_handler(request, exc)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,5 +1,6 @@
-from api.storage.storage_service import StorageService
 from api.router.models import TutorSearchQuery
+from api.storage.storage_service import StorageService
+
 
 class TutorLogic:
 

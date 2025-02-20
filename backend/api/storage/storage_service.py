@@ -1,16 +1,15 @@
 from typing import Optional, Type
 
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy_utils import create_database, database_exists
-
 from api.exceptions import (TableEmptyError, UserAlreadyExistsError,
                             UserNotFoundError)
 from api.storage.connection import engine
 from api.storage.models import (Base, Client, Subject, Tutor, TutorSubject,
                                 User, UserType)
 from api.storage.storage_interface import StorageInterface
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy_utils import create_database, database_exists
 
 
 class StorageService(StorageInterface):
@@ -139,3 +138,17 @@ class StorageService(StorageInterface):
                 raise UserAlreadyExistsError(email, userType)
 
         return new_user
+    
+    @staticmethod
+    def update_user_by_id(id: int, update: dict, TableClass: Optional[Type[User]] = User) -> User:
+
+        # Use SQLAlchemy session for querying
+        with Session(engine) as session:
+            statement = update(TableClass).where(TableClass.id == id).values(**update)
+            session.execute(statement)
+            session.commit()
+            
+        # Fetch the updated user
+        updated_user = StorageService.find_one_user({"id": id}, TableClass)
+
+        return updated_user

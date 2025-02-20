@@ -1,23 +1,25 @@
-[tool.poetry]
-name = "the-website"
+[project]
+name = "the-website-backend"
 version = "0.1.0"
 description = ""
-authors = ["chongtzezhao <47619363+chongtzezhao@users.noreply.github.com>"]
-
-[tool.poetry.dependencies]
-python = "^3.10"
-fastapi = "^0.115.6"
-sqlalchemy = "^2.0.36"
-psycopg2 = "~2.9.9"
-sqlalchemy-utils = "^0.41.2"
-python-jose = "^3.3.0"
-bcrypt = "^4.2.1"
-pytest = "^8.3.4"
-uvicorn = "^0.34.0"
-python-dotenv = "^1.0.1"
+authors = [
+    {name = "chongtzezhao",email = "47619363+chongtzezhao@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi (>=0.115.8,<0.116.0)",
+    "sqlalchemy (>=2.0.38,<3.0.0)",
+    "psycopg2 (>=2.9.10,<3.0.0)",
+    "sqlalchemy-utils (>=0.41.2,<0.42.0)",
+    "python-jose (>=3.3.0,<4.0.0)",
+    "bcrypt (>=4.2.1,<5.0.0)",
+    "pytest (>=8.3.4,<9.0.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)"
+]
 
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
-package-mode = false
