@@ -4,6 +4,7 @@ from api.logic.tutor_logic import TutorLogic
 from api.router.models import (TutorProfile, TutorPublicSummary,
                                TutorSearchQuery)
 from fastapi import APIRouter, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -35,15 +36,14 @@ async def search_tutors(query: str = None, subjects: list = [], levels: list = [
 
 
 @router.post("/api/tutors/create")
-async def create_tutor(request: Request) -> TutorProfile:
+async def create_tutor(tutorProfile: TutorProfile) -> TutorProfile:
     # TODO: Enforce login authentication for tutors
     # Returns the newly created tutor profile
 
     if settings.is_use_mock:
         return mock.create_tutor()
 
-    data = await request.json()
-    pass
+    raise NotImplementedError("Tutor creation is not yet implemented.")
 
 @router.get("/api/tutors/profile/{id}")
 async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile | None:
@@ -51,29 +51,29 @@ async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile
     
     if settings.is_use_mock:
         return mock.get_tutor_profile()
-    pass
-    # return TutorLogic.find_tutor_by_id(id)
+    
+    raise NotImplementedError("Tutor profile retrieval is not yet implemented.")
 
 
 @router.put("/api/tutors/profile/{id}")
-async def update_tutor_profile(id: str = None) -> TutorProfile:
+async def update_tutor_profile(tutorProfile: TutorProfile, id: str = None) -> TutorProfile:
     # TODO: Enforce login authorization to access private profiles
     # Returns the updated private profile
 
     if settings.is_use_mock:
         return mock.update_tutor_profile()
-    pass
-    # return TutorLogic.find_tutor_by_id(id)
+    
+    raise NotImplementedError("Tutor profile update is not yet implemented.")
 
+class IncomingTutorRequest(BaseModel):
+    clientId: int
+    datetime: str
 
 @router.post("/api/tutors/request{id}")
-async def request_tutor(request: Request, id: str = None) -> Response:
+async def request_tutor(tutorRequest: IncomingTutorRequest, id: str = None) -> Response:
     # TODO: Enforce login authentication for clients
 
     if settings.is_use_mock:
         return Response(status_code=200)
-    pass
-    # data = await request.json()
-    # TutorLogic.request_tutor(data)
 
-    # return Response(status_code=200)
+    raise NotImplementedError("Tutor request is not yet implemented.")

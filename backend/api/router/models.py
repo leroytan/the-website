@@ -46,6 +46,13 @@ class TutorProfile(BaseModel):
     availability: str | None
     isProfileComplete: bool
 
+class ClientTutorRequest(BaseModel):
+    id: str
+    tutorId: int
+    clientId: int
+    datetime: str
+    status: str
+
 class TutorSearchQuery(BaseModel):
     query: str
     subjects: list[str]
@@ -94,3 +101,14 @@ class ClientProfile(BaseModel):
     contact: str
     email: str
     isProfileComplete: bool
+
+class Assignment(BaseModel):
+    id: int
+    clientId: int
+    tutorId: int
+    weeklyFrequency: int
+    availableSlots: list[str]
+    datetime: str
+    specialRequests: str | None
+    status: str
+    

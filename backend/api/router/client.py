@@ -1,21 +1,28 @@
+import api.router.mock as mock
+from api.config import settings
 from api.logic.client_logic import ClientLogic
 from api.router.models import ClientProfile
 from fastapi import APIRouter, Request, Response
 
 router = APIRouter()
 
+@router.post("/api/clients/create")
+async def create_client(clientProfile: ClientProfile) -> ClientProfile:
+    if settings.is_use_mock:
+        return mock.create_client()
+    
+    raise NotImplementedError("Client creation is not yet implemented.")
+    
 @router.get("/api/clients/profile/{id}")
-async def client_profile(id: str = None) -> ClientProfile | None:
-    # TODO: Enforce login authorization to only allow the client to access their own profile
-    return ClientLogic.find_client_by_id(id)
+async def get_client_profile(id: str = None) -> ClientProfile | None:
+    if settings.is_use_mock:
+        return mock.get_client_profile()
+    
+    raise NotImplementedError("Client profile retrieval is not yet implemented.")
 
-@router.post("/api/clients/profile/{id}")
-async def client_profile(request: Request) -> ClientProfile:
-    # TODO: Enforce login authorization to only allow the client to access their own profile
-    # Returns the updated client profile
-    data = await request.json()
-
-    return ClientLogic.update_client_profile(data)
-
-
-
+@router.put("/api/clients/profile/{id}")
+async def update_client_profile(clientProfile: ClientProfile, id: str = None) -> ClientProfile | None:
+    if settings.is_use_mock:
+        return mock.update_client_profile()
+    
+    raise NotImplementedError("Client profile update is not yet implemented.")

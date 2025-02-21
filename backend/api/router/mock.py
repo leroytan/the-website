@@ -1,6 +1,7 @@
 # contains all the mock data for each endpoint
 
-from api.router.models import TutorProfile, TutorPublicSummary
+from api.router.models import (Assignment, ClientProfile, TutorProfile,
+                               TutorPublicSummary)
 
 
 def search_tutors():
@@ -44,7 +45,7 @@ def create_tutor():
     return TutorProfile(
         id="1",
         name="John Doe",
-        contact=1234567890,
+        contact="81234567",
         email="johndoe@example.com",
         photoUrl="https://example.com/photo.jpg",
         highestEducation="Bachelors in Mathematics",
@@ -65,7 +66,7 @@ def get_tutor_profile():
     return TutorProfile(
         id="1",
         name="John Doe",
-        contact=1234567890,
+        contact="81234567",
         email="johndoe@example.com",
         photoUrl="https://example.com/photo.jpg",
         highestEducation="Bachelors in Mathematics",
@@ -86,7 +87,7 @@ def update_tutor_profile():
     return TutorProfile(
         id="1",
         name="John Doe",
-        contact=1234567890,
+        contact="81234567",
         email="johndoe@example.com",
         photoUrl="https://example.com/photo.jpg",
         highestEducation="Bachelors in Mathematics",
@@ -103,3 +104,60 @@ def update_tutor_profile():
         isProfileComplete=True
     )
 
+def create_client():
+    return ClientProfile(
+        id="1",
+        name="Alice Johnson",
+        school="ABC School",
+        level="Junior College",
+        subjects=["Math", "Physics"],
+        contact="81234567",
+        email="alicejohnson@example.com",
+        isProfileComplete=True
+    )
+
+def get_client_profile():
+    return ClientProfile(
+        id="1",
+        name="Alice Johnson",
+        school="ABC School",
+        level="Junior College",
+        subjects=["Math", "Physics"],
+        contact="81234567",
+        email="alicejohnson@example.com",
+        isProfileComplete=True
+    )
+
+def get_assignments():
+    return [
+        Assignment(
+            id=1,
+            clientId=1,
+            tutorId=1,
+            weeklyFrequency=2,
+            availableSlots=["Mon 2 PM", "Wed 4 PM", "Fri 6 PM"],
+            datetime="2022-01-01T10:00:00",
+            specialRequests="Please bring additional materials for the lesson.",
+            status="Pending"
+        ),
+        Assignment(
+            id=2,
+            clientId=2,
+            tutorId=2,
+            weeklyFrequency=1,
+            availableSlots=["Tue 3 PM", "Thu 5 PM"],
+            datetime="2022-01-01T14:00:00",
+            specialRequests="Student requires additional help with homework.",
+            status="Confirmed"
+        ),
+        Assignment(
+            id=3,
+            clientId=3,
+            tutorId=3,
+            weeklyFrequency=3,
+            availableSlots=["Sat 10 AM", "Sun 2 PM"],
+            datetime="2022-01-01T16:00:00",
+            specialRequests="Student has upcoming exams and needs intensive tutoring.",
+            status="Completed"
+        )
+    ]
