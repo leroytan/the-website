@@ -1,3 +1,5 @@
+import api.router.mock as mock
+from api.config import settings
 from api.logic.tutor_logic import TutorLogic
 from api.router.models import (TutorProfile, TutorPublicSummary,
                                TutorSearchQuery)
@@ -18,6 +20,9 @@ async def search_tutors(query: str = None, subjects: list = [], levels: list = [
                         fails, an HTTP error is raised with an appropriate status code.
     """
 
+    if settings.is_use_mock:
+        return mock.search_tutors()
+
     search_query = TutorSearchQuery(
         query=query,
         subjects=subjects,
@@ -28,24 +33,47 @@ async def search_tutors(query: str = None, subjects: list = [], levels: list = [
 
     return results
 
+
+@router.post("/api/tutors/create")
+async def create_tutor(request: Request) -> TutorProfile:
+    # TODO: Enforce login authentication for tutors
+    # Returns the newly created tutor profile
+
+    if settings.is_use_mock:
+        return mock.create_tutor()
+
+    data = await request.json()
+    pass
+
 @router.get("/api/tutors/profile/{id}")
 async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile | None:
     # TODO: find a way to use login authorization to differentiate between public and private profiles
-    return TutorLogic.find_tutor_by_id(id)
+    
+    if settings.is_use_mock:
+        return mock.get_tutor_profile()
+    pass
+    # return TutorLogic.find_tutor_by_id(id)
 
-@router.post("/api/tutors/profile/{id}")
+
+@router.put("/api/tutors/profile/{id}")
 async def update_tutor_profile(id: str = None) -> TutorProfile:
     # TODO: Enforce login authorization to access private profiles
     # Returns the updated private profile
-    return TutorLogic.find_tutor_by_id(id)
 
-@router.post("/api/tutors/request")
-async def request_tutor(request: Request) -> Response:
+    if settings.is_use_mock:
+        return mock.update_tutor_profile()
+    pass
+    # return TutorLogic.find_tutor_by_id(id)
+
+
+@router.post("/api/tutors/request{id}")
+async def request_tutor(request: Request, id: str = None) -> Response:
     # TODO: Enforce login authentication for clients
 
-    data = await request.json()
-    TutorLogic.request_tutor(data)
+    if settings.is_use_mock:
+        return Response(status_code=200)
+    pass
+    # data = await request.json()
+    # TutorLogic.request_tutor(data)
 
-    return Response(status_code=200)
-
-
+    # return Response(status_code=200)

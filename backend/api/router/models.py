@@ -44,6 +44,7 @@ class TutorProfile(BaseModel):
     resumeUrl: str | None
     experience: str | None
     availability: str | None
+    isProfileComplete: bool
 
 class TutorSearchQuery(BaseModel):
     query: str
@@ -92,3 +93,4 @@ class ClientProfile(BaseModel):
     subjects: list[str]
     contact: str
     email: str
+    isProfileComplete: bool
