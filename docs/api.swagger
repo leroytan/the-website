@@ -84,6 +84,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
+  /api/tutors/profile/create:
+    post:
+        tags:
+          - tutor
+        summary: creates a tutor profile. authorization required
+        requestBody:
+          required: true
+          description: parameters tutors are expected to have
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorProfile'
+        responses:
+          '200':
+            description: confirmation of successful creation
   /api/tutors/profile/{id}:
     get:
       tags:
@@ -96,13 +111,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorProfile'
-    post:
+    put:
       tags:
         - tutor
-      summary: updates details of a tutor profile
+      summary: updates details of a tutor profile. specific tutor authorization required
       requestBody:
         required: true
-        description: parameters the tutors are expected to have
+        description: parameters tutors are expected to have
         content:
           application/json:
             schema:
@@ -117,7 +132,7 @@ paths:
       summary: submits a client request of a specific tutor
       requestBody:
         required: true
-        description: parameters the tutors are expected to have
+        description: parameters tutors are expected to have
         content:
           application/json:
             schema:
@@ -144,6 +159,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssignmentSummaryList'
+  /api/assignments/create:
+    post:
+        tags:
+          - assignment
+        summary: creates an assignment. client authorization required
+        requestBody:
+          required: true
+          description: parameters assignments are expected to have
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorProfile'
+        responses:
+          '200':
+            description: confirmation of successful creation
+  /api/assignments/item/{id}:
+    get:
+      tags:
+        - assignment
+      summary: retrieves the details of an assignment specified by id
+      responses:
+        '200':
+          description: the details of a single assignment, with fields depending on the authorization level of the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorProfile'
+    put:
+      tags:
+        - assignment
+      summary: updates details of an assignment. specific client authorization required
+      requestBody:
+        required: true
+        description: parameters tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TutorProfile'
+      responses:
+        '200':
+          description: confirmation of successful update
+  /api/assignments/request/{id}:
+    post:
+        tags:
+          - assignment
+        summary: creates a request for an assignment specified by id. tutor authorization required
+        requestBody:
+          required: true
+          description: parameters assignments are expected to have
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorProfile'
+        responses:
+          '200':
+            description: confirmation of successful creation
+  /api/clients/profile/create:
+    post:
+      tags:
+        - client
+      summary: creates a client profile. authorization required
+      requestBody:
+        required: true
+        description: parameters the clients are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientProfile'
+      responses:
+        '200':
+          description: confirmation of successful creation
   /api/clients/profile/{id}:
     get:
       tags:
@@ -156,10 +242,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientProfile'
-    post:
+    put:
       tags:
         - client
-      summary: updates details of a client profile
+      summary: updates details of a client profile. specific client authorization required
       requestBody:
         required: true
         description: parameters the clients are expected to have
@@ -456,6 +542,7 @@ components:
         - resume
         - experience
         - availability
+        - isProfileComplete
       properties:
         id:
           type: string
@@ -496,6 +583,8 @@ components:
           type: string
         availability:
           type: string
+        isProfileComplete:
+          type: boolean
     ClientProfile:
       type: object
       required:
@@ -504,6 +593,7 @@ components:
         - school
         - level
         - subjects
+        - isProfileComplete
       properties:
         id:
           type: string
@@ -521,6 +611,8 @@ components:
           type: number
         email:
           type: string
+        isProfileComplete:
+          type: boolean
     ClientTutorRequest:
       type: object
       required:
