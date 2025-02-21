@@ -20,7 +20,7 @@ class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photoUrl: str | None
-    rate: float | None
+    rate: str | None
     rating: int | None
     subjectsTeachable: list[str]
     levelsTeachable: list[str]
@@ -34,7 +34,7 @@ class TutorProfile(BaseModel):
     email: str
     photoUrl: str | None
     highestEducation: str | None
-    rate: float | None
+    rate: str | None
     location: str | None
     rating: int | None
     aboutMe: str | None
@@ -104,11 +104,12 @@ class ClientProfile(BaseModel):
 
 class Assignment(BaseModel):
     id: int
+    datetime: str
     clientId: int
     tutorId: int
+    estimatedRate: str
     weeklyFrequency: int
     availableSlots: list[str]
-    datetime: str
     specialRequests: str | None
     status: str
     
