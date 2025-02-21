@@ -84,7 +84,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
-  /api/tutors/profile/create:
+  /api/tutors/create:
     post:
         tags:
           - tutor
@@ -125,14 +125,14 @@ paths:
       responses:
         '200':
           description: confirmation of successful update
-  /api/tutors/request:
+  /api/tutors/request/{id}:
     post:
       tags:
         - tutor
       summary: submits a client request of a specific tutor
       requestBody:
         required: true
-        description: parameters tutors are expected to have
+        description: information identifying a unique client and tutor, with timestamp
         content:
           application/json:
             schema:
@@ -170,7 +170,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TutorProfile'
+                $ref: '#/components/schemas/Assignment'
         responses:
           '200':
             description: confirmation of successful creation
@@ -185,7 +185,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TutorProfile'
+                $ref: '#/components/schemas/Assignment'
     put:
       tags:
         - assignment
@@ -196,7 +196,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TutorProfile'
+              $ref: '#/components/schemas/Assignment'
       responses:
         '200':
           description: confirmation of successful update
@@ -207,11 +207,11 @@ paths:
         summary: creates a request for an assignment specified by id. tutor authorization required
         requestBody:
           required: true
-          description: parameters assignments are expected to have
+          description: information identifying a unique tutor and assignment, with timestamp
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TutorProfile'
+                $ref: '#/components/schemas/TutorAssignmentRequest'
         responses:
           '200':
             description: confirmation of successful creation
@@ -617,36 +617,48 @@ components:
       type: object
       required:
       - id
-      - tutorId
       - clientId
+      - datetime
+      properties:
+        id:
+          type: string
+        clientId:
+          type: string
+        datetime:
+          type: string
+    Assignment:
+      type: object
+      required:
+        - frequency (per week)
+        - available slots
+        - budget
+        - special requests
+      properties:
+        frequency:
+          type: number
+        available slots:
+          type: string
+        budget:
+          type: string
+        special requests:
+          type: number
+    AssignmentSummaryList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Assignment'
+    TutorAssignmentRequest:
+      type: object
+      required:
+      - id
+      - tutorId
       - datetime
       properties:
         id:
           type: string
         tutorId:
           type: string
-        clientId:
-          type: string
         datetime:
           type: string
-    AssignmentSummaryList:
-      type: array
-      items:
-        type: object
-        required:
-          - frequency (per week)
-          - available slots
-          - budget
-          - special requests
-        properties:
-          frequency:
-            type: number
-          available slots:
-            type: string
-          budget:
-            type: string
-          special requests:
-            type: number
     LoginRequest:
       type: object
       required:
