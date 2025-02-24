@@ -475,7 +475,7 @@ components:
         required:
           - id
           - name
-          - photo
+          - photoUrl
           - rate
           - rating
           - subjectsTeachable
@@ -487,7 +487,7 @@ components:
             type: string
           name:
             type: string
-          photo:
+          photoUrl:
             type: string
           rate:
             type: string
@@ -530,6 +530,8 @@ components:
       required:
         - id
         - name
+        - contact
+        - email
         - photo
         - highestEducation
         - rate
@@ -548,11 +550,11 @@ components:
           type: string
         name:
           type: string
-        phone number:
-          type: number
+        contact:
+          type: string
         email:
           type: string
-        photo:
+        photoUrl:
           type: string
         highestEducation:
           type: string
@@ -576,9 +578,8 @@ components:
           type: array
           items:
             type: string
-        resume:
-          type: object
-          format: file
+        resumeUrl:
+          type: string
         experience:
           type: string
         availability:
@@ -607,8 +608,8 @@ components:
           type: array
           items:
             type: string
-        phone number:
-          type: number
+        contact:
+          type: string
         email:
           type: string
         isProfileComplete:
@@ -616,32 +617,46 @@ components:
     ClientTutorRequest:
       type: object
       required:
-      - id
       - clientId
       - datetime
       properties:
-        id:
-          type: string
         clientId:
-          type: string
+          type: number
         datetime:
           type: string
     Assignment:
       type: object
       required:
-        - frequency (per week)
-        - available slots
-        - budget
-        - special requests
+        - id
+        - datetime
+        - clientId
+        - tutorId
+        - estimatedRate
+        - weeklyFrequency
+        - availableSlots
+        - specialRequests
+        - status
       properties:
-        frequency:
+        id:
           type: number
-        available slots:
+        datetime:
           type: string
-        budget:
-          type: string
-        special requests:
+        clientId:
           type: number
+        tutorId:
+          type: number
+        estimatedRate:
+          type: string
+        weeklyFrequency:
+          type: string
+        availableSlots:
+          type: array
+          items:
+            type: string
+        specialRequests:
+          type: string
+        status:
+          type: string
     AssignmentSummaryList:
       type: array
       items:
@@ -649,12 +664,9 @@ components:
     TutorAssignmentRequest:
       type: object
       required:
-      - id
       - tutorId
       - datetime
       properties:
-        id:
-          type: string
         tutorId:
           type: string
         datetime:
