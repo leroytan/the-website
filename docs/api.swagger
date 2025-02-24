@@ -53,29 +53,17 @@ paths:
     get:
       tags:
         - tutor
-      summary: get the data to populate the page which shows all tutors
-      responses:
-        '200':
-          description: Successful retrieval of tutors
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TutorPublicSummaryList'
-  /api/tutors/search:
-    get:
-      tags:
-        - tutor
       summary: Search for tutors
       parameters:
         - name: query
           in: query
-          required: true
+          required: false
           description: The search query for tutors
           schema:
             type: string
         - name: subjects
           in: query
-          required: true
+          required: false
           description: List of subjects to filter by
           schema:
             type: array
@@ -83,7 +71,7 @@ paths:
               type: string
         - name: levels
           in: query
-          required: true
+          required: false
           description: List of levels to filter by
           schema:
             type: array
@@ -96,6 +84,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorPublicSummaryList'
+  /api/tutors/create:
+    post:
+        tags:
+          - tutor
+        summary: creates a tutor profile. authorization required
+        requestBody:
+          required: true
+          description: parameters tutors are expected to have
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorProfile'
+        responses:
+          '200':
+            description: confirmation of successful creation
   /api/tutors/profile/{id}:
     get:
       tags:
@@ -108,13 +111,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TutorProfile'
-    post:
+    put:
       tags:
         - tutor
-      summary: updates details of a tutor profile
+      summary: updates details of a tutor profile. specific tutor authorization required
       requestBody:
         required: true
-        description: parameters the tutors are expected to have
+        description: parameters tutors are expected to have
         content:
           application/json:
             schema:
@@ -122,14 +125,14 @@ paths:
       responses:
         '200':
           description: confirmation of successful update
-  /api/tutors/request:
+  /api/tutors/request/{id}:
     post:
       tags:
         - tutor
       summary: submits a client request of a specific tutor
       requestBody:
         required: true
-        description: parameters the tutors are expected to have
+        description: information identifying a unique client and tutor, with timestamp
         content:
           application/json:
             schema:
@@ -142,6 +145,13 @@ paths:
       tags:
         - assignment
       summary: get the data to populate the page which shows all courses
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          required: false
+          description: query string to search
       responses:
         '200':
           description: Successful retrieval of assignments
@@ -149,18 +159,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssignmentSummaryList'
-  /api/assignments/search:
+  /api/assignments/create:
     post:
+        tags:
+          - assignment
+        summary: creates an assignment. client authorization required
+        requestBody:
+          required: true
+          description: parameters assignments are expected to have
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+        responses:
+          '200':
+            description: confirmation of successful creation
+  /api/assignments/item/{id}:
+    get:
       tags:
         - assignment
-      summary: get the data to populate the page which shows all courses
+      summary: retrieves the details of an assignment specified by id
       responses:
         '200':
-          description: Successful retrieval of assignments
+          description: the details of a single assignment, with fields depending on the authorization level of the user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AssignmentSummaryList'
+                $ref: '#/components/schemas/Assignment'
+    put:
+      tags:
+        - assignment
+      summary: updates details of an assignment. specific client authorization required
+      requestBody:
+        required: true
+        description: parameters tutors are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Assignment'
+      responses:
+        '200':
+          description: confirmation of successful update
+  /api/assignments/request/{id}:
+    post:
+        tags:
+          - assignment
+        summary: creates a request for an assignment specified by id. tutor authorization required
+        requestBody:
+          required: true
+          description: information identifying a unique tutor and assignment, with timestamp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorAssignmentRequest'
+        responses:
+          '200':
+            description: confirmation of successful creation
+  /api/clients/profile/create:
+    post:
+      tags:
+        - client
+      summary: creates a client profile. authorization required
+      requestBody:
+        required: true
+        description: parameters the clients are expected to have
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientProfile'
+      responses:
+        '200':
+          description: confirmation of successful creation
   /api/clients/profile/{id}:
     get:
       tags:
@@ -173,10 +242,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientProfile'
-    post:
+    put:
       tags:
         - client
-      summary: updates details of a client profile
+      summary: updates details of a client profile. specific client authorization required
       requestBody:
         required: true
         description: parameters the clients are expected to have
@@ -192,6 +261,13 @@ paths:
       tags:
         - course
       summary: get the data to populate the page which shows all courses
+      parameters:
+        - name: query
+          in: query
+          required: false
+          description: The search query. Omitting means all results are returned.
+          schema:
+            type: string
       responses:
         '200':
           description: Successful retrieval of courses
@@ -399,7 +475,7 @@ components:
         required:
           - id
           - name
-          - photo
+          - photoUrl
           - rate
           - rating
           - subjectsTeachable
@@ -411,7 +487,7 @@ components:
             type: string
           name:
             type: string
-          photo:
+          photoUrl:
             type: string
           rate:
             type: string
@@ -454,6 +530,8 @@ components:
       required:
         - id
         - name
+        - contact
+        - email
         - photo
         - highestEducation
         - rate
@@ -466,16 +544,17 @@ components:
         - resume
         - experience
         - availability
+        - isProfileComplete
       properties:
         id:
           type: string
         name:
           type: string
-        phone number:
-          type: number
+        contact:
+          type: string
         email:
           type: string
-        photo:
+        photoUrl:
           type: string
         highestEducation:
           type: string
@@ -499,13 +578,14 @@ components:
           type: array
           items:
             type: string
-        resume:
-          type: object
-          format: file
+        resumeUrl:
+          type: string
         experience:
           type: string
         availability:
           type: string
+        isProfileComplete:
+          type: boolean
     ClientProfile:
       type: object
       required:
@@ -514,6 +594,7 @@ components:
         - school
         - level
         - subjects
+        - isProfileComplete
       properties:
         id:
           type: string
@@ -527,44 +608,69 @@ components:
           type: array
           items:
             type: string
-        phone number:
-          type: number
+        contact:
+          type: string
         email:
           type: string
+        isProfileComplete:
+          type: boolean
     ClientTutorRequest:
       type: object
       required:
-      - id
-      - tutorId
       - clientId
       - datetime
       properties:
-        id:
+        clientId:
+          type: number
+        datetime:
           type: string
-        tutorId:
+    Assignment:
+      type: object
+      required:
+        - id
+        - datetime
+        - clientId
+        - tutorId
+        - estimatedRate
+        - weeklyFrequency
+        - availableSlots
+        - specialRequests
+        - status
+      properties:
+        id:
+          type: number
+        datetime:
           type: string
         clientId:
+          type: number
+        tutorId:
+          type: number
+        estimatedRate:
           type: string
-        datetime:
+        weeklyFrequency:
+          type: string
+        availableSlots:
+          type: array
+          items:
+            type: string
+        specialRequests:
+          type: string
+        status:
           type: string
     AssignmentSummaryList:
       type: array
       items:
-        type: object
-        required:
-          - frequency (per week)
-          - available slots
-          - budget
-          - special requests
-        properties:
-          frequency:
-            type: number
-          available slots:
-            type: string
-          budget:
-            type: string
-          special requests:
-            type: number
+        $ref: '#/components/schemas/Assignment'
+    TutorAssignmentRequest:
+      type: object
+      required:
+      - tutorId
+      - datetime
+      properties:
+        tutorId:
+          type: string
+        datetime:
+          type: string
     LoginRequest:
       type: object
       required:
