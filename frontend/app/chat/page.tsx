@@ -3,88 +3,185 @@ import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { ArrowLeftToLine } from "lucide-react";
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation";
 
 const ChatApp = () => {
+  const chatData = {
+    lockedChats: [
+      {
+        name: "User 1",
+        message: "Hello!",
+        time: "Today, 9:52pm",
+        notifications: 4,
+      },
+      {
+        name: "User 2",
+        message: "That is true...",
+        time: "Yesterday, 12:31pm",
+        notifications: 0,
+      },
+      {
+        name: "User 3",
+        message: "It’s not going to happen",
+        time: "Wednesday, 9:12am",
+        notifications: 0,
+      },
+    ],
+    unlockedChats: [
+      {
+        name: "Anil",
+        message: "Yes Sure!",
+        time: "Today, 9:52pm",
+        notifications: 0,
+      },
+      {
+        name: "Chuutiya",
+        message: "That would be great. Thank you!",
+        time: "Today, 12:11pm",
+        notifications: 1,
+      },
+      {
+        name: "Mary ma’am",
+        message: "Thanks!",
+        time: "Today, 2:40pm",
+        notifications: 1,
+      },
+      {
+        name: "Bill Gates",
+        message: "Nevermind bro",
+        time: "Yesterday, 12:31pm",
+        notifications: 5,
+      },
+      {
+        name: "Victoria H",
+        message: "Okay, brother. let’s see...",
+        time: "Wednesday, 11:12am",
+        notifications: 0,
+      },
+      {
+        name: "Victoria H",
+        message: "Okay, brother. let’s see...",
+        time: "Wednesday, 11:12am",
+        notifications: 0,
+      },
+      {
+        name: "Victoria H",
+        message: "Okay, brother. let’s see...",
+        time: "Wednesday, 11:12am",
+        notifications: 0,
+      },
+    ],
+    chatHistory: {
+      Anil: [
+        {
+          sender: "Anil",
+          message: "Hey there!",
+          time: "Today, 9:52pm",
+          sentByUser: false,
+        },
+        {
+          sender: "Anil",
+          message: "How are you?",
+          time: "Today, 9:53pm",
+          sentByUser: false,
+        },
+        {
+          sender: "User",
+          message: "Hello!",
+          time: "Today, 9:54pm",
+          sentByUser: true,
+        },
+        {
+          sender: "User",
+          message: "I am fine and how are you?",
+          time: "Today, 9:55pm",
+          sentByUser: true,
+        },
+      ],
+      Chuutiya: [
+        {
+          sender: "Parent",
+          message: "Hello, I wanted to discuss my child's progress.",
+          time: "Today, 10:00am",
+          sentByUser: false,
+        },
+        {
+          sender: "Tutor",
+          message:
+            "Sure! Your child is doing well in mathematics but needs some improvement in writing skills.",
+          time: "Today, 10:05am",
+          sentByUser: true,
+        },
+        {
+          sender: "Parent",
+          message: "That sounds good. What do you suggest for improvement?",
+          time: "Today, 10:10am",
+          sentByUser: false,
+        },
+        {
+          sender: "Tutor",
+          message:
+            "Regular practice and reading more structured material can help. I can also provide extra worksheets.",
+          time: "Today, 10:15am",
+          sentByUser: true,
+        },
+        {
+          sender: "Parent",
+          message: "That would be great. Thank you!",
+          time: "Today, 10:20am",
+          sentByUser: false,
+        },
+      ],
+    },
+  };
   const router = useRouter();
-  const lockedChats = [
-    {
-      name: "User 1",
-      message: "Hello!",
-      time: "Today, 9:52pm",
-      notifications: 4,
-    },
-    {
-      name: "User 2",
-      message: "That is true...",
-      time: "Yesterday, 12:31pm",
-      notifications: 0,
-    },
-    {
-      name: "User 3",
-      message: "It’s not going to happen",
-      time: "Wednesday, 9:12am",
-      notifications: 0,
-    },
-  ];
+  const [selectedChat, setSelectedChat] = useState("Anil");
+  type ChatHistoryKeys = keyof typeof chatData.chatHistory;
+  const [chatMessages, setChatMessages] = useState<
+    { sender: string; message: string; time: string; sentByUser: boolean }[]
+  >(chatData.chatHistory[selectedChat as ChatHistoryKeys]);
+  const [newMessage, setNewMessage] = useState("");
+  const [showChat, setShowChat] = useState(false);
 
-  const unlockedChats = [
-    {
-      name: "Anil",
-      message: "Yes Sure!",
-      time: "Today, 9:52pm",
-      notifications: 0,
-    },
-    {
-      name: "Chuutiya",
-      message: "See you tomorrow",
-      time: "Today, 12:11pm",
-      notifications: 1,
-    },
-    {
-      name: "Mary ma’am",
-      message: "Thanks!",
-      time: "Today, 2:40pm",
-      notifications: 1,
-    },
-    {
-      name: "Bill Gates",
-      message: "Nevermind bro",
-      time: "Yesterday, 12:31pm",
-      notifications: 5,
-    },
-    {
-      name: "Victoria H",
-      message: "Okay, brother. let’s see...",
-      time: "Wednesday, 11:12am",
-      notifications: 0,
-    },
-  ];
+  const handleChatSelection = (chatName: React.SetStateAction<string>) => {
+    setSelectedChat(chatName);
+    setChatMessages(chatData.chatHistory[chatName as ChatHistoryKeys]);
+    setShowChat(true);
+    setNewMessage("");
+  };
+  const handleSendMessage = () => {
+    if (newMessage.trim() !== "") {
+      setChatMessages([
+        ...chatMessages,
+        { sender: "User", message: newMessage, time: "Now", sentByUser: true },
+      ]);
+      setNewMessage("");
+    }
+  };
 
   return (
-    <div className="flex flex-col min-w-[320px]">
+    <div className="flex flex-col min-w-[320px] h-screen">
       <div className="flex flex-1 overflow-hidden bg-customLightYellow">
-        {/* Sidebar - Hidden on mobile */}
+        {/* Sidebar - Shown on mobile */}
         <aside
-          className="hidden md:block w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm shadow-customlightBlue"
-          style={{ height: "100vh" }}
+          className={`w-full md:w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm ${
+            showChat ? "hidden md:block" : "block"
+          }`}
         >
           <div
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >
             <header id="topbar" className="bg-white">
               <div className="container mx-auto px-4 py-2 sm:py-3 flex items-center justify-between">
-                
                 <motion.button
-                  whileHover={{ scale: 1.1,  }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   className="text-customDarkBlue hover:text-customYellow"
-                  onClick={() => router.back()}
                 >
-                  <ArrowLeftToLine />
+                  <ArrowLeftToLine onClick={() => router.back()} />
                 </motion.button>
 
                 <motion.button
@@ -107,24 +204,25 @@ const ChatApp = () => {
 
             {/* Main Content */}
           </div>
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col flex-grow h-full ">
             <div className="w-full flex"></div>
             <div className="mb-4 p-4 ">
               <input
                 type="text"
                 placeholder="Search"
-                className="w-full px-4 py-2 rounded-3xl border border-gray-300 shadow-sm shadow-customlightBlue"
+                className="w-full px-4 py-2 rounded-3xl border shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
               />
             </div>
-            <div className="flex-1 mb-6 overflow-y-auto">
+            <div className="flex-1 mb-6 overflow-y-auto pb-20">
               <div className="bg-white p-2 font-bold sticky top-0 z-10">
                 Locked
               </div>
               <div className="space-y-2">
-                {lockedChats.map((chat, index) => (
+                {chatData.lockedChats.map((chat, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
+                    onClick={() => handleChatSelection(chat.name)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
@@ -146,15 +244,16 @@ const ChatApp = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto ">
+            <div className="flex-1 overflow-y-auto pb-20">
               <div className="bg-white px-2 py-4 font-bold sticky top-0 z-10">
                 Unlocked
               </div>
               <div className="space-y-2">
-                {unlockedChats.map((chat, index) => (
+                {chatData.unlockedChats.map((chat, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
+                    onClick={() => handleChatSelection(chat.name)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
@@ -179,51 +278,61 @@ const ChatApp = () => {
         </aside>
 
         {/* Chat Area */}
-        <main className="flex-1 p-4 min-w-[320px]">
+        <main
+          className={`flex-1 p-4 min-w-[320px] ${
+            showChat ? "block" : "hidden md:block"
+          }`}
+        >
+          <button
+            className="mb-4 p-2 text-sm bg-gray-200 rounded-md md:hidden"
+            onClick={() => setShowChat(false)}
+          >
+            <ArrowLeftToLine size={24} />
+          </button>
           <div className="p-4 bg-white rounded-3xl shadow-md h-full flex flex-col">
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="ml-4">
-                <p className="text-lg font-semibold">Anil</p>
+                <p className="text-lg font-semibold">{selectedChat}</p>
                 <p className="text-sm text-gray-500">
-                  Online - Last seen, 2:02pm
+                  Online
                 </p>
               </div>
             </div>
             <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
               <div className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]">
-                <div className="self-start">
-                  <p className="p-2 bg-gray-300 rounded-3xl">Hey there!</p>
-                  <p className="text-xs text-gray-400 mt-1">Today, 9:52pm</p>
-                </div>
-                <div className="self-start">
-                  <p className="p-2 bg-gray-300 rounded-3xl">How are you?</p>
-                  <p className="text-xs text-gray-400 mt-1">Today, 9:53pm</p>
-                </div>
-                <div className="self-end">
-                  <p className="p-2 bg-customDarkBlue text-white rounded-3xl">
-                    Hello!
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1 flex justify-end">
-                    Today, 9:54pm
-                  </p>
-                </div>
-                <div className="self-end">
-                  <p className="p-2 bg-customDarkBlue text-white rounded-3xl">
-                    I am fine and how are you?
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1 flex justify-end">
-                    Today, 9:55pm
-                  </p>
-                </div>
+                {chatMessages.map((chat, index) => (
+                  <div
+                    key={index}
+                    className={chat.sentByUser ? "self-end" : "self-start"}
+                  >
+                    <p
+                      className={`p-2 rounded-3xl ${
+                        chat.sentByUser
+                          ? "bg-customDarkBlue text-white"
+                          : "bg-gray-300"
+                      }`}
+                    >
+                      {chat.message}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1 flex justify-end">
+                      {chat.time}
+                    </p>
+                  </div>
+                ))}
               </div>
               <div className="flex items-center gap-2 mt-auto">
                 <input
                   type="text"
                   placeholder="Type your message here..."
                   className="flex-1 px-4 py-2 rounded-3xl border border-gray-300"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
                 />
-                <button className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block">
+                <button
+                  onClick={handleSendMessage}
+                  className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
+                >
                   Send
                 </button>
               </div>

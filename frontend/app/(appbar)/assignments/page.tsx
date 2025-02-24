@@ -134,7 +134,7 @@ function Input({ placeholder }: { placeholder: string }) {
     <input
       type="text"
       placeholder={placeholder}
-      className="w-1/3 p-2 border border-gray-300 rounded-lg shadow-sm"
+      className="w-full sm:w-1/3 p-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
     />
   );
 }
@@ -205,9 +205,9 @@ export default function TuitionListings() {
   );
   return (
     <motion.section>
-      <div className="flex gap-6 p-6 bg-customLightYellow min-h-screen">
+      <div className="flex flex-col md:flex-row gap-4 p-4 sm:p-6 bg-customLightYellow min-h-screen">
         {/* Sidebar */}
-        <div className="w-1/4 bg-white p-4 rounded-lg shadow-md md:block hidden">
+        <div className="w-full md:w-1/4 bg-white p-4 rounded-lg shadow-md md:block">
           <h2 className="font-semibold mb-4">Subjects</h2>
           <div className="space-y-2">
             {["English", "Mathematics", "Science", "Chinese"].map((subject) => (
@@ -238,7 +238,7 @@ export default function TuitionListings() {
         </div>
 
         <div className="flex-1">
-          <div className="flex justify-between mb-4">
+          <div className="flex flex-col sm:flex-row justify-between mb-4 gap-2">
             <Input placeholder="Search" />
             <div className="flex gap-2">
             {[
@@ -262,7 +262,7 @@ export default function TuitionListings() {
           <motion.div
             layout="position"
             transition={{ duration: 1, ease: "easeInOut" }}
-            className="grid grid-cols-3 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
           >
             <AnimatePresence>
               {filteredListings.map((listing) => (
