@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import Link from 'next/link';
 
 type SidebarProps = {
   isOpen: boolean;
@@ -40,25 +41,36 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </motion.button>
           <nav className="p-6 text-[#4a58b5]">
             <ul className="space-y-4">
+              
               <li>
-                <a href="/" className="text-lg font-semibold hover:underline">
-                  Home
-                </a>
+              <Link href="/" className="text-lg font-semibold hover:underline" onClick={onClose}>
+              Home
+              </Link>
               </li>
               <li>
-                <a href="#" className="text-lg font-semibold hover:underline">
+                <Link href="#" className="text-lg font-semibold hover:underline" onClick={onClose}>
                   THE Team
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-lg font-semibold hover:underline">
+                <Link href="#" className="text-lg font-semibold hover:underline" onClick={onClose}>
                   THE Courses
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/tutors" className="text-lg font-semibold hover:underline">
+                <Link href="/tutors" className="text-lg font-semibold hover:underline" onClick={onClose}>
                   THE Tutors
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/assignments" className="text-lg font-semibold hover:underline" onClick={onClose}>
+                  THE Assignments
+                </Link>
+              </li>
+              <li>
+                <Link href="/chat" className="text-lg font-semibold hover:underline " onClick={onClose}>
+                  Chat
+                </Link>
               </li>
             </ul>
           </nav>

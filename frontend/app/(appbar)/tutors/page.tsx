@@ -86,6 +86,7 @@ const TutorCard = ({ tutor }: { tutor: Tutor }) => (
     layout="position"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
+    transition={{ duration: 1 }}
     exit={{ opacity: 0 }}
     className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
   >
