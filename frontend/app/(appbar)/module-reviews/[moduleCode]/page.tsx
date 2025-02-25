@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Star } from 'lucide-react'
 import { Inter } from 'next/font/google'
 import Header from '@/components/Header'
+import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -201,4 +201,5 @@ export default function ModuleReviewsPage() {
     </div>
   )
 }
+
 

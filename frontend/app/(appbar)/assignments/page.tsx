@@ -1,4 +1,5 @@
 "use client";
+import AssignmentCard from "@/components/assignmentCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 
@@ -139,42 +140,6 @@ function Input({ placeholder }: { placeholder: string }) {
   );
 }
 
-function Button({
-  children,
-  className,
-  onClick,
-}: {
-  children: React.ReactNode;
-  className: string;
-  onClick: () => void;
-}) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className={`px-4 py-2 rounded-lg shadow-md ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </motion.button>
-  );
-}
-
-function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`p-4 rounded-lg shadow-md bg-white duration-300 transform hover:-translate-y-1 ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function TuitionListings() {
   const [filters, setFilters] = useState({
@@ -278,29 +243,8 @@ export default function TuitionListings() {
                   transition={{ duration: 0.5 }}
                   exit={{ opacity: 0 }}
                 >
-                  <Card key={listing.id}>
-                    <div className="text-xs bg-black text-white px-2 py-1 inline-block rounded-md mb-2">
-                      {listing.time}
-                    </div>
-                    <h3 className="text-blue-600 font-semibold">
-                      {listing.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">{listing.location}</p>
-                    <p className="text-sm">{listing.duration}</p>
-                    <p className="text-sm font-semibold">{listing.price}</p>
-                    <Button
-                      className={
-                        listing.status === "applied"
-                          ? "bg-orange-400 text-white mt-2"
-                          : "bg-customDarkBlue text-white mt-2"
-                      }
-                      onClick={function (): void {
-                        throw new Error("Function not implemented.");
-                      }}
-                    >
-                      {listing.status === "applied" ? "Applied" : "Apply"}
-                    </Button>
-                  </Card>
+                  <AssignmentCard {...listing} />
+                  
                 </motion.div>
               ))}
             </AnimatePresence>

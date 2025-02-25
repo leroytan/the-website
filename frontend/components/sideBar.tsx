@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </Link>
               </li>
               <li>
-                <Link href="/chat" className="text-lg font-semibold hover:underline " onClick={onClose}>
+                <Link href="/chat/tutee" className="text-lg font-semibold hover:underline " onClick={onClose}>
                   Chat
                 </Link>
               </li>
