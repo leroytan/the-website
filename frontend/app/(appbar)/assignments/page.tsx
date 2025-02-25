@@ -222,41 +222,45 @@ export default function TuitionListings() {
             ))}
           </div>
 
-          <h2 className="font-semibold mt-6">Level</h2>
-          {["Primary", "Secondary", "Junior College", "University/Poly"].map(
-            (level) => (
-              <div key={level} className="flex items-center gap-2">
-                <Checkbox
-                  defaultChecked={filters.levels.includes(level)}
-                  onChange={() => handleFilterChange("levels", level)}
-                >
-                  {level}
-                </Checkbox>
-              </div>
-            )
-          )}
+          <h2 className="font-semibold mt-6 mb-4">Level</h2>
+          <div className="space-y-2">
+            {["Primary", "Secondary", "Junior College", "University/Poly"].map(
+              (level) => (
+                <div key={level} className="flex items-center gap-2">
+                  <Checkbox
+                    defaultChecked={filters.levels.includes(level)}
+                    onChange={() => handleFilterChange("levels", level)}
+                  >
+                    <span className={"text-customDarkBlue"}>{level}</span>
+                  </Checkbox>
+                </div>
+              )
+            )}
+          </div>
         </div>
 
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row justify-between mb-4 gap-2">
             <Input placeholder="Search" />
             <div className="flex gap-2">
-            {[
-              { label: "New", value: "new" },
-              { label: "Price ascending", value: "price-asc" },
-              { label: "Price descending", value: "price-desc" },
-            ].map(({ label, value }) => (
-              <button
-                key={value}
-                className={`px-4 py-2 rounded-lg shadow-md transition-all duration-200 ${
-                  sortOption === value ? "bg-orange-400 text-white" : "bg-white"
-                }`}
-                onClick={() => setSortOption(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+              {[
+                { label: "New", value: "new" },
+                { label: "Price ascending", value: "price-asc" },
+                { label: "Price descending", value: "price-desc" },
+              ].map(({ label, value }) => (
+                <button
+                  key={value}
+                  className={`px-4 py-2 rounded-lg shadow-md transition-all duration-200 ${
+                    sortOption === value
+                      ? "bg-orange-400 text-white"
+                      : "bg-white"
+                  }`}
+                  onClick={() => setSortOption(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <motion.div

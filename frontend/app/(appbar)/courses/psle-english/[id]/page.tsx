@@ -9,7 +9,7 @@ import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
-type Module = {
+type courseModule = {
   id: number
   title: string
   completed: boolean
@@ -17,7 +17,7 @@ type Module = {
   videoUrl: string
 }
 
-const modules: Module[] = [
+const courseModules: courseModule[] = [
   { id: 1, title: "Introduction to PSLE English", completed: true, locked: false, videoUrl: "https://example.com/video1.mp4" },
   { id: 2, title: "Grammar Essentials", completed: false, locked: false, videoUrl: "https://example.com/video2.mp4" },
   { id: 3, title: "Vocabulary Building", completed: false, locked: false, videoUrl: "https://example.com/video3.mp4" },
@@ -33,10 +33,10 @@ export default function ModuleVideoPage({ params }: { params: { id: string } }) 
   const [progress, setProgress] = useState(0)
   const [completed, setCompleted] = useState(false)
   const moduleId = parseInt(params.id)
-  const module = modules.find(m => m.id === moduleId)
-  const currentIndex = modules.findIndex(m => m.id === moduleId)
-  const prevModule = currentIndex > 0 ? modules[currentIndex - 1] : null
-  const nextModule = currentIndex < modules.length - 1 ? modules[currentIndex + 1] : null
+  const currentModule = courseModules.find(m => m.id === moduleId)
+  const currentIndex = courseModules.findIndex(m => m.id === moduleId)
+  const prevModule = currentIndex > 0 ? courseModules[currentIndex - 1] : null
+  const nextModule = currentIndex < courseModules.length - 1 ? courseModules[currentIndex + 1] : null
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,7 +53,7 @@ export default function ModuleVideoPage({ params }: { params: { id: string } }) 
     return () => clearInterval(timer)
   }, [])
 
-  if (!module) return null
+  if (!currentModule) return null
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
@@ -81,9 +81,9 @@ export default function ModuleVideoPage({ params }: { params: { id: string } }) 
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-3xl font-bold text-[#4a58b5] mb-4">{module.title}</h1>
+          <h1 className="text-3xl font-bold text-[#4a58b5] mb-4">{currentModule.title}</h1>
           <video
-            src={module.videoUrl}
+            src={currentModule.videoUrl}
             controls
             className="w-full aspect-video mb-4"
           />

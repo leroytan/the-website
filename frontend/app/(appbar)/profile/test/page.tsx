@@ -218,7 +218,7 @@ export default function TutorProfile() {
               >
                 {reviews.map((review) => (
                   <div key={review.id} className="flex gap-4 border-b py-3">
-                    <img
+                    <Image
                       src={review.profileImage}
                       alt={review.name}
                       className="w-10 h-10 rounded-full"

@@ -9,7 +9,7 @@ import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
-type Module = {
+type courseModule = {
   id: number
   title: string
   completed: boolean
@@ -17,7 +17,7 @@ type Module = {
   videoUrl: string
 }
 
-const modules: Module[] = [
+const courseModules: courseModule[] = [
   { id: 1, title: "Introduction to PSLE English", completed: true, locked: false, videoUrl: "https://example.com/video1.mp4" },
   { id: 2, title: "Grammar Essentials", completed: false, locked: false, videoUrl: "https://example.com/video2.mp4" },
   { id: 3, title: "Vocabulary Building", completed: false, locked: false, videoUrl: "https://example.com/video3.mp4" },
@@ -32,7 +32,7 @@ export default function ModulePage() {
   const router = useRouter()
   const [completedModules, setCompletedModules] = useState(1)
 
-  const progress = (completedModules / modules.length) * 100
+  const progress = (completedModules / courseModules.length) * 100
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
@@ -75,12 +75,12 @@ export default function ModulePage() {
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <p className="text-sm text-[#4a58b5]">{completedModules} of {modules.length} modules completed</p>
+            <p className="text-sm text-[#4a58b5]">{completedModules} of {courseModules.length} modules completed</p>
           </motion.div>
         </div>
 
         <div className="grid gap-4">
-          {modules.map((module) => (
+          {courseModules.map((module) => (
             <motion.div
               key={module.id}
               initial={{ opacity: 0, y: 20 }}
