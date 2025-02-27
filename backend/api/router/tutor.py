@@ -9,7 +9,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 @router.get("/api/tutors")
-async def search_tutors(query: str = None, subjects: list = [], levels: list = []) -> list[TutorPublicSummary]:
+async def search_tutors(query: str = "", subjects: list = [], levels: list = []) -> list[TutorPublicSummary]:
     """
     Handles the searching of specific tutors using fields such as subjects and levels.
 
@@ -20,7 +20,6 @@ async def search_tutors(query: str = None, subjects: list = [], levels: list = [
         HTTPException: If the login credentials are invalid or the login process 
                         fails, an HTTP error is raised with an appropriate status code.
     """
-
     if settings.is_use_mock:
         return mock.search_tutors()
 

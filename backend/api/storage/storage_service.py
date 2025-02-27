@@ -1,12 +1,15 @@
 from typing import Optional, Type
 
+from api.config import settings
 from api.exceptions import (TableEmptyError, UserAlreadyExistsError,
                             UserNotFoundError)
 from api.storage.connection import engine
-from api.storage.models import (Base, Client, Subject, Tutor, TutorSubject,
-                                User, UserType)
+from api.storage.models import (Base, Client, Level, Subject, Tutor,
+                                TutorLevel, TutorSubject, User, UserType)
+from api.storage.populate import insert_test_data
 from api.storage.storage_interface import StorageInterface
-from sqlalchemy import select, update
+from api.storage.validate import check_data
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy_utils import create_database, database_exists
@@ -19,8 +22,11 @@ class StorageService(StorageInterface):
         # Create the tables if they don't exist
         if not database_exists(engine.url):
             create_database(engine.url)
-        # SQLAlchemy automatically creates tables from the Base metadata
-        Base.metadata.create_all(engine)
+            # SQLAlchemy automatically creates tables from the Base metadata
+            Base.metadata.create_all(engine)
+            if settings.db_populate_check:
+                insert_test_data()
+                check_data()
 
     @staticmethod
     def find_one_tutor(query: dict) -> Tutor:
@@ -92,9 +98,46 @@ class StorageService(StorageInterface):
 
     @staticmethod
     def search_tutors(query: dict) -> list[dict]:
-        # TODO: implement searching based on OR condition
-        return []
+        """
+        Search for tutors in the database based on the provided query.
+        """
+        session = Session(bind=engine)  # Assuming `engine` is your SQLAlchemy engine
 
+        try:
+            # Base query for tutors
+            tutor_query = session.query(Tutor)
+
+            # Apply filters based on the query dictionary
+            if query.get("general"):
+                # Search by name, address, or description (OR condition)
+                search_term = f"%{query['general']}%"
+                tutor_query = tutor_query.filter(
+                    or_(
+                        Tutor.name.ilike(search_term),
+                        Tutor.location.ilike(search_term),
+                        Tutor.aboutMe.ilike(search_term),
+                    )
+                )
+
+            if query.get("subjects"):
+                # Filter by subjects (AND condition)
+                tutor_query = tutor_query.join(TutorSubject).join(Subject).filter(
+                    Subject.name.in_(query["subjects"])
+                )
+
+            if query.get("levels"):
+                # Filter by levels (AND condition)
+                tutor_query = tutor_query.join(TutorLevel).join(Level).filter(
+                    Level.name.in_(query["levels"])
+                )
+
+            # Execute the query and return results as a list of dictionaries
+            tutors = tutor_query.all()
+            return [tutor.to_dict() for tutor in tutors]
+            return [tutor_to_dict(tutor) for tutor in tutors]
+
+        finally:
+            session.close()
     @staticmethod
     def get_course_summaries() -> list[dict]:
         return []
