@@ -69,10 +69,13 @@ class Tutor(User):
     # Specific fields for Tutor
     photoUrl = Column(String, nullable=True)
     highestEducation = Column(String, nullable=True)
+    availability = Column(String, nullable=True)
+    resumeUrl = Column(String, nullable=True)
     rate = Column(String, nullable=True)
     location = Column(String, nullable=True)
     rating = Column(Float, nullable=True)
     aboutMe = Column(String, nullable=True)
+    experience = Column(String, nullable=True)
     subjects = relationship('Subject', secondary='TutorSubject', back_populates='tutors')
     levels = relationship('Level', secondary='TutorLevel', back_populates='tutors')
     specialSkills = relationship('SpecialSkill', secondary='TutorSpecialSkill', back_populates='tutors')

@@ -1,22 +1,15 @@
+from api.auth.auth_service import AuthService
+from api.auth.models import TokenData
+from api.common.models import LoginRequest, SignupRequest
+from api.exceptions import UserAlreadyExistsError, UserNotFoundError
+from api.logic.logic_interface import LogicInterface
+from api.storage.models import (Base, Client, Level, Subject, Tutor,
+                                TutorLevel, TutorSubject, User, UserType)
+from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from jose import JWTError
-
 from pydantic import ValidationError
 
-from api.auth.auth_service import AuthService
-
-from api.exceptions import UserAlreadyExistsError
-from api.exceptions import UserNotFoundError
-
-from api.logic.logic_interface import LogicInterface
-
-from api.common.models import LoginRequest
-from api.common.models import SignupRequest
-
-from api.storage.storage_service import StorageService
-from api.storage.models import User
-
-from api.auth.models import TokenData
 
 class Logic(LogicInterface):
 
@@ -42,15 +35,27 @@ class Logic(LogicInterface):
 
         hashed_password = AuthService.hash_password(signup_data.password)
 
+        match signup_data.userType:
+            case UserType.CLIENT:
+                CurrentUser = Client
+            case UserType.TUTOR:
+                CurrentUser = Tutor
+            case _:
+                raise ValueError("Invalid user type")
+
+        if StorageService.get_user_by_email_and_type(signup_data.email, CurrentUser):
+            raise HTTPException(status_code=400, detail="User already exists")  # TODO: change to 409
+
         try:
-            _ = StorageService.create_user(
-                email=signup_data.email,
-                name=signup_data.name,
-                password_hash=hashed_password,
-                userType=signup_data.userType
+            StorageService.create_user(
+                CurrentUser(
+                    email=signup_data.email,
+                    name=signup_data.name,
+                    password_hash=hashed_password,
+                )
             )
         except UserAlreadyExistsError as e:
-            raise HTTPException(status_code=400, detail=str(e))  # to change to 409
+            raise HTTPException(status_code=400, detail="User already exists")  # TODO: change to 409
         
         token_data = TokenData(email=signup_data.email, userType=signup_data.userType)
         

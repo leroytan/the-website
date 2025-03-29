@@ -27,39 +27,39 @@ def insert_test_data():
     session.commit()
 
     # Adding SpecialSkills
-    skill1 = SpecialSkill(name="Mathematics")
-    skill2 = SpecialSkill(name="Physics")
+    skill1 = SpecialSkill(name="Piano")
+    skill2 = SpecialSkill(name="Patient with children")
 
     session.add_all([skill1, skill2])
     session.commit()
 
     # Adding Subjects
-    subject1 = Subject(name="Algebra")
-    subject2 = Subject(name="Calculus")
+    subject1 = Subject(name="Mathematics")
+    subject2 = Subject(name="Physics")
 
     session.add_all([subject1, subject2])
     session.commit()
 
     # Adding Levels
-    level1 = Level(name="High School")
-    level2 = Level(name="Undergraduate")
+    level1 = Level(name="Lower Primary")
+    level2 = Level(name="Upper Primary")
 
     session.add_all([level1, level2])
     session.commit()
 
-    # Adding TutorSpecialSkills
-    tutor_skill1 = TutorSpecialSkill(tutorId=tutor1.id, specialSkillId=skill1.id)
-    tutor_skill2 = TutorSpecialSkill(tutorId=tutor2.id, specialSkillId=skill2.id)
+    # # Adding TutorSpecialSkills
+    # tutor_skill1 = TutorSpecialSkill(tutorId=tutor1.id, specialSkillId=skill1.id)
+    # tutor_skill2 = TutorSpecialSkill(tutorId=tutor2.id, specialSkillId=skill2.id)
 
-    session.add_all([tutor_skill1, tutor_skill2])
-    session.commit()
+    # session.add_all([tutor_skill1, tutor_skill2])
+    # session.commit()
 
-    # Adding TutorSubjects
-    tutor_subject1 = TutorSubject(tutorId=tutor1.id, subjectId=subject1.id)
-    tutor_subject2 = TutorSubject(tutorId=tutor2.id, subjectId=subject2.id)
+    # # Adding TutorSubjects
+    # tutor_subject1 = TutorSubject(tutorId=tutor1.id, subjectId=subject1.id)
+    # tutor_subject2 = TutorSubject(tutorId=tutor2.id, subjectId=subject2.id)
 
-    session.add_all([tutor_subject1, tutor_subject2])
-    session.commit()
+    # session.add_all([tutor_subject1, tutor_subject2])
+    # session.commit()
 
     # Adding ClientSubjects
     client_subject1 = ClientSubject(clientId=client1.id, subjectId=subject1.id)
@@ -68,12 +68,12 @@ def insert_test_data():
     session.add_all([client_subject1, client_subject2])
     session.commit()
 
-    # Adding TutorLevels
-    tutor_level1 = TutorLevel(tutorId=tutor1.id, levelId=level1.id)
-    tutor_level2 = TutorLevel(tutorId=tutor2.id, levelId=level2.id)
+    # # Adding TutorLevels
+    # tutor_level1 = TutorLevel(tutorId=tutor1.id, levelId=level1.id)
+    # tutor_level2 = TutorLevel(tutorId=tutor2.id, levelId=level2.id)
 
-    session.add_all([tutor_level1, tutor_level2])
-    session.commit()
+    # session.add_all([tutor_level1, tutor_level2])
+    # session.commit()
 
     # Adding Assignments
     assignment1 = Assignment(datetime=datetime.now(), clientId=client1.id, tutorId=tutor1.id, subjectId=subject1.id, estimatedRate="30", weeklyFrequency=2, specialRequests="Need help with integrals", status=AssignmentStatus.PENDING)

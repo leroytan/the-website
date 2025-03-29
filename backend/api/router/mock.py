@@ -70,7 +70,7 @@ def get_tutor_profile():
         email="johndoe@example.com",
         photoUrl="https://example.com/photo.jpg",
         highestEducation="Bachelors in Mathematics",
-        rate=50.0,
+        rate="50.0",
         location="New York, NY",
         rating=5,
         aboutMe="I am a passionate tutor with 10 years of experience in teaching mathematics.",

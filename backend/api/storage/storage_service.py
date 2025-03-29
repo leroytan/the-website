@@ -1,197 +1,101 @@
-from typing import Optional, Type
+from typing import Type
 
 from api.config import settings
-from api.exceptions import (TableEmptyError, UserAlreadyExistsError,
-                            UserNotFoundError)
-from api.storage.connection import engine
-from api.storage.models import (Base, Client, Level, Subject, Tutor,
-                                TutorLevel, TutorSubject, User, UserType)
+from api.exceptions import TableEmptyError, UserAlreadyExistsError
+from api.storage.connection import engine as default_engine
+from api.storage.models import Base, User
 from api.storage.populate import insert_test_data
 from api.storage.storage_interface import StorageInterface
 from api.storage.validate import check_data
-from sqlalchemy import and_, or_, select, update
+from sqlalchemy import Engine, and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy_utils import create_database, database_exists
 
 
 class StorageService(StorageInterface):
 
+    engine: Engine = None
+
     @staticmethod
-    def init_db():
+    def init_db(db_engine=default_engine):
+        print("Initializing database")
         # Create the tables if they don't exist
-        if not database_exists(engine.url):
-            create_database(engine.url)
+        if not database_exists(db_engine.url):
+            print("Creating database")
+            create_database(db_engine.url)
+            print("Database created")
             # SQLAlchemy automatically creates tables from the Base metadata
-            Base.metadata.create_all(engine)
+            Base.metadata.create_all(db_engine)
+            print("Tables created")
             if settings.db_populate_check:
+                print("Inserting test data")
                 insert_test_data()
                 check_data()
-
+                print("Test data inserted")
+        StorageService.engine = db_engine
+        print("Database initialized")
+    
     @staticmethod
-    def find_one_tutor(query: dict) -> Tutor:
-        return StorageService.find_one_user(query, Tutor)
-
-    @staticmethod
-    def find_one_client(query: dict) -> Client:
-        return StorageService.find_one_user(query, Client)
-
-    @staticmethod
-    def find_one_user(query: dict, TableClass: Optional[Type[User]] = User) -> User:
-        return StorageService.find_users(query, TableClass, find_one=True)
-
-    @staticmethod
-    def find_many_tutors(query: dict) -> list[Tutor]:
-        return StorageService.find_many_users(query, Tutor)
-
-    @staticmethod
-    def find_many_clients(query: dict) -> list[Client]:
-        return StorageService.find_many_users(query, Client)
-
-    @staticmethod
-    def find_many_users(query: dict, TableClass: Optional[Type[User]] = User) -> list[User]:
-        return StorageService.find_users(query, TableClass, find_one=False)
-
-    @staticmethod
-    def find_users(query: dict, TableClass: Optional[Type[User]] = User, find_one: bool = False) -> list[User]:
+    def find(session: Session, query: dict, TableClass: Type[DeclarativeMeta], find_one: bool = False) -> list[DeclarativeMeta] | DeclarativeMeta:
         from api.common.utils import Utils
 
-        # Use SQLAlchemy session for querying
-        with Session(engine) as session:
+        with Session(StorageService.engine) as session:
             statement = select(TableClass).filter_by(**query)
             res = session.execute(statement).scalars()
-            if find_one:
-                user = res.first()  # Use .first() to get the result
-            else:
-                user = res.all()
+            result = res.first() if find_one else res.all()
 
-        if not user:
+        if not result:
             try:
                 Utils.validate_non_empty(query=query)
             except ValueError:
                 # query is empty
                 raise TableEmptyError(TableClass.__tablename__)
-            raise UserNotFoundError(query=query, userType=TableClass)
-
-        return user
-
+            
+        return result
+    
     @staticmethod
-    def get_tutor_summaries() -> list[dict]:
-        with Session(engine) as session:
-            statement = select(Tutor)
-            tutors = session.execute(statement).scalars().all()
-            tutors = [
-                {
-                    "id": tutor.id,
-                    "name": tutor.name,
-                    "photoUrl": tutor.photoUrl,
-                    "rate": tutor.rate,
-                    "rating": tutor.rating,
-                    "subjects": [subject.name for subject in tutor.subjects],
-                    "experience": tutor.experience,
-                    "availability": tutor.availability
-                }
-                for tutor in tutors # Iterate over the tutors
-            ]
+    def find_any(session: Session, queries: list[dict], TableClass: Type[DeclarativeMeta], find_one: bool = False) -> list[DeclarativeMeta] | DeclarativeMeta:
+        from api.common.utils import Utils
 
-        return tutors
+        with Session(StorageService.engine) as session:
+            # Build OR conditions
+            conditions = [and_(*[getattr(TableClass, key) == value for key, value in query.items()]) for query in queries]
+            statement = select(TableClass).where(or_(*conditions))
+            
+            res = session.execute(statement).scalars()
+            result = res.first() if find_one else res.all()
 
-    @staticmethod
-    def search_tutors(query: dict) -> list[dict]:
-        """
-        Search for tutors in the database based on the provided query.
-        """
-        session = Session(bind=engine)  # Assuming `engine` is your SQLAlchemy engine
-
-        try:
-            # Base query for tutors
-            tutor_query = session.query(Tutor)
-
-            # Apply filters based on the query dictionary
-            if query.get("general"):
-                # Search by name, address, or description (OR condition)
-                search_term = f"%{query['general']}%"
-                tutor_query = tutor_query.filter(
-                    or_(
-                        Tutor.name.ilike(search_term),
-                        Tutor.location.ilike(search_term),
-                        Tutor.aboutMe.ilike(search_term),
-                    )
-                )
-
-            if query.get("subjects"):
-                # Filter by subjects (AND condition)
-                tutor_query = tutor_query.join(TutorSubject).join(Subject).filter(
-                    Subject.name.in_(query["subjects"])
-                )
-
-            if query.get("levels"):
-                # Filter by levels (AND condition)
-                tutor_query = tutor_query.join(TutorLevel).join(Level).filter(
-                    Level.name.in_(query["levels"])
-                )
-
-            # Execute the query and return results as a list of dictionaries
-            tutors = tutor_query.all()
-            return [tutor.to_dict() for tutor in tutors]
-            return [tutor_to_dict(tutor) for tutor in tutors]
-
-        finally:
-            session.close()
-    @staticmethod
-    def get_course_summaries() -> list[dict]:
-        return []
-
-    @staticmethod
-    def create_user(email: str, name: str, password_hash: str, userType: UserType) -> User:
-        # Decide which model to use based on userType
-        match userType:
-            case UserType.CLIENT:
-                CurrentUser = Client
-            case UserType.TUTOR:
-                CurrentUser = Tutor
-            case _:
-                raise ValueError("Invalid user type")
-
-        # Check if the user already exists based on email and userType
-        with Session(engine) as session:
-            statement = select(CurrentUser).filter_by(email=email)
-            existing_user = session.execute(statement).scalars().first()
-
-            if existing_user:
-                raise UserAlreadyExistsError(email, userType)
-
-            # Create a new user instance
-            new_user = CurrentUser(
-                email=email,
-                name=name,  # Ensure that `name` is part of the model
-                password_hash=password_hash
-            )
-
-            # Insert the new user into the database
-            session.add(new_user)
+        if not result:
             try:
-                session.commit()  # Commit the transaction
-                session.refresh(new_user)  # Get the assigned user ID
+                Utils.validate_non_empty(query=queries)
+            except ValueError:
+                raise TableEmptyError(TableClass.__tablename__)
+
+        return result
+    
+    @staticmethod
+    def update(session: Session, query: dict, values: dict, TableClass: Type[DeclarativeMeta]) -> DeclarativeMeta:
+        
+        statement = update(TableClass).where(and_(*[getattr(TableClass, key) == value for key, value in query.items()])).values(**values)
+        session.execute(statement)
+        session.commit()
+        return StorageService.find(session, query, TableClass, find_one=True)
+    
+    @staticmethod
+    def create_user(session: Session, user: User):
+        """
+        Add a new user to the database.
+        """
+        with Session(StorageService.engine) as session:
+            try:
+                session.add(user)
+                session.commit()
+                session.refresh(user)  # Get the assigned user ID
             except IntegrityError as e:
-                print(f"IntegrityError: User with email {email} already exists")
+                print(f"IntegrityError: User with email {user.email} already exists")
                 print(e)
                 session.rollback()  # Rollback in case of integrity error (e.g., unique constraint failure)
                 # Re-raise error for user already existing
-                raise UserAlreadyExistsError(email, userType)
-
-        return new_user
-    
-    @staticmethod
-    def update_user_by_id(id: int, update: dict, TableClass: Optional[Type[User]] = User) -> User:
-
-        # Use SQLAlchemy session for querying
-        with Session(engine) as session:
-            statement = update(TableClass).where(TableClass.id == id).values(**update)
-            session.execute(statement)
-            session.commit()
-            
-        # Fetch the updated user
-        updated_user = StorageService.find_one_user({"id": id}, TableClass)
-
-        return updated_user
+                raise UserAlreadyExistsError(user.email, User)    

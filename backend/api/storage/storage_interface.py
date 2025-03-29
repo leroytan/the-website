@@ -7,7 +7,7 @@ class StorageInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def init_db() -> None:
+    def init_db(engine) -> None:
         """
         Initializes the database.
         """

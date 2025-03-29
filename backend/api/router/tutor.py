@@ -35,14 +35,14 @@ async def search_tutors(query: str = "", subjects: list = [], levels: list = [])
 
 
 @router.post("/api/tutors/create")
-async def create_tutor(tutorProfile: TutorProfile) -> TutorProfile:
+async def create_tutor(tutorProfile: TutorProfile):
     # TODO: Enforce login authentication for tutors
     # Returns the newly created tutor profile
 
     if settings.is_use_mock:
         return mock.create_tutor()
-
-    raise NotImplementedError("Tutor creation is not yet implemented.")
+    
+    return TutorLogic.create_tutor(tutorProfile)
 
 @router.get("/api/tutors/profile/{id}")
 async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile | None:
@@ -51,6 +51,7 @@ async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile
     if settings.is_use_mock:
         return mock.get_tutor_profile()
     
+    return TutorLogic.find_profile_by_id(id)
     raise NotImplementedError("Tutor profile retrieval is not yet implemented.")
 
 
@@ -62,6 +63,7 @@ async def update_tutor_profile(tutorProfile: TutorProfile, id: str = None) -> Tu
     if settings.is_use_mock:
         return mock.update_tutor_profile()
     
+    return TutorLogic.update_profile(tutorProfile)
     raise NotImplementedError("Tutor profile update is not yet implemented.")
 
 class IncomingTutorRequest(BaseModel):
@@ -75,4 +77,5 @@ async def request_tutor(tutorRequest: IncomingTutorRequest, id: str = None) -> R
     if settings.is_use_mock:
         return Response(status_code=200)
 
+    # return TutorLogic.request_tutor(tutorRequest)
     raise NotImplementedError("Tutor request is not yet implemented.")
