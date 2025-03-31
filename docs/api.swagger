@@ -16,7 +16,40 @@ tags:
     description: Assignment-specific operations
   - name: course
     description: Course-specific operations
+  - name: chat
+    description: endpoints for the live chat feature between clients and tutors
 paths:
+  /api/chat/{token}:
+    get:
+      tags:
+        - chat
+      summary: gets the chat history between the current user and the other user specified by token. to be split in separate pages
+      responses:
+        '200':
+          description: Successful retrieval of chat history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '401':
+          description: Invalid credentials
+  /ws/chat/{token}:
+    post:
+      tags:
+        - chat
+      summary: sends a message to the other party
+  /ws/chat/{token}/unlock:
+    get:
+      tags:
+        - chat
+      summary: Unlocks the chat for both users (tbc on implementation)
+      responses:
+        '200':
+          description: Successful unlocking
+        '401':
+          description: Invalid credentials
   /api/auth/login:
     post:
       tags:
@@ -49,6 +82,51 @@ paths:
           description: User created successfully and logged in. Both refresh and access tokens are stored as http cookies in the browser.
         '400':
           description: Invalid input or email already exists
+  /api/auth/forgetpassword:
+    post:
+      tags:
+        - auth
+      summary: endpoint for user to submit email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: if the email is valid, a link has been sent
+  /api/auth/resetpassword:
+    post:
+      tags:
+        - auth
+      summary: endpoint for user to submit email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: if the email is valid, a link has been sent
+  /api/auth/verifyemail:
+    post:
+      tags:
+        - auth
+      summary: endpoint for user to submit email
+      parameters:
+        - name: key
+          in: key
+          required: true
+          description: The unique key for email verification
+          schema:
+            type: string
+      requestBody:
+        required: false
+      responses:
+        '200':
+          description: if the email is valid, a link has been sent
   /api/tutors:
     get:
       tags:
@@ -152,6 +230,18 @@ paths:
             type: string
           required: false
           description: query string to search
+        - in: filter
+          name: filter
+          schema:
+            type: string
+          required: false
+          description: filter assignments based on type. dynamically choose filters based on backend database and update the frontend
+        - in: sort
+          name: sort
+          schema:
+            type: string
+          required: false
+          description: ordering of assignments
       responses:
         '200':
           description: Successful retrieval of assignments
@@ -178,7 +268,7 @@ paths:
     get:
       tags:
         - assignment
-      summary: retrieves the details of an assignment specified by id
+      summary: retrieves the details of an assignment specified by id. if client is owner, then will see tutors who requested
       responses:
         '200':
           description: the details of a single assignment, with fields depending on the authorization level of the user
@@ -709,3 +799,19 @@ components:
           enum:
             - tutor
             - client
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the message
+        user_id:
+          type: string
+          description: The ID of the user who sent the message
+        content:
+          type: string
+          description: The content of the message
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp of when the message was sent
