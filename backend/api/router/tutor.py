@@ -1,8 +1,10 @@
 import api.router.mock as mock
 from api.config import settings
 from api.logic.tutor_logic import TutorLogic
-from api.router.models import SearchQuery, TutorProfile, TutorPublicSummary
-from fastapi import APIRouter, Request, Response
+from api.router.auth_utils import AuthUtils
+from api.router.models import (CreatedTutorProfile, SearchQuery, TutorProfile,
+                               TutorPublicSummary)
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -39,24 +41,27 @@ async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> 
 
 
 @router.post("/api/tutors/create")
-async def create_tutor(tutorProfile: TutorProfile):
+async def create_tutor(tutorProfile: CreatedTutorProfile):
     # TODO: Enforce login authentication for tutors
     # Returns the newly created tutor profile
 
     if settings.is_use_mock:
         return mock.create_tutor()
     
+    user = await AuthUtils.get_current_user()
+    if not user or user.id != tutorProfile.id:
+        raise HTTPException(status_code=403, detail="Unauthorized action")
+    
     return TutorLogic.create_tutor(tutorProfile)
 
 @router.get("/api/tutors/profile/{id}")
-async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile | None:
+async def get_tutor_profile(id: str | int) -> TutorPublicSummary | TutorProfile | None:
     # TODO: find a way to use login authorization to differentiate between public and private profiles
     
     if settings.is_use_mock:
         return mock.get_tutor_profile()
     
     return TutorLogic.find_profile_by_id(id)
-    raise NotImplementedError("Tutor profile retrieval is not yet implemented.")
 
 
 @router.put("/api/tutors/profile/{id}")

@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Request, Response
-
 from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
                              REFRESH_TOKEN_EXPIRE_MINUTES)
 from api.common.models import LoginRequest, SignupRequest
 from api.common.utils import Utils
 from api.logic.logic import Logic
+from api.router.auth_utils import AuthUtils
 from api.storage.models import User
+from fastapi import APIRouter, Depends, Request, Response
 
 router = APIRouter()
 
@@ -26,15 +26,6 @@ def update_tokens(tokens: dict[str, str], response: Response) -> None:
         samesite="strict",  # CSRF protection
         max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
     )
-
-def clear_tokens(response: Response) -> None:
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
-
-async def get_current_user(request: Request) -> User:
-    token = request.cookies.get("access_token")
-    user = Logic.get_current_user(token)
-    return user
 
 @router.post("/api/auth/login")
 async def login(request: Request, response: Response):
@@ -120,7 +111,7 @@ async def logout(response: Response):
     return {"message": "Logged out successfully"}
 
 @router.get("/api/protected")
-async def protected_route(current_user: User = Depends(get_current_user)):
+async def protected_route(current_user: User = Depends(AuthUtils.get_current_user)):
     return {"message": "You are logged in as " + current_user.email}
 
 @router.post("/api/auth/refresh")
@@ -133,7 +124,7 @@ async def refresh(request: Request, response: Response):
     return {"message": "Tokens refreshed successfully"}
 
 @router.post("/api/auth/check")
-async def check(_: User = Depends(get_current_user)):
+async def check(_: User = Depends(AuthUtils.get_current_user)):
     return {"message": "Valid token"}
 
 @router.get("/api/auth/idk")

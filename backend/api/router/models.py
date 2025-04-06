@@ -1,4 +1,3 @@
-from api.storage.models import UserType
 from pydantic import BaseModel
 
 
@@ -6,13 +5,11 @@ from pydantic import BaseModel
 class LoginRequest(BaseModel):
     email: str
     password: str
-    userType: UserType
 
 class SignupRequest(BaseModel):
     email: str
     password: str
     name: str
-    userType: UserType
 
 class TutorPublicSummary(BaseModel):
     id: int
@@ -24,6 +21,21 @@ class TutorPublicSummary(BaseModel):
     levelsTeachable: list[str]
     experience: str | None
     availability: str | None
+
+class CreatedTutorProfile(BaseModel):
+    id: int
+    photoUrl: str | None
+    highestEducation: str | None
+    availability: str | None
+    resumeUrl: str | None
+    rate: str | None
+    location: str | None
+    rating: float | None
+    aboutMe: str | None
+    experience: str | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    specialSkills: list[str]
 
 class TutorProfile(BaseModel):
     id: int
@@ -42,7 +54,6 @@ class TutorProfile(BaseModel):
     resumeUrl: str | None
     experience: str | None
     availability: str | None
-    isProfileComplete: bool
 
 class ClientTutorRequest(BaseModel):
     id: str
@@ -93,7 +104,6 @@ class ClientProfile(BaseModel):
     subjects: list[str]
     contact: str
     email: str
-    isProfileComplete: bool
 
 class Assignment(BaseModel):
     id: int

@@ -6,7 +6,7 @@ from api.storage.connection import engine as default_engine
 from api.storage.models import Base, User
 from api.storage.populate import insert_test_data
 from api.storage.storage_interface import StorageInterface
-from api.storage.validate import check_data
+# from api.storage.validate import check_data
 from sqlalchemy import ColumnElement, Engine, and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -31,8 +31,8 @@ class StorageService(StorageInterface):
             print("Tables created")
             if settings.db_populate_check:
                 print("Inserting test data")
-                insert_test_data()
-                check_data()
+                insert_test_data(db_engine)
+                # check_data(db_engine)
                 print("Test data inserted")
         StorageService.engine = db_engine
         print("Database initialized")
@@ -85,12 +85,19 @@ class StorageService(StorageInterface):
         return result
     
     @staticmethod
-    def update(session: Session, query: dict, values: dict, TableClass: Type[DeclarativeMeta]) -> DeclarativeMeta:
+    def update(session: Session, query: dict | list[ColumnElement], values: dict, TableClass: Type[DeclarativeMeta]) -> DeclarativeMeta:
         
         statement = update(TableClass).where(and_(*[getattr(TableClass, key) == value for key, value in query.items()])).values(**values)
         session.execute(statement)
         session.commit()
         return StorageService.find(session, query, TableClass, find_one=True)
+    
+    @staticmethod
+    def insert(session: Session, obj: DeclarativeMeta) -> DeclarativeMeta:
+        session.add(obj)
+        session.commit()
+        session.refresh(obj)
+        return obj
     
     @staticmethod
     def create_user(session: Session, user: User):

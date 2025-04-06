@@ -1,7 +1,9 @@
 from api.logic.filter_logic import FilterLogic
-from api.router.models import SearchQuery, TutorProfile, TutorPublicSummary
-from api.storage.models import Level, SpecialSkill, Subject, Tutor
+from api.router.models import (CreatedTutorProfile, SearchQuery, TutorProfile,
+                               TutorPublicSummary)
+from api.storage.models import Level, SpecialSkill, Subject, Tutor, User
 from api.storage.storage_service import StorageService
+from fastapi import HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -28,7 +30,7 @@ class TutorLogic:
         # Create and return the TutorPublicSummary
         return TutorPublicSummary(
             id=tutor.id,
-            name=tutor.name,
+            name=tutor.user.name,
             photoUrl=tutor.photoUrl,
             rate=tutor.rate,
             rating=tutor.rating,
@@ -79,25 +81,54 @@ class TutorLogic:
             return summaries
     
     @staticmethod
-    def create_tutor(tutor_profile: TutorProfile):
+    def create_tutor(tutor_profile: CreatedTutorProfile):
         # Create a new Tutor instance from the incoming request data
         tutor_dict = tutor_profile.model_dump()
 
-        tutor_dict["isProfileComplete"] = False  # TODO: perform some validation to make it true
         tutor_dict.pop("subjectsTeachable", None)
         tutor_dict.pop("levelsTeachable", None)
         tutor_dict.pop("specialSkills", None)
-        tutor_dict.pop("id", None)
 
         with Session(StorageService.engine) as session:
-            tutor = StorageService.update(session, {'email': tutor_profile.email}, tutor_dict, Tutor)
+            # Check if the user exists
+            existing_user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
+            if not existing_user:
+                raise HTTPException(
+                    status_code=404,
+                    detail="User not found"
+                )
+            
+            # Check if the tutor role already exists
+            existing_tutor = StorageService.find(session, {"id": tutor_profile.id}, Tutor, find_one=True)
+            if existing_tutor:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Tutor role already exists for this user"
+                )
+            
+            tutor = StorageService.insert(session, Tutor(
+                **tutor_dict
+            ))
+
             session.add(tutor)
             # Fetch the related Subject, Level, and SpecialSkill objects
             tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjectsTeachable)).all()
             tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levelsTeachable)).all()
             tutor.specialSkills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.specialSkills)).all()
+            tutor.user = existing_user
             session.commit()
             session.refresh(tutor)
 
         return tutor
+    
+    @staticmethod
+    def find_profile_by_id(id: str | int) -> TutorPublicSummary | TutorProfile | None:
+        with Session(StorageService.engine) as session:
+            tutor = StorageService.find(session, {"id": id}, Tutor)
+
+            if not tutor:
+                return None
+
+            # Convert the Tutor object to a TutorPublicSummary object
+            return TutorLogic.convert_tutor_to_public_summary(session, tutor)
 
