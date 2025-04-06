@@ -7,7 +7,7 @@ from api.storage.models import Base, User
 from api.storage.populate import insert_test_data
 from api.storage.storage_interface import StorageInterface
 from api.storage.validate import check_data
-from sqlalchemy import Engine, and_, or_, select, update
+from sqlalchemy import ColumnElement, Engine, and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
@@ -38,11 +38,20 @@ class StorageService(StorageInterface):
         print("Database initialized")
     
     @staticmethod
-    def find(session: Session, query: dict, TableClass: Type[DeclarativeMeta], find_one: bool = False) -> list[DeclarativeMeta] | DeclarativeMeta:
+    def find(session: Session, query: dict | list[ColumnElement], TableClass: Type[DeclarativeMeta], find_one: bool = False) -> list[DeclarativeMeta] | DeclarativeMeta:
         from api.common.utils import Utils
 
         with Session(StorageService.engine) as session:
-            statement = select(TableClass).filter_by(**query)
+            statement = select(TableClass)
+            if isinstance(query, list):
+                for q in query:
+                    statement = statement.where(q)
+            elif isinstance(query, dict):
+                statement = statement.filter_by(**query)
+            else:
+                raise ValueError("Query must be a dictionary or a list of ColumnElement objects.")
+            
+            # Execute the query
             res = session.execute(statement).scalars()
             result = res.first() if find_one else res.all()
 

@@ -4,6 +4,7 @@ from sqlalchemy import (Boolean, Column, Float, ForeignKey, Integer, String,
                         Table)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy_serializer import SerializerMixin
 
@@ -116,6 +117,13 @@ class Subject(Base):
     tutors = relationship('Tutor', secondary='TutorSubject', back_populates='subjects')
     clients = relationship('Client', secondary='ClientSubject', back_populates='subjects')
 
+    @hybrid_property
+    def filterId(self):
+        """
+        Returns the filter ID for the subject
+        """
+        return f"subject_{self.id}"
+
 class Level(Base):
     """
     Level model
@@ -127,6 +135,13 @@ class Level(Base):
     name = Column(String, unique=True, nullable=False)
 
     tutors = relationship('Tutor', secondary='TutorLevel', back_populates='levels')
+
+    @hybrid_property
+    def filterId(self):
+        """
+        Returns the filter ID for the level
+        """
+        return f"level_{self.id}"
 
 class AssignmentStatus(enum.Enum):
     """

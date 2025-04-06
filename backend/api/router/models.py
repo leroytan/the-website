@@ -19,7 +19,7 @@ class TutorPublicSummary(BaseModel):
     name: str
     photoUrl: str | None
     rate: str | None
-    rating: int | None
+    rating: float | None
     subjectsTeachable: list[str]
     levelsTeachable: list[str]
     experience: str | None
@@ -51,11 +51,6 @@ class ClientTutorRequest(BaseModel):
     datetime: str
     status: str
 
-class TutorSearchQuery(BaseModel):
-    query: str
-    subjects: list[str]
-    levels: list[str]
-    
 class CoursePublicSummary(BaseModel):
     id: str
     name: str
@@ -111,3 +106,7 @@ class Assignment(BaseModel):
     specialRequests: str | None
     status: str
     
+class SearchQuery(BaseModel):
+    query: str | None
+    filters: list[str] | None
+    sorts: list[str] | None

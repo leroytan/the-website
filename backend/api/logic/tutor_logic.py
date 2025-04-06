@@ -1,5 +1,6 @@
-from api.router.models import TutorProfile, TutorSearchQuery
-from api.storage.models import Level, SpecialSkill, Subject, Tutor, UserType
+from api.logic.filter_logic import FilterLogic
+from api.router.models import SearchQuery, TutorProfile, TutorPublicSummary
+from api.storage.models import Level, SpecialSkill, Subject, Tutor
 from api.storage.storage_service import StorageService
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -8,7 +9,37 @@ from sqlalchemy.orm import Session
 class TutorLogic:
 
     @staticmethod
-    def search_tutors(search_query: TutorSearchQuery):
+    def convert_tutor_to_public_summary(session: Session, tutor: Tutor) -> TutorPublicSummary:
+        """
+        Converts a Tutor model instance to a TutorPublicSummary model.
+        
+        Args:
+            tutor: A Tutor model instance
+            
+        Returns:
+            TutorPublicSummary: A pydantic model with the public tutor information
+        """
+        tutor = session.merge(tutor)
+
+        # Extract subject and level names
+        subject_names = [subject.name for subject in tutor.subjects] if tutor.subjects else []
+        level_names = [level.name for level in tutor.levels] if tutor.levels else []
+        
+        # Create and return the TutorPublicSummary
+        return TutorPublicSummary(
+            id=tutor.id,
+            name=tutor.name,
+            photoUrl=tutor.photoUrl,
+            rate=tutor.rate,
+            rating=tutor.rating,
+            subjectsTeachable=subject_names,
+            levelsTeachable=level_names,
+            experience=tutor.experience,
+            availability=tutor.availability
+        )
+
+    @staticmethod
+    def search_tutors(search_query: SearchQuery) -> list[TutorPublicSummary]:
 
         with Session(StorageService.engine) as session:
             filters = []
@@ -22,25 +53,30 @@ class TutorLogic:
                     Tutor.aboutMe.ilike(general_query)
                 ))
 
+            # get filters from the search query
+            parsed_filters = FilterLogic.parse_filters(search_query.filters)
+
             # Filter by subjects
-            if search_query.subjects:
-                filters.append(Tutor.subjects.any(Subject.name.in_(search_query.subjects)))
+            if "subject" in parsed_filters:
+                filters.append(Tutor.subjects.any(Subject.id.in_(parsed_filters["subject"])))
+
+            # Filter by special skills
+            if "specialSkill" in parsed_filters:
+                filters.append(Tutor.specialSkills.any(SpecialSkill.id.in_(parsed_filters["specialSkill"])))
 
             # Filter by levels
-            if search_query.levels:
-                filters.append(Tutor.levels.any(Level.name.in_(search_query.levels)))
+            if "level" in parsed_filters:
+                filters.append(Tutor.levels.any(Level.id.in_(parsed_filters["level"])))
 
-        return StorageService.find(session, filters, Tutor)
-        query_dict = {
-            "general": search_query.query,  # TODO: perform some object transformation; query -> name, address, description????
-            "subjects": search_query.subjects,
-            "levels": search_query.levels,
-        }
-        
-        # TODO: transform the query dict into a valid query
+            tutors = StorageService.find(session, filters, Tutor)
 
-        with Session(StorageService.engine) as session:
-            return StorageService.find(session, query_dict, Tutor)
+            if not tutors:
+                raise ValueError("No tutors found matching the search criteria.")
+
+            # Convert the list of Tutor objects to TutorPublicSummary objects            
+            summaries = [TutorLogic.convert_tutor_to_public_summary(session, tutor) for tutor in tutors]
+
+            return summaries
     
     @staticmethod
     def create_tutor(tutor_profile: TutorProfile):

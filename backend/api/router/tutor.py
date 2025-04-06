@@ -1,15 +1,14 @@
 import api.router.mock as mock
 from api.config import settings
 from api.logic.tutor_logic import TutorLogic
-from api.router.models import (TutorProfile, TutorPublicSummary,
-                               TutorSearchQuery)
+from api.router.models import SearchQuery, TutorProfile, TutorPublicSummary
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
 
 @router.get("/api/tutors")
-async def search_tutors(query: str = "", subjects: list = [], levels: list = []) -> list[TutorPublicSummary]:
+async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> list[TutorPublicSummary]:
     """
     Handles the searching of specific tutors using fields such as subjects and levels.
 
@@ -22,11 +21,16 @@ async def search_tutors(query: str = "", subjects: list = [], levels: list = [])
     """
     if settings.is_use_mock:
         return mock.search_tutors()
+    
+    # Parse the filters and sorts from the query string
+    # TODO: Implement a more robust parsing method
+    filter_ids = filters.split(",") if filters else []
+    sort_ids = sorts.split(",") if sorts else []
 
-    search_query = TutorSearchQuery(
+    search_query = SearchQuery(
         query=query,
-        subjects=subjects,
-        levels=levels,
+        filters=filter_ids,
+        sorts=sort_ids,
     )
 
     results = TutorLogic.search_tutors(search_query)
