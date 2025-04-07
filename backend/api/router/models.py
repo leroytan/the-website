@@ -46,7 +46,7 @@ class TutorProfile(BaseModel):
     highestEducation: str | None
     rate: str | None
     location: str | None
-    rating: int | None
+    rating: float | None
     aboutMe: str | None
     subjectsTeachable: list[str]
     levelsTeachable: list[str]

@@ -39,6 +39,42 @@ class TutorLogic:
             experience=tutor.experience,
             availability=tutor.availability
         )
+    
+    @staticmethod
+    def convert_tutor_to_profile(session: Session, tutor: Tutor) -> TutorProfile:
+        """
+        Converts a Tutor model instance to a TutorProfile model.
+        
+        Args:
+            tutor: A Tutor model instance
+            
+        Returns:
+            TutorProfile: A pydantic model with the full tutor information
+        """
+        tutor = session.merge(tutor)
+
+        # Extract subject and level names
+        subject_names = [subject.name for subject in tutor.subjects] if tutor.subjects else []
+        level_names = [level.name for level in tutor.levels] if tutor.levels else []
+        
+        # Create and return the TutorProfile
+        return TutorProfile(
+            id=tutor.id,
+            name=tutor.user.name,
+            contact=tutor.user.email,
+            email=tutor.user.email,
+            photoUrl=tutor.photoUrl,
+            highestEducation=tutor.highestEducation,
+            rate=tutor.rate,
+            location=tutor.location,
+            rating=tutor.rating,
+            aboutMe=tutor.aboutMe,
+            subjectsTeachable=subject_names,
+            levelsTeachable=level_names,
+            specialSkills=[skill.name for skill in tutor.specialSkills] if tutor.specialSkills else [],
+            resumeUrl=tutor.resumeUrl,
+            experience=tutor.experience,
+        )
 
     @staticmethod
     def search_tutors(search_query: SearchQuery) -> list[TutorPublicSummary]:
@@ -82,14 +118,10 @@ class TutorLogic:
     
     @staticmethod
     def create_tutor(tutor_profile: CreatedTutorProfile):
-        # Create a new Tutor instance from the incoming request data
-        tutor_dict = tutor_profile.model_dump()
-
-        tutor_dict.pop("subjectsTeachable", None)
-        tutor_dict.pop("levelsTeachable", None)
-        tutor_dict.pop("specialSkills", None)
-
+    
         with Session(StorageService.engine) as session:
+
+
             # Check if the user exists
             existing_user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
             if not existing_user:
@@ -106,6 +138,12 @@ class TutorLogic:
                     detail="Tutor role already exists for this user"
                 )
             
+            tutor_dict = tutor_profile.model_dump()
+
+            tutor_dict.pop("subjectsTeachable", None)
+            tutor_dict.pop("levelsTeachable", None)
+            tutor_dict.pop("specialSkills", None)
+
             tutor = StorageService.insert(session, Tutor(
                 **tutor_dict
             ))
@@ -122,13 +160,39 @@ class TutorLogic:
         return tutor
     
     @staticmethod
-    def find_profile_by_id(id: str | int) -> TutorPublicSummary | TutorProfile | None:
+    def find_profile_by_id(id: str | int, is_self: bool = False) -> TutorPublicSummary | TutorProfile | None:
         with Session(StorageService.engine) as session:
-            tutor = StorageService.find(session, {"id": id}, Tutor)
+            tutor = StorageService.find(session, {"id": id}, Tutor, find_one=True)
 
             if not tutor:
                 return None
+            
+            if not is_self:
+                # Convert the Tutor object to a TutorPublicSummary object
+                return TutorLogic.convert_tutor_to_public_summary(session, tutor)
+            else:
+                return TutorLogic.convert_tutor_to_profile(session, tutor)
 
-            # Convert the Tutor object to a TutorPublicSummary object
-            return TutorLogic.convert_tutor_to_public_summary(session, tutor)
+    @staticmethod
+    def update_profile(tutor_profile: TutorProfile, id: str | int) -> TutorProfile:
 
+        with Session(StorageService.engine) as session:
+            # Find the existing tutor profile
+            existing_tutor = StorageService.find(session, {"id": id}, Tutor, find_one=True)
+
+            if not existing_tutor:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Tutor not found"
+                )
+            
+            tutor_dict = tutor_profile.model_dump()
+
+            tutor_dict.pop("subjectsTeachable", None)
+            tutor_dict.pop("levelsTeachable", None)
+            tutor_dict.pop("specialSkills", None)
+
+            # TODO: settle the update logic to update User and Tutor
+
+
+        return TutorLogic.convert_tutor_to_profile(session, existing_tutor)

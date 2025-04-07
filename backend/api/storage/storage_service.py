@@ -98,20 +98,3 @@ class StorageService(StorageInterface):
         session.commit()
         session.refresh(obj)
         return obj
-    
-    @staticmethod
-    def create_user(session: Session, user: User):
-        """
-        Add a new user to the database.
-        """
-        with Session(StorageService.engine) as session:
-            try:
-                session.add(user)
-                session.commit()
-                session.refresh(user)  # Get the assigned user ID
-            except IntegrityError as e:
-                print(f"IntegrityError: User with email {user.email} already exists")
-                print(e)
-                session.rollback()  # Rollback in case of integrity error (e.g., unique constraint failure)
-                # Re-raise error for user already existing
-                raise UserAlreadyExistsError(user.email, User)    

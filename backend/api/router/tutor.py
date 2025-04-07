@@ -1,10 +1,11 @@
 import api.router.mock as mock
 from api.config import settings
 from api.logic.tutor_logic import TutorLogic
-from api.router.auth_utils import AuthUtils
+from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (CreatedTutorProfile, SearchQuery, TutorProfile,
                                TutorPublicSummary)
-from fastapi import APIRouter, HTTPException, Response
+from api.storage.models import User
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -41,15 +42,14 @@ async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> 
 
 
 @router.post("/api/tutors/create")
-async def create_tutor(tutorProfile: CreatedTutorProfile):
+async def create_tutor(tutorProfile: CreatedTutorProfile, user: User = Depends(RouterAuthUtils.get_current_user)) -> TutorProfile:
     # TODO: Enforce login authentication for tutors
     # Returns the newly created tutor profile
 
     if settings.is_use_mock:
         return mock.create_tutor()
     
-    user = await AuthUtils.get_current_user()
-    if not user or user.id != tutorProfile.id:
+    if user.id != tutorProfile.id:
         raise HTTPException(status_code=403, detail="Unauthorized action")
     
     return TutorLogic.create_tutor(tutorProfile)
@@ -61,19 +61,20 @@ async def get_tutor_profile(id: str | int) -> TutorPublicSummary | TutorProfile 
     if settings.is_use_mock:
         return mock.get_tutor_profile()
     
-    return TutorLogic.find_profile_by_id(id)
+    user = await RouterAuthUtils.get_current_user()
+    is_self = user and user.id == id
+    return TutorLogic.find_profile_by_id(id, is_self=is_self)
 
 
 @router.put("/api/tutors/profile/{id}")
-async def update_tutor_profile(tutorProfile: TutorProfile, id: str = None) -> TutorProfile:
+async def update_tutor_profile(tutorProfile: TutorProfile, id: str | int) -> TutorProfile:
     # TODO: Enforce login authorization to access private profiles
     # Returns the updated private profile
 
     if settings.is_use_mock:
         return mock.update_tutor_profile()
     
-    return TutorLogic.update_profile(tutorProfile)
-    raise NotImplementedError("Tutor profile update is not yet implemented.")
+    return TutorLogic.update_profile(tutorProfile, id)
 
 class IncomingTutorRequest(BaseModel):
     clientId: int

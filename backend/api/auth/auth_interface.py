@@ -5,38 +5,8 @@ from typing import Optional
 from api.auth.models import TokenData
 from api.common.utils import Utils
 
+
 class AuthInterface(ABC):
-
-    @staticmethod
-    @abstractmethod
-    def serialize_token_data(token_data: TokenData) -> dict:
-        """
-        Serializes the token data into a dictionary.
-
-        Args:
-            token_data (TokenData): The token data to serialize.
-
-        Returns:
-            dict: The serialized token data.
-        """
-        pass
-    
-    @staticmethod
-    @abstractmethod
-    def deserialize_token(token: dict) -> TokenData:
-        """
-        Deserializes the token data from a dictionary.
-
-        Args:
-            token (dict): The dictionary containing the token data.
-
-        Raises:
-            ValidationError: If the token data is invalid.
-
-        Returns:
-            TokenData: The deserialized token data.
-        """
-        pass
 
     @staticmethod
     @abstractmethod

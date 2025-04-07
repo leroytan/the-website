@@ -1,35 +1,18 @@
-import bcrypt
 from datetime import datetime, timedelta, timezone
+
+import bcrypt
+from api.auth.auth_interface import AuthInterface
+from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES, JWT_ALGORITHM,
+                             JWT_SECRET_KEY, REFRESH_TOKEN_EXPIRE_MINUTES,
+                             REFRESH_TOKEN_SECRET_KEY)
+from api.auth.models import TokenData
+from api.common.utils import Utils
 from jose import jwt
-from typing import Optional
 from pydantic import ValidationError
 
-from api.auth.auth_interface import AuthInterface
-from api.auth.config import (
-    JWT_SECRET_KEY, 
-    REFRESH_TOKEN_SECRET_KEY, 
-    JWT_ALGORITHM, 
-    ACCESS_TOKEN_EXPIRE_MINUTES, 
-    REFRESH_TOKEN_EXPIRE_MINUTES
-)
-
-from api.auth.models import TokenData
-
-from api.common.utils import Utils
 
 class AuthService(AuthInterface):
-
-    @staticmethod
-    def serialize_token_data(token_data: TokenData) -> dict:
-        serialized = token_data.model_dump()
-        serialized["userType"] = Utils.user_type_to_str(serialized["userType"])
-        return serialized
     
-    @staticmethod
-    def deserialize_token(token: dict) -> TokenData:
-        token["userType"] = Utils.str_to_user_type(token["userType"])
-        return TokenData(**token)
-
     @staticmethod
     def hash_password(password: str) -> str:
         Utils.validate_non_empty(password=password)
@@ -44,18 +27,18 @@ class AuthService(AuthInterface):
         return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
     
     @staticmethod
-    def create_access_token(token_data: TokenData, expires_delta: Optional[timedelta] = None) -> str:
+    def create_access_token(token_data: TokenData, expires_delta: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)) -> str:
         Utils.validate_non_empty(token_data=token_data)
-        to_encode = AuthService.serialize_token_data(token_data)
-        expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        to_encode = token_data.model_dump()
+        expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({"exp": expire, "type": "access"})
         return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
     @staticmethod
-    def create_refresh_token(token_data: TokenData, expires_delta: Optional[timedelta] = None) -> str:
+    def create_refresh_token(token_data: TokenData, expires_delta: timedelta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)) -> str:
         Utils.validate_non_empty(token_data=token_data)
-        to_encode = AuthService.serialize_token_data(token_data)
-        expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES))
+        to_encode = token_data.model_dump()
+        expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({"exp": expire, "type": "refresh"})
         return jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
@@ -74,7 +57,7 @@ class AuthService(AuthInterface):
         payload.pop("exp")
         payload.pop("type")
         
-        return AuthService.deserialize_token(payload)
+        return TokenData(**payload)
 
     @staticmethod
     def refresh_tokens(refresh_token: str) -> dict[str, str]:
