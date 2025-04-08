@@ -294,6 +294,7 @@ def insert_test_data(engine):
     # Create test assignments
     assignments = [
         Assignment(
+            title="Calculus Finals Prep",
             datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[0].id,  # John Doe requesting 
             tutorId=tutors[0].id,     # Alice as tutor
@@ -303,6 +304,7 @@ def insert_test_data(engine):
             status=AssignmentStatus.OPEN
         ),
         Assignment(
+            title="Essay-Writing Clinic",
             datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[1].id,  # Jane Smith requesting
             tutorId=tutors[2].id,     # Carol as tutor
@@ -312,6 +314,7 @@ def insert_test_data(engine):
             status=AssignmentStatus.FILLED
         ),
         Assignment(
+            title="Programming Coaching (Python)",
             datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[0].id,  # John Doe requesting
             tutorId=tutors[3].id,     # David as tutor

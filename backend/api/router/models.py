@@ -105,17 +105,26 @@ class ClientProfile(BaseModel):
     contact: str
     email: str
 
+class AssignmentSlot(BaseModel):
+    id: int
+    day: str
+    startTime: str
+    endTime: str
+
 class Assignment(BaseModel):
     id: int
     datetime: str
+    title: str
     requesterId: int
     tutorId: int
     estimatedRate: str
     weeklyFrequency: int
-    availableSlots: list[str]
+    availableSlots: list[AssignmentSlot]
     specialRequests: str | None
+    subjects: list[str]
+    levels: list[str]
     status: str
-    
+
 class SearchQuery(BaseModel):
     query: str | None
     filters: list[str] | None

@@ -1,5 +1,4 @@
-from api.router.auth import router as auth_router
-from api.router.tutor import router as tutor_router
+from api.router.routers import routers
 from api.storage.models import Subject
 from api.storage.storage_service import StorageService
 from fastapi import FastAPI, Request
@@ -12,8 +11,8 @@ StorageService.init_db()
 ### Create FastAPI instance with custom docs and openapi url
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
-app.include_router(tutor_router)
-app.include_router(auth_router)
+for router in routers:
+    app.include_router(router)
 
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):

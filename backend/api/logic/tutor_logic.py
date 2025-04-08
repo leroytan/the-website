@@ -112,9 +112,6 @@ class TutorLogic:
 
             tutors = StorageService.find(session, filters, Tutor)
 
-            if not tutors:
-                raise ValueError("No tutors found matching the search criteria.")
-
             # Convert the list of Tutor objects to TutorPublicSummary objects            
             summaries = [TutorLogic.convert_tutor_to_public_summary(session, tutor) for tutor in tutors]
 

@@ -85,6 +85,7 @@ class Assignment(Base):
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
     datetime = Column(String, nullable=False)
+    title = Column(String, nullable=False)
     requesterId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
     estimatedRate = Column(String, nullable=False)
