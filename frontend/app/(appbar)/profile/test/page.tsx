@@ -16,7 +16,7 @@ import Image from "next/image";
 const tutorProfile = {
   name: "Lexus Tan",
   role: "Tutor",
-  subjects: ["Mathematics, Physics"],
+  subjects: ["Mathematics, English"],
   rating: 4.5,
   reviewsCount: 2,
   studentsCount: 42,
@@ -24,10 +24,10 @@ const tutorProfile = {
   email: "lexus.tan@example.com",
   phone: "+1234567890",
   location: "Central Singapore",
-  subjectsTeachable: "Mathematics, Physics",
+  subjectsTeachable: "Mathematics, English",
   highestQualification: "Master's Degree",
-  levelsTeachable: "Secondary 1 to Junior College",
-  rate: "$30-$50 per hour depending on subject and level",
+  levelsTeachable: "Primary 1 to Primary 6",
+  rate: "$25-$45 per hour depending on subject and level",
   specialSkills: "Problem-solving techniques, Visual learning methods",
   about: `
     Hi, I'm Lexus, a dedicated tutor with a passion for helping students excel in Math and English. I specialize in breaking complex concepts into simple, easy-to-understand lessons.
@@ -63,7 +63,7 @@ const reviews = [
 ];
 
 export default function TutorProfile() {
-  const [selectedTab, setSelectedTab] = useState("reviews");
+  const [selectedTab, setSelectedTab] = useState("tutor information");
   const [message, setMessage] = useState("");
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

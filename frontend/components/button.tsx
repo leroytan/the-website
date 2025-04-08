@@ -6,7 +6,7 @@ export function Button({
     onClick,
   }: {
     children: React.ReactNode;
-    className: string;
+    className?: string;
     onClick: () => void;
   }) {
     return (

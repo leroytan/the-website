@@ -1,4 +1,5 @@
 "use client";
+import AddAssignmentButton from "@/components/addAssignmentButton";
 import AssignmentCard from "@/components/assignmentCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
@@ -140,11 +141,11 @@ function Input({ placeholder }: { placeholder: string }) {
   );
 }
 
-
 export default function TuitionListings() {
+  const [listings, setListings] = useState(tuitionListings);
   const [filters, setFilters] = useState({
     subjects: ["English", "Mathematics", "Science", "Chinese"],
-    levels: ["Primary", "Secondary"],
+    levels: ["Primary"],
   });
   const [sortOption, setSortOption] = useState("new");
   const handleFilterChange = (type: "subjects" | "levels", value: string) => {
@@ -155,7 +156,26 @@ export default function TuitionListings() {
       return { ...prev, [type]: updatedValues };
     });
   };
-  const sortedListings = [...tuitionListings].sort((a, b) => {
+  const addListingController = (listing: {
+    id: number;
+    time: string;
+    title: string;
+    location: string;
+    duration: string;
+    price: string;
+    averagePrice: number;
+    status: string;
+    level: string;
+    subject: string;
+  }) => {
+    setListings((prev) => {
+      return [...prev, listing];
+    });
+    console.log(listings);
+    console.log(sortedListings);
+  };
+
+  const sortedListings = [...listings].slice().sort((a, b) => {
     if (sortOption === "price-asc") {
       return a.averagePrice - b.averagePrice;
     } else if (sortOption === "price-desc") {
@@ -163,11 +183,13 @@ export default function TuitionListings() {
     }
     return b.id - a.id; // Default to newest first
   });
-  const filteredListings = sortedListings.filter(
-    (listing) =>
-      filters.subjects.includes(listing.subject) &&
-      filters.levels.includes(listing.level)
-  );
+  const filteredListings = sortedListings
+    .slice()
+    .filter(
+      (listing) =>
+        filters.subjects.includes(listing.subject) &&
+        filters.levels.includes(listing.level)
+    );
   return (
     <motion.section>
       <div className="flex flex-col md:flex-row gap-4 p-4 sm:p-6 bg-customLightYellow min-h-screen">
@@ -189,24 +211,25 @@ export default function TuitionListings() {
 
           <h2 className="font-semibold mt-6 mb-4">Level</h2>
           <div className="space-y-2">
-            {["Primary", "Secondary", "Junior College", "University/Poly"].map(
-              (level) => (
-                <div key={level} className="flex items-center gap-2">
-                  <Checkbox
-                    defaultChecked={filters.levels.includes(level)}
-                    onChange={() => handleFilterChange("levels", level)}
-                  >
-                    <span className={"text-customDarkBlue"}>{level}</span>
-                  </Checkbox>
-                </div>
-              )
-            )}
+            {["Primary"].map((level) => (
+              <div key={level} className="flex items-center gap-2">
+                <Checkbox
+                  defaultChecked={filters.levels.includes(level)}
+                  onChange={() => handleFilterChange("levels", level)}
+                >
+                  <span className={"text-customDarkBlue"}>{level}</span>
+                </Checkbox>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row justify-between mb-4 gap-2">
             <Input placeholder="Search" />
+            <AddAssignmentButton
+              addListingController={addListingController}
+            ></AddAssignmentButton>
             <div className="flex gap-2">
               {[
                 { label: "New", value: "new" },
@@ -244,7 +267,6 @@ export default function TuitionListings() {
                   exit={{ opacity: 0 }}
                 >
                   <AssignmentCard {...listing} />
-                  
                 </motion.div>
               ))}
             </AnimatePresence>

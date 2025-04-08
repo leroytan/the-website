@@ -13,7 +13,6 @@ import {
   Filter,
   GraduationCap,
 } from "lucide-react";
-import Header from "@/components/Header";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,10 +33,10 @@ const mockTutors: Tutor[] = [
   {
     id: 1,
     name: "John Doe",
-    subjects: ["Mathematics", "Physics"],
-    levels: ["Primary 5", "Primary 6", "Secondary 1"],
+    subjects: ["Mathematics"],
+    levels: ["Primary 5", "Primary 6"],
     rating: 4.8,
-    ratePerHour: 30,
+    ratePerHour: 35,
     imageUrl: "/placeholder.svg",
     experience: "5 years",
     availability: "Weekdays, Evenings",
@@ -45,7 +44,7 @@ const mockTutors: Tutor[] = [
   {
     id: 2,
     name: "Jane Smith",
-    subjects: ["English", "Literature"],
+    subjects: ["English"],
     levels: ["Primary 3", "Primary 4", "Primary 5"],
     rating: 4.9,
     ratePerHour: 35,
@@ -56,10 +55,10 @@ const mockTutors: Tutor[] = [
   {
     id: 3,
     name: "Mike Johnson",
-    subjects: ["Chemistry", "Biology"],
-    levels: ["Secondary 2", "Secondary 3", "Secondary 4"],
+    subjects: ["English, Chinese"],
+    levels: ["Primary 1", "Primary 2", "Primary 3"],
     rating: 4.7,
-    ratePerHour: 28,
+    ratePerHour: 30,
     imageUrl: "/placeholder.svg",
     experience: "3 years",
     availability: "Flexible",
@@ -67,10 +66,10 @@ const mockTutors: Tutor[] = [
   {
     id: 4,
     name: "Sarah Lee",
-    subjects: ["History", "Geography"],
+    subjects: ["Science"],
     levels: ["Primary 4", "Primary 5", "Primary 6"],
     rating: 4.6,
-    ratePerHour: 25,
+    ratePerHour: 35,
     imageUrl: "/placeholder.svg",
     experience: "4 years",
     availability: "Weekdays, Afternoons",
@@ -78,10 +77,10 @@ const mockTutors: Tutor[] = [
   {
     id: 5,
     name: "David Chen",
-    subjects: ["Computer Science", "Mathematics"],
-    levels: ["Secondary 3", "Secondary 4", "Junior College"],
+    subjects: ["Mathematics"],
+    levels: ["Primary 1", "Primary 2", "Primary 3"],
     rating: 4.9,
-    ratePerHour: 40,
+    ratePerHour: 30,
     imageUrl: "/placeholder.svg",
     experience: "8 years",
     availability: "Evenings, Weekends",
@@ -89,10 +88,10 @@ const mockTutors: Tutor[] = [
   {
     id: 6,
     name: "Lexus Tan",
-    subjects: ["Mathematics", "Physics"],
-    levels: ["Secondary 1", "Secondary 2", "Secondary 3", "Secondary 4", "Junior College"],
+    subjects: ["Mathematics", "English"],
+    levels: ["Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5", "Primary 6"],
     rating: 4.8,
-    ratePerHour: 30,
+    ratePerHour: 35,
     imageUrl: "/placeholder.svg",
     experience: "5 years",
     availability: "Weekdays, Evenings",

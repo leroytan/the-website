@@ -35,10 +35,10 @@ const ChatApp = () => {
             <AssignmentCard
               id={4}
               time={"FRI 07:00 PM"}
-              title={"Sec 2 Math"}
+              title={"P5 Math"}
               location={"662C Jurong West Street 64 643662"}
               duration={"1.5h"}
-              price={"$30-45/h"}
+              price={"$35-45/h"}
               averagePrice={35}
               status={"apply"}
               level={"Secondary"}
