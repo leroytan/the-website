@@ -37,10 +37,10 @@ class CreatedTutorProfile(BaseModel):
     levelsTeachable: list[str]
     specialSkills: list[str]
 
+#TODO: Decide which fields in tutor are required and which are optional
 class TutorProfile(BaseModel):
     id: int
     name: str
-    contact: str
     email: str
     photoUrl: str | None
     highestEducation: str | None

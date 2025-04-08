@@ -24,7 +24,7 @@ class User(Base, SerializerMixin):
 
     tutorRole = relationship('Tutor', back_populates='user', uselist=False)
 
-
+#TODO: Decide which fields in tutor are required and which are optional
 class Tutor(Base):
     """Tutor-specific role model"""
     __tablename__ = 'Tutor'
