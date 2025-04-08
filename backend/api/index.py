@@ -1,6 +1,5 @@
-# Import the routers
-from api.router.auth import router as auth_router
-from api.router.tutor import router as tutor_router
+from api.router.routers import routers
+from api.storage.models import Subject
 from api.storage.storage_service import StorageService
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,8 +11,8 @@ StorageService.init_db()
 ### Create FastAPI instance with custom docs and openapi url
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
-app.include_router(tutor_router)
-app.include_router(auth_router)
+for router in routers:
+    app.include_router(router)
 
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -22,7 +21,17 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
             status_code=404,
             content={"message": "Error: The requested route or method does not exist."}
         )
-    return await app.default_exception_handler(request, exc)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail}
+    )
+
+@app.get('/api/test')
+async def test():
+    query = {"id": "1"}
+    update = {"name": "Algebra"}
+    with Session(StorageService.engine) as session:
+        return StorageService.update(session, query, update, Subject)
 
 app.add_middleware(
     CORSMiddleware,

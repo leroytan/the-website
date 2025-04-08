@@ -1,6 +1,3 @@
-from typing import List, Optional
-
-from api.storage.models import UserType
 from pydantic import BaseModel
 
 
@@ -8,35 +5,48 @@ from pydantic import BaseModel
 class LoginRequest(BaseModel):
     email: str
     password: str
-    userType: UserType
 
 class SignupRequest(BaseModel):
     email: str
     password: str
     name: str
-    userType: UserType
 
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photoUrl: str | None
     rate: str | None
-    rating: int | None
+    rating: float | None
     subjectsTeachable: list[str]
     levelsTeachable: list[str]
     experience: str | None
     availability: str | None
 
+class CreatedTutorProfile(BaseModel):
+    id: int
+    photoUrl: str | None
+    highestEducation: str | None
+    availability: str | None
+    resumeUrl: str | None
+    rate: str | None
+    location: str | None
+    rating: float | None
+    aboutMe: str | None
+    experience: str | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    specialSkills: list[str]
+
+#TODO: Decide which fields in tutor are required and which are optional
 class TutorProfile(BaseModel):
     id: int
     name: str
-    contact: str
     email: str
     photoUrl: str | None
     highestEducation: str | None
     rate: str | None
     location: str | None
-    rating: int | None
+    rating: float | None
     aboutMe: str | None
     subjectsTeachable: list[str]
     levelsTeachable: list[str]
@@ -44,20 +54,14 @@ class TutorProfile(BaseModel):
     resumeUrl: str | None
     experience: str | None
     availability: str | None
-    isProfileComplete: bool
 
 class ClientTutorRequest(BaseModel):
     id: str
     tutorId: int
-    clientId: int
+    requesterId: int
     datetime: str
     status: str
 
-class TutorSearchQuery(BaseModel):
-    query: str
-    subjects: list[str]
-    levels: list[str]
-    
 class CoursePublicSummary(BaseModel):
     id: str
     name: str
@@ -100,16 +104,28 @@ class ClientProfile(BaseModel):
     subjects: list[str]
     contact: str
     email: str
-    isProfileComplete: bool
+
+class AssignmentSlot(BaseModel):
+    id: int
+    day: str
+    startTime: str
+    endTime: str
 
 class Assignment(BaseModel):
     id: int
     datetime: str
-    clientId: int
+    title: str
+    requesterId: int
     tutorId: int
     estimatedRate: str
     weeklyFrequency: int
-    availableSlots: list[str]
+    availableSlots: list[AssignmentSlot]
     specialRequests: str | None
+    subjects: list[str]
+    levels: list[str]
     status: str
-    
+
+class SearchQuery(BaseModel):
+    query: str | None
+    filters: list[str] | None
+    sorts: list[str] | None

@@ -3,20 +3,28 @@ name = "the-website-backend"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "chongtzezhao",email = "47619363+chongtzezhao@users.noreply.github.com"}
+    {name = "Your Name",email = "you@example.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4.0"
 dependencies = [
-    "fastapi (>=0.115.8,<0.116.0)",
-    "sqlalchemy (>=2.0.38,<3.0.0)",
+    "fastapi (>=0.115.11,<0.116.0)",
+    "sqlalchemy (>=2.0.29,<3.0.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
-    "sqlalchemy-utils (>=0.41.2,<0.42.0)",
-    "python-jose (>=3.3.0,<4.0.0)",
-    "bcrypt (>=4.2.1,<5.0.0)",
-    "pytest (>=8.3.4,<9.0.0)",
+    "python-jose (>=3.4.0,<4.0.0)",
+    "bcrypt (>=4.3.0,<5.0.0)",
+    "pytest (>=8.3.5,<9.0.0)",
     "uvicorn (>=0.34.0,<0.35.0)",
-    "python-dotenv (>=1.0.1,<2.0.0)"
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "pydantic-settings (>=2.8.1,<3.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "sqlalchemy-serializer (>=1.4.22,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [
+    { include = "api", from = "." },
+    { include = "test", from = "." }
 ]
 
 

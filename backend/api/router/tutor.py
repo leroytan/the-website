@@ -1,15 +1,17 @@
 import api.router.mock as mock
 from api.config import settings
 from api.logic.tutor_logic import TutorLogic
-from api.router.models import (TutorProfile, TutorPublicSummary,
-                               TutorSearchQuery)
-from fastapi import APIRouter, Request, Response
+from api.router.auth_utils import RouterAuthUtils
+from api.router.models import (CreatedTutorProfile, SearchQuery, TutorProfile,
+                               TutorPublicSummary)
+from api.storage.models import User
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
 
 @router.get("/api/tutors")
-async def search_tutors(query: str = None, subjects: list = [], levels: list = []) -> list[TutorPublicSummary]:
+async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> list[TutorPublicSummary]:
     """
     Handles the searching of specific tutors using fields such as subjects and levels.
 
@@ -20,14 +22,18 @@ async def search_tutors(query: str = None, subjects: list = [], levels: list = [
         HTTPException: If the login credentials are invalid or the login process 
                         fails, an HTTP error is raised with an appropriate status code.
     """
-
     if settings.is_use_mock:
         return mock.search_tutors()
+    
+    # Parse the filters and sorts from the query string
+    # TODO: Implement a more robust parsing method
+    filter_ids = filters.split(",") if filters else []
+    sort_ids = sorts.split(",") if sorts else []
 
-    search_query = TutorSearchQuery(
+    search_query = SearchQuery(
         query=query,
-        subjects=subjects,
-        levels=levels,
+        filters=filter_ids,
+        sorts=sort_ids,
     )
 
     results = TutorLogic.search_tutors(search_query)
@@ -36,44 +42,55 @@ async def search_tutors(query: str = None, subjects: list = [], levels: list = [
 
 
 @router.post("/api/tutors/create")
-async def create_tutor(tutorProfile: TutorProfile) -> TutorProfile:
-    # TODO: Enforce login authentication for tutors
+async def create_tutor(
+    tutorProfile: CreatedTutorProfile,
+    user: User = Depends(RouterAuthUtils.get_current_user)
+) -> TutorProfile:
     # Returns the newly created tutor profile
 
     if settings.is_use_mock:
         return mock.create_tutor()
-
-    raise NotImplementedError("Tutor creation is not yet implemented.")
+    
+    if user.id != tutorProfile.id:
+        raise HTTPException(status_code=403, detail="Unauthorized action")
+    
+    return TutorLogic.create_tutor(tutorProfile)
 
 @router.get("/api/tutors/profile/{id}")
-async def get_tutor_profile(id: str = None) -> TutorPublicSummary | TutorProfile | None:
-    # TODO: find a way to use login authorization to differentiate between public and private profiles
+async def get_tutor_profile(id: str | int, request: Request) -> TutorPublicSummary | TutorProfile | None:
     
     if settings.is_use_mock:
         return mock.get_tutor_profile()
     
-    raise NotImplementedError("Tutor profile retrieval is not yet implemented.")
+    try:
+        user = await RouterAuthUtils.get_current_user(request)
+        is_self = user and str(user.id) == str(id)
+    except HTTPException:
+        is_self = False
+    return TutorLogic.find_profile_by_id(id, is_self=is_self)
 
 
 @router.put("/api/tutors/profile/{id}")
-async def update_tutor_profile(tutorProfile: TutorProfile, id: str = None) -> TutorProfile:
-    # TODO: Enforce login authorization to access private profiles
+async def update_tutor_profile(
+    tutorProfile: TutorProfile,
+    id: str | int,
+    user: User = Depends(RouterAuthUtils.get_current_user)
+) -> TutorProfile:
     # Returns the updated private profile
 
     if settings.is_use_mock:
         return mock.update_tutor_profile()
     
-    raise NotImplementedError("Tutor profile update is not yet implemented.")
+    if str(user.id) != str(id):
+        raise HTTPException(status_code=403, detail="Unauthorized action")
+    
+    return TutorLogic.update_profile(tutorProfile, id)
 
-class IncomingTutorRequest(BaseModel):
-    clientId: int
-    datetime: str
-
-@router.post("/api/tutors/request{id}")
-async def request_tutor(tutorRequest: IncomingTutorRequest, id: str = None) -> Response:
+@router.post("/api/tutors/request/{id}")
+async def request_tutor(id: str | int, user: User = Depends(RouterAuthUtils.get_current_user)):
     # TODO: Enforce login authentication for clients
 
     if settings.is_use_mock:
         return Response(status_code=200)
-
-    raise NotImplementedError("Tutor request is not yet implemented.")
+    
+    return TutorLogic.submit_request(user.id, id)
