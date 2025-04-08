@@ -9,7 +9,11 @@ router = APIRouter()
 
 
 @router.post("/api/auth/login")
-async def login(request: Request, response: Response):
+async def login(
+    login_request: LoginRequest,
+    response: Response,
+    _ = Depends(RouterAuthUtils.assert_logged_out)
+):
     """
     Handles user login by validating the provided credentials and generating 
     an authentication token. The token is then set as an HTTP-only cookie in 
@@ -24,21 +28,18 @@ async def login(request: Request, response: Response):
         HTTPException: If the login credentials are invalid or the login process 
                         fails, an HTTP error is raised with an appropriate status code.
     """
-    data = await request.json()
 
-    login_data = LoginRequest(
-        email=data["email"],
-        password=data["password"],
-        userType=Utils.str_to_user_type(data["userType"].upper())
-    )
-
-    tokens = Logic.handle_login(login_data=login_data)
+    tokens = Logic.handle_login(login_data=login_request)
     RouterAuthUtils.update_tokens(tokens, response)
 
     return {"message": "Logged in successfully"}
 
 @router.post("/api/auth/signup")
-async def signup(signup_request: SignupRequest, response: Response):
+async def signup(
+    signup_request: SignupRequest,
+    response: Response,
+    _ = Depends(RouterAuthUtils.assert_logged_out)
+):
     """
     Handles user registration by processing the provided signup data, 
     creating a new user account, and generating an authentication token. 
@@ -65,7 +66,7 @@ async def signup(signup_request: SignupRequest, response: Response):
     
 
 @router.post("/api/auth/logout")
-async def logout(response: Response):
+async def logout(response: Response, _ = Depends(RouterAuthUtils.assert_not_logged_out)):
     RouterAuthUtils.clear_tokens(response)
     return {"message": "Logged out successfully"}
 
@@ -75,7 +76,7 @@ async def protected_route(current_user: User = Depends(RouterAuthUtils.get_curre
     return {"message": "You are logged in as " + current_user.email}
 
 @router.post("/api/auth/refresh")
-async def refresh(request: Request, response: Response):
+async def refresh(request: Request, response: Response, _ = Depends(RouterAuthUtils.get_current_user)):
     refresh_token = request.cookies.get("refresh_token")
 
     tokens = Logic.refresh_tokens(refresh_token)
@@ -83,10 +84,18 @@ async def refresh(request: Request, response: Response):
 
     return {"message": "Tokens refreshed successfully"}
 
-@router.post("/api/auth/check")
+@router.get("/api/auth/check")
 async def check(_: User = Depends(RouterAuthUtils.get_current_user)):
     return {"message": "Valid token"}
 
 @router.get("/api/auth/idk")
 def auth_idk():
     return {"message": "Hello from FastAPI auth router"}
+
+@router.get("/api/auth/me")
+def me(user: User = Depends(RouterAuthUtils.get_current_user)):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+    }

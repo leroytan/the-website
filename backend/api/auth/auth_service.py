@@ -5,7 +5,7 @@ from api.auth.auth_interface import AuthInterface
 from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES, JWT_ALGORITHM,
                              JWT_SECRET_KEY, REFRESH_TOKEN_EXPIRE_MINUTES,
                              REFRESH_TOKEN_SECRET_KEY)
-from api.auth.models import TokenData
+from api.auth.models import TokenData, TokenPair
 from api.common.utils import Utils
 from jose import jwt
 from pydantic import ValidationError
@@ -60,7 +60,7 @@ class AuthService(AuthInterface):
         return TokenData(**payload)
 
     @staticmethod
-    def refresh_tokens(refresh_token: str) -> dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> TokenPair:
         # Verify refresh token
         token_data = AuthService.verify_token(refresh_token, is_refresh=True)
         
@@ -68,7 +68,7 @@ class AuthService(AuthInterface):
         new_access_token = AuthService.create_access_token(token_data)
         new_refresh_token = AuthService.create_refresh_token(token_data)
         
-        return {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token
-        }
+        return TokenPair(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token
+        )

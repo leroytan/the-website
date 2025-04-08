@@ -1,5 +1,4 @@
 import api.router.auth
-import api.router.client
 import api.router.course
 import api.router.mock
 import api.router.models

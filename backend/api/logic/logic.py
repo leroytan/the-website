@@ -19,7 +19,7 @@ class Logic:
         with Session(StorageService.engine) as session:
             # Check if user exists
             user = StorageService.find(session, {"email": login_data.email}, User, find_one=True)
-            if not user or not AuthService.verify_password(login_data.password, user.password_hash):
+            if not user or not AuthService.verify_password(login_data.password, user.passwordHash):
                 raise HTTPException(status_code=401, detail="Incorrect email or password")
     
         token_data = TokenData(email=login_data.email)
@@ -44,7 +44,7 @@ class Logic:
                     User(
                         email=signup_data.email,
                         name=signup_data.name,
-                        password_hash=hashed_password,
+                        passwordHash=hashed_password,
                     )
                 )
             except IntegrityError as e:
@@ -84,7 +84,7 @@ class Logic:
 
     
     @staticmethod
-    def refresh_tokens(refresh_token: str) -> dict[str, str]:
+    def refresh_tokens(refresh_token: str) -> TokenPair:
         try:
             return AuthService.refresh_tokens(refresh_token)
         except (JWTError, ValueError, ValidationError) as e:

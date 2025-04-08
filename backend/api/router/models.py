@@ -58,7 +58,7 @@ class TutorProfile(BaseModel):
 class ClientTutorRequest(BaseModel):
     id: str
     tutorId: int
-    clientId: int
+    requesterId: int
     datetime: str
     status: str
 
@@ -108,7 +108,7 @@ class ClientProfile(BaseModel):
 class Assignment(BaseModel):
     id: int
     datetime: str
-    clientId: int
+    requesterId: int
     tutorId: int
     estimatedRate: str
     weeklyFrequency: int

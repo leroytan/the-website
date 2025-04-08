@@ -1,11 +1,44 @@
 from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
                              REFRESH_TOKEN_EXPIRE_MINUTES)
+from api.auth.models import TokenPair
 from api.logic.logic import Logic
 from api.storage.models import User
-from fastapi import Request, Response
+from fastapi import HTTPException, Request, Response
 
 
 class RouterAuthUtils:
+
+    @staticmethod
+    def assert_logged_out(request: Request) -> None:
+        """
+        Check if the user is logged out by verifying the presence of access and refresh tokens.
+        This method checks if both tokens are missing from the response cookies.
+        Args:
+            response (Response): The response object to check for tokens.
+        Returns:
+            bool: True if the user is logged out (both tokens are missing), False otherwise.
+        """
+        if request.cookies.get("access_token") or request.cookies.get("refresh_token"):
+            raise HTTPException(
+                status_code=401,
+                detail="User is already logged in",
+            )
+        
+    @staticmethod
+    def assert_not_logged_out(request: Request) -> None:
+        """
+        Check if the user is logged in by verifying the presence of access and refresh tokens.
+        This method checks if both tokens are present in the request cookies.
+        Args:
+            response (Response): The response object to check for tokens.
+        Returns:
+            bool: True if the user is logged out (both tokens are missing), False otherwise.
+        """
+        if not request.cookies.get("access_token") or not request.cookies.get("refresh_token"):
+            raise HTTPException(
+                status_code=200,
+                detail="User is already logged out",
+            )
 
     @staticmethod
     def clear_tokens(response: Response) -> None:
@@ -13,7 +46,7 @@ class RouterAuthUtils:
         response.delete_cookie("refresh_token")
 
     @staticmethod
-    def update_tokens(tokens: dict[str, str], response: Response) -> None:
+    def update_tokens(tokens: TokenPair, response: Response) -> None:
         """
         Update the response with new access and refresh tokens.
         This method sets the tokens as HTTP-only cookies in the response,
@@ -24,7 +57,7 @@ class RouterAuthUtils:
         """
         response.set_cookie(
             key="access_token",
-            value=tokens["access_token"],
+            value=tokens.access_token,
             httponly=True,  # Prevent JavaScript access
             secure=True,    # Use HTTPS in production
             samesite="strict",  # CSRF protection
@@ -32,7 +65,7 @@ class RouterAuthUtils:
         )
         response.set_cookie(
             key="refresh_token",
-            value=tokens["refresh_token"],
+            value=tokens.refresh_token,
             httponly=True,  # Prevent JavaScript access
             secure=True,    # Use HTTPS in production
             samesite="strict",  # CSRF protection

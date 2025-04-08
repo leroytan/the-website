@@ -63,7 +63,7 @@ class TutorRequest(Base):
     datetime = Column(DateTime, default=datetime.datetime.now)
     requesterId = Column(Integer, ForeignKey('User.id'))  # Foreign key to requester
     tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to tutor
-    status = Column(ENUM(TutorRequestStatus), nullable=False)
+    status = Column(ENUM(TutorRequestStatus), default=TutorRequestStatus.PENDING)
 
     # Relationships
     requester = relationship('User', foreign_keys=[requesterId])
@@ -90,7 +90,7 @@ class Assignment(Base):
     estimatedRate = Column(String, nullable=False)
     weeklyFrequency = Column(Integer, nullable=False)
     specialRequests = Column(String, nullable=True)
-    status = Column(ENUM(AssignmentStatus), nullable=False)
+    status = Column(ENUM(AssignmentStatus), default=AssignmentStatus.OPEN)
 
     # Relationships
     requester = relationship('User', foreign_keys=[requesterId])
@@ -134,7 +134,7 @@ class AssignmentRequest(Base):
     assignmentId = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
     datetime = Column(DateTime, default=datetime.datetime.now)
     tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
-    status = Column(ENUM(AssignmentRequestStatus), nullable=False)
+    status = Column(ENUM(AssignmentRequestStatus), default=AssignmentRequestStatus.PENDING)
 
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutorId])

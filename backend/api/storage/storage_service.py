@@ -5,16 +5,14 @@ from api.exceptions import TableEmptyError, UserAlreadyExistsError
 from api.storage.connection import engine as default_engine
 from api.storage.models import Base, User
 from api.storage.populate import insert_test_data
-from api.storage.storage_interface import StorageInterface
 # from api.storage.validate import check_data
 from sqlalchemy import ColumnElement, Engine, and_, or_, select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy_utils import create_database, database_exists
 
 
-class StorageService(StorageInterface):
+class StorageService:
 
     engine: Engine = None
 

@@ -1,6 +1,5 @@
 import api.router.mock as mock
 from api.config import settings
-from api.logic.client_logic import ClientLogic
 from api.router.models import Assignment
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
