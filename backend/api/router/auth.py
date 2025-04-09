@@ -76,7 +76,7 @@ async def protected_route(current_user: User = Depends(RouterAuthUtils.get_curre
     return {"message": "You are logged in as " + current_user.email}
 
 @router.post("/api/auth/refresh")
-async def refresh(request: Request, response: Response, _ = Depends(RouterAuthUtils.get_current_user)):
+async def refresh(request: Request, response: Response):
     refresh_token = request.cookies.get("refresh_token")
 
     tokens = Logic.refresh_tokens(refresh_token)
