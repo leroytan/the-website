@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Request, Response
 
-from api.router.models import ModuleReviews
-
 router = APIRouter()
 
 @router.get("/api/module-reviews")

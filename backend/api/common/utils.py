@@ -1,6 +1,5 @@
 from typing import Any
 
-from api.storage.models import UserType
 
 class Utils:
 
@@ -24,17 +23,3 @@ class Utils:
         """Validate multiple arguments at once."""
         for field_name, value in kwargs.items():
             cls.__validate_non_empty(value, field_name)
-
-    @staticmethod
-    def str_to_user_type(userType: str) -> UserType:
-        # Convert "TUTEE" to "CLIENT" for consistency
-        if userType.upper() == "TUTEE":
-            userType = "CLIENT"
-        try:
-            return UserType(userType)
-        except ValueError:
-            raise ValueError("Invalid user type")
-        
-    @staticmethod
-    def user_type_to_str(userType: UserType) -> str:
-        return userType.name

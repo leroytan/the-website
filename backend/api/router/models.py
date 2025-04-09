@@ -1,41 +1,73 @@
 from pydantic import BaseModel
-from typing import List, Optional
-from api.storage.models import UserType
+
 
 # Pydantic models
 class LoginRequest(BaseModel):
     email: str
     password: str
-    userType: UserType
 
 class SignupRequest(BaseModel):
     email: str
     password: str
     name: str
-    userType: UserType
 
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
-    photoUrl: Optional[str]
-    rate: Optional[float]
-    rating: Optional[int]
-    subjectsTeachable: List[str]
-    levelsTeachable: List[str]
-    experience: Optional[str]
-    availability: Optional[str]
+    photoUrl: str | None
+    rate: str | None
+    rating: float | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    experience: str | None
+    availability: str | None
 
-class TutorSearchQuery(BaseModel):
-    query: str
-    subjects: list[str]
-    levels: list[str]
-    
+class CreatedTutorProfile(BaseModel):
+    id: int
+    photoUrl: str | None
+    highestEducation: str | None
+    availability: str | None
+    resumeUrl: str | None
+    rate: str | None
+    location: str | None
+    rating: float | None
+    aboutMe: str | None
+    experience: str | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    specialSkills: list[str]
+
+#TODO: Decide which fields in tutor are required and which are optional
+class TutorProfile(BaseModel):
+    id: int
+    name: str
+    email: str
+    photoUrl: str | None
+    highestEducation: str | None
+    rate: str | None
+    location: str | None
+    rating: float | None
+    aboutMe: str | None
+    subjectsTeachable: list[str]
+    levelsTeachable: list[str]
+    specialSkills: list[str]
+    resumeUrl: str | None
+    experience: str | None
+    availability: str | None
+
+class ClientTutorRequest(BaseModel):
+    id: str
+    tutorId: int
+    requesterId: int
+    datetime: str
+    status: str
+
 class CoursePublicSummary(BaseModel):
     id: str
     name: str
     description: str
     progress: float
-    fileLink: Optional[str]
+    fileLink: str | None
 
 class CourseModule(BaseModel):
     courseOverview: str
@@ -64,4 +96,36 @@ class Module(BaseModel):
     name: str
     reviews: list[Review]
 
-    
+class ClientProfile(BaseModel):
+    id: int
+    name: str
+    school: str | None
+    level: str | None
+    subjects: list[str]
+    contact: str
+    email: str
+
+class AssignmentSlot(BaseModel):
+    id: int
+    day: str
+    startTime: str
+    endTime: str
+
+class Assignment(BaseModel):
+    id: int
+    datetime: str
+    title: str
+    requesterId: int
+    tutorId: int
+    estimatedRate: str
+    weeklyFrequency: int
+    availableSlots: list[AssignmentSlot]
+    specialRequests: str | None
+    subjects: list[str]
+    levels: list[str]
+    status: str
+
+class SearchQuery(BaseModel):
+    query: str | None
+    filters: list[str] | None
+    sorts: list[str] | None
