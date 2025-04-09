@@ -1,56 +1,65 @@
-'use client'
+"use client";
+import "@/app/globals.css";
+import DropDown from "@/components/dropdown";
+import { apiClient } from "@/logic/apiClient";
+import { useAuth } from "@/logic/AuthContent";
+import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
+import { Inter } from "next/font/google";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
-import DropDown from '@/components/dropdown'
-import { motion } from 'framer-motion'
-import { Eye, EyeOff } from 'lucide-react'
-import { Inter } from 'next/font/google'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import React, { useState } from 'react'
+const inter = Inter({ subsets: ["latin"] });
 
-const inter = Inter({ subsets: ['latin'] })
-
-const ROLES = ['Tutor', 'Tutee/Parent'] as const
+const ROLES = ["Tutor", "Tutee/Parent"] as const;
 
 export default function SignupPage() {
-  const router = useRouter()
+  const router = useRouter();
+  const { isAuthenticated, logout } = useAuth()
 
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')  // New state for password confirmation
-  const [showPassword, setShowPassword] = useState(false)
-  const [userType, setUserType] = useState('Select Role')
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // New state for password confirmation
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userType, setUserType] = useState("Select Role");
 
-
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match.")
-      return
+      setErrorMessage("Passwords do not match.");
+      return;
     }
 
-    console.log('Sign up attempted with:', { name, email, password, userType })
+    console.log("Sign up attempted with:", { name, email, password, userType });
 
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, userType })
-    })
+    const res = await apiClient("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, userType }),
+    }, logout);
 
     if (res.status === 400) {
-      alert('User with same email and role already exists.')
-      return
+      setErrorMessage("User with the same email and role already exists.");
+      return;
     }
-
-    router.push('/protected')
-  }
+    if (res.ok) {
+      router.push("/protected");
+    } else {
+      setErrorMessage("Error signing up. Please try again later.");
+    }
+  };
 
   return (
-    <div className={`min-h-screen bg-[#fff2de] flex flex-col items-center justify-center px-4 py-8 ${inter.className}`}>
+    <div
+      className={`min-h-screen bg-[#fff2de] flex flex-col items-center justify-center px-4 py-8 ${inter.className}`}
+    >
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -66,10 +75,17 @@ export default function SignupPage() {
             className="w-32 sm:w-40"
           />
         </div>
-        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">Sign Up for T.H.E.</h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">
+          Sign Up for T.H.E.
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="name" className="block text-sm font-medium text-[#4a58b5] mb-1">Name</label>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-[#4a58b5] mb-1"
+            >
+              Name
+            </label>
             <input
               type="text"
               id="name"
@@ -81,7 +97,12 @@ export default function SignupPage() {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-[#4a58b5] mb-1">Email</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-[#4a58b5] mb-1"
+            >
+              Email
+            </label>
             <input
               type="email"
               id="email"
@@ -93,16 +114,21 @@ export default function SignupPage() {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium text-[#4a58b5] mb-1">Password</label>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-[#4a58b5] mb-1"
+            >
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
                 value={password}
-                onChange={e => {
-                  setPassword(e.target.value)
+                onChange={(e) => {
+                  setPassword(e.target.value);
                   if (password !== confirmPassword) {
-                    setShowPassword(true)
+                    setShowPassword(true);
                   }
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
@@ -115,16 +141,25 @@ export default function SignupPage() {
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-500" />
+                )}
               </button>
             </div>
           </div>
 
           <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#4a58b5] mb-1">Confirm Password</label>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-[#4a58b5] mb-1"
+            >
+              Confirm Password
+            </label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showConfirmPassword ? "text" : "password"}
                 id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => {
@@ -136,24 +171,33 @@ export default function SignupPage() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-500" />
+                )}
               </button>
             </div>
             {password !== confirmPassword && confirmPassword && (
-              <p className="text-sm text-red-500 mt-2">Passwords do not match</p>
+              <p className="text-sm text-red-500 mt-2">
+                Passwords do not match
+              </p>
             )}
           </div>
-          <DropDown 
-            stringOnDisplay={userType} 
-            stateController={setUserType} 
+          <DropDown
+            stringOnDisplay={userType}
+            stateController={setUserType}
             iterable={[...ROLES]}
           />
-          
           <br />
+          {errorMessage && (
+            <p className="text-sm text-red-500 mb-4">{errorMessage}</p>
+          )}
+          
           <motion.button
             type="submit"
             whileHover={{ scale: 1.05 }}
@@ -164,7 +208,7 @@ export default function SignupPage() {
           </motion.button>
         </form>
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link href="/login" className="text-[#fc6453] hover:underline">
             Log in
           </Link>
@@ -179,5 +223,5 @@ export default function SignupPage() {
         &copy; 2024 Teach . Honour . Excel. All rights reserved.
       </motion.p>
     </div>
-  )
+  );
 }

@@ -1,51 +1,50 @@
-'use client'
+"use client";
+import "@/app/globals.css";
+import { motion } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
+import { Inter } from "next/font/google";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 
-import { motion } from 'framer-motion'
-import { Eye, EyeOff } from 'lucide-react'
-import { Inter } from 'next/font/google'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
+import { useRouter } from "next/navigation";
+import { apiClient } from "@/logic/apiClient";
+import { useAuth } from "@/logic/AuthContent";
 
-import { useRouter } from 'next/navigation'
-
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function LoginPage() {
-  const router = useRouter()
+  const router = useRouter();
+  const { login, logout } = useAuth()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [userType, setUserType] = useState('tutee')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [userType, setUserType] = useState("tutee");
+
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    console.log('Login attempted with:', { email, password, userType })
+    console.log("Login attempted with:", { email, password, userType });
 
-    console.log('Sending login request...')
-    
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, userType })
-    })
+    console.log("Sending login request...");
 
-    console.log('Login response:', res)
-
-    // if status code 401, show error message
-    if (res.status === 401) {
-      alert('Invalid email or password')
-      return
+    try {
+      await login(email, password, userType);
+      console.log("Login successful");
+      router.push("/");
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      setErrorMessage(error.message || "An error occurred during login.");
     }
-
-    // if successful, redirect to protected page
-    router.push('/protected')
-  }
+  };
 
   return (
-    <div className={`min-h-screen bg-[#fff2de] flex flex-col items-center justify-center px-4 ${inter.className}`}>
+    <div
+      className={`min-h-screen bg-[#fff2de] flex flex-col items-center justify-center px-4 ${inter.className}`}
+    >
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -56,15 +55,19 @@ export default function LoginPage() {
           <Image
             src="/images/logo.png"
             alt="THE Logo"
-          width={150}
+            width={150}
             height={75}
             className="w-32 sm:w-40"
           />
         </div>
-        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">Login to THE</h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#4a58b5] text-center">
+          Login to THE
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-[#4a58b5] mb-2">I am logging in as:</label>
+            <label className="block text-sm font-medium text-[#4a58b5] mb-2">
+              I am logging in as:
+            </label>
             <div className="flex space-x-4">
               <label className="inline-flex items-center">
                 <input
@@ -72,7 +75,7 @@ export default function LoginPage() {
                   className="form-radio text-[#fabb84]"
                   name="userType"
                   value="tutee"
-                  checked={userType === 'tutee'}
+                  checked={userType === "tutee"}
                   onChange={(e) => setUserType(e.target.value)}
                 />
                 <span className="ml-2 text-[#4a58b5]">Tutee/Parent</span>
@@ -83,7 +86,7 @@ export default function LoginPage() {
                   className="form-radio text-[#fabb84]"
                   name="userType"
                   value="tutor"
-                  checked={userType === 'tutor'}
+                  checked={userType === "tutor"}
                   onChange={(e) => setUserType(e.target.value)}
                 />
                 <span className="ml-2 text-[#4a58b5]">Tutor</span>
@@ -91,7 +94,12 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-[#4a58b5] mb-1">Email</label>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-[#4a58b5] mb-1"
+            >
+              Email
+            </label>
             <input
               type="email"
               id="email"
@@ -103,7 +111,12 @@ export default function LoginPage() {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium text-[#4a58b5] mb-1">Password</label>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-[#4a58b5] mb-1"
+            >
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -120,10 +133,17 @@ export default function LoginPage() {
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-500" />
+                )}
               </button>
             </div>
           </div>
+          {errorMessage && (
+            <p className="text-sm text-red-500 mb-4">{errorMessage}</p>
+          )}
           <motion.button
             type="submit"
             whileHover={{ scale: 1.05 }}
@@ -134,7 +154,7 @@ export default function LoginPage() {
           </motion.button>
         </form>
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
-          Don't have an account?{' '}
+          Don't have an account?{" "}
           <Link href="/signup" className="text-[#fc6453] hover:underline">
             Sign up
           </Link>
@@ -149,5 +169,5 @@ export default function LoginPage() {
         &copy; 2024 Teach . Honour . Excel. All rights reserved.
       </motion.p>
     </div>
-  )
+  );
 }
