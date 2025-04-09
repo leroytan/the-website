@@ -16,18 +16,18 @@ import Image from "next/image";
 const tutorProfile = {
   name: "Lexus Tan",
   role: "Tutor",
-  subjects: ["Mathematics, Physics, Computer Science"],
-  rating: 4.8,
-  reviewsCount: 134,
+  subjects: ["Mathematics, English"],
+  rating: 4.5,
+  reviewsCount: 2,
   studentsCount: 42,
   profileImage: "/placeholder.svg?height=200&width=200",
   email: "lexus.tan@example.com",
   phone: "+1234567890",
   location: "Central Singapore",
-  subjectsTeachable: "Mathematics, Physics, Computer Science",
+  subjectsTeachable: "Mathematics, English",
   highestQualification: "Master's Degree",
-  levelsTeachable: "Secondary 1 to Junior College",
-  rate: "$30-$50 per hour depending on subject and level",
+  levelsTeachable: "Primary 1 to Primary 6",
+  rate: "$25-$45 per hour depending on subject and level",
   specialSkills: "Problem-solving techniques, Visual learning methods",
   about: `
     Hi, I'm Lexus, a dedicated tutor with a passion for helping students excel in Math and English. I specialize in breaking complex concepts into simple, easy-to-understand lessons.
@@ -50,7 +50,7 @@ const reviews = [
     rating: 5,
     timeAgo: "2 hours ago",
     text: "Lexus is a fantastic tutor! Always explains with patience and ensures I truly understand the topic. Highly recommend!",
-    profileImage: "https://via.placeholder.com/40",
+    profileImage: "/placeholder.svg?height=40&width=40",
   },
   {
     id: 2,
@@ -58,12 +58,12 @@ const reviews = [
     rating: 4,
     timeAgo: "1 day ago",
     text: "Very structured lessons. Lexus gives clear examples and makes it fun to learn difficult topics.",
-    profileImage: "https://via.placeholder.com/40",
+    profileImage: "/placeholder.svg?height=40&width=40",
   },
 ];
 
 export default function TutorProfile() {
-  const [selectedTab, setSelectedTab] = useState("reviews");
+  const [selectedTab, setSelectedTab] = useState("tutor information");
   const [message, setMessage] = useState("");
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,6 +222,8 @@ export default function TutorProfile() {
                       src={review.profileImage}
                       alt={review.name}
                       className="w-10 h-10 rounded-full"
+                      width={40}
+                      height={40}
                     />
                     <div>
                       <h4 className="text-gray-800 font-semibold">

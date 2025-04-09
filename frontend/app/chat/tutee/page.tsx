@@ -3,10 +3,11 @@ import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { ReactElement, useState } from "react";
 import Image from "next/image";
-import { ArrowLeftToLine } from "lucide-react";
+import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import AssignmentCard from "@/components/assignmentCard";
 
 const ChatApp = () => {
   const chatData = {
@@ -75,6 +76,14 @@ const ChatApp = () => {
       },
     ],
     chatHistory: {
+      "User 1": [
+        {
+          sender: "User",
+          message: "Hello!",
+          time: "Today, 9:52pm",
+          sentByUser: true,
+        },
+      ],
       Anil: [
         {
           sender: "Anil",
@@ -141,10 +150,16 @@ const ChatApp = () => {
   const [selectedChat, setSelectedChat] = useState("Anil");
   type ChatHistoryKeys = keyof typeof chatData.chatHistory;
   const [chatMessages, setChatMessages] = useState<
-    { sender: string; message: string; time: string; sentByUser: boolean }[]
+    {
+      sender: string;
+      message: string | ReactElement;
+      time: string;
+      sentByUser: boolean;
+    }[]
   >(chatData.chatHistory[selectedChat as ChatHistoryKeys]);
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
+  const [showDropup, setShowDropup] = useState(false);
 
   const handleChatSelection = (chatName: React.SetStateAction<string>) => {
     setSelectedChat(chatName);
@@ -161,7 +176,28 @@ const ChatApp = () => {
       setNewMessage("");
     }
   };
+  const handleSendAssignment = () => {
+    const assignment = (
+      <AssignmentCard
+        id={4}
+        time={"FRI 07:00 PM"}
+        title={"P5 Math"}
+        location={"662C Jurong West Street 64 643662"}
+        duration={"1.5h"}
+        price={"$35-45/h"}
+        averagePrice={35}
+        status={"disabled"}
+        level={"Secondary"}
+        subject={"Mathematics"}
+      ></AssignmentCard>
+    );
 
+    setChatMessages([
+      ...chatMessages,
+      { sender: "User", message: assignment, time: "Now", sentByUser: true },
+    ]);
+    setShowDropup(false);
+  };
   return (
     <div className="flex flex-col min-w-[320px] h-screen">
       <div className="flex flex-1 overflow-hidden bg-customLightYellow">
@@ -294,9 +330,7 @@ const ChatApp = () => {
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="ml-4">
                 <p className="text-lg font-semibold">{selectedChat}</p>
-                <p className="text-sm text-gray-500">
-                  Online
-                </p>
+                <p className="text-sm text-gray-500">Online</p>
               </div>
             </div>
             <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
@@ -306,22 +340,39 @@ const ChatApp = () => {
                     key={index}
                     className={chat.sentByUser ? "self-end" : "self-start"}
                   >
-                    <p
-                      className={`p-2 rounded-3xl ${
+                    <div
+                      className={`p-2 rounded-xl ${
                         chat.sentByUser
                           ? "bg-customDarkBlue text-white"
                           : "bg-gray-300"
                       }`}
                     >
                       {chat.message}
-                    </p>
+                    </div>
                     <p className="text-xs text-gray-400 mt-1 flex justify-end">
                       {chat.time}
                     </p>
                   </div>
                 ))}
               </div>
+
               <div className="flex items-center gap-2 mt-auto">
+                <button
+                  className="p-2 bg-gray-300 rounded-full"
+                  onClick={() => setShowDropup(!showDropup)}
+                >
+                  <BookPlusIcon size={24} />
+                </button>
+                {showDropup && (
+                  <div className="absolute mb-28 bg-white shadow-md rounded-lg p-2 w-48">
+                    <button
+                      className="w-full text-left p-2 hover:bg-gray-100"
+                      onClick={handleSendAssignment}
+                    >
+                      P5 Math
+                    </button>
+                  </div>
+                )}
                 <input
                   type="text"
                   placeholder="Type your message here..."

@@ -1,5 +1,6 @@
 'use client'
 
+import DropDown from '@/components/dropdown'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 import { Inter } from 'next/font/google'
@@ -10,7 +11,7 @@ import React, { useState } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 
-const ROLES = ['Tutor', 'Tutee'] as const
+const ROLES = ['Tutor', 'Tutee/Parent'] as const
 
 export default function SignupPage() {
   const router = useRouter()
@@ -21,12 +22,8 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')  // New state for password confirmation
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState('Select Role')
-  const [isOpen, setIsOpen] = useState(false)
 
-  const toggleDropdown = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsOpen(prev => !prev)
-  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +59,7 @@ export default function SignupPage() {
       >
         <div className="flex justify-center mb-6">
           <Image
-            src=""
+            src="/images/logo.png"
             alt="T.H.E. Logo"
             width={150}
             height={75}
@@ -150,35 +147,12 @@ export default function SignupPage() {
               <p className="text-sm text-red-500 mt-2">Passwords do not match</p>
             )}
           </div>
-          <div className="relative w-100">
-            <button
-              onClick={toggleDropdown}
-              className="w-full px-4 py-2 bg-gray-200 rounded-lg text-left font-medium 
-                        hover:bg-gray-300 focus:outline-none transition-colors"
-            >
-              {userType}
-            </button>
-
-            {isOpen && (
-              <ul
-                className="absolute w-full mt-2 bg-white shadow-md rounded-lg border border-gray-300 z-10"
-              >
-                {ROLES.map((role) => (
-                  <li
-                    key={role}
-                    onClick={e => {
-                      e.preventDefault()
-                      setUserType(role)
-                      setIsOpen(false)
-                    }}
-                    className="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer transition-colors"
-                  >
-                    {role}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <DropDown 
+            stringOnDisplay={userType} 
+            stateController={setUserType} 
+            iterable={[...ROLES]}
+          />
+          
           <br />
           <motion.button
             type="submit"

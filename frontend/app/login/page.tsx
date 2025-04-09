@@ -75,7 +75,7 @@ export default function LoginPage() {
                   checked={userType === 'tutee'}
                   onChange={(e) => setUserType(e.target.value)}
                 />
-                <span className="ml-2 text-[#4a58b5]">Tutee</span>
+                <span className="ml-2 text-[#4a58b5]">Tutee/Parent</span>
               </label>
               <label className="inline-flex items-center">
                 <input
