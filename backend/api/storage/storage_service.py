@@ -8,7 +8,7 @@ from api.storage.populate import insert_test_data
 # from api.storage.validate import check_data
 from sqlalchemy import (ColumnElement, Engine, and_, inspect, or_, select,
                         update)
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy_utils import create_database, database_exists
 
@@ -37,14 +37,15 @@ class StorageService:
         print("Database initialized")
     
     @staticmethod
-    def find(session: Session, query: dict | list[ColumnElement], TableClass: Type[DeclarativeMeta], find_one: bool = False) -> list[DeclarativeMeta] | DeclarativeMeta:
+    def find(session: Session, query: dict | list[ColumnElement] | Query, TableClass: Type[DeclarativeMeta], find_one: bool = False) -> list[DeclarativeMeta] | DeclarativeMeta:
         from api.common.utils import Utils
 
         with Session(StorageService.engine) as session:
             statement = select(TableClass)
-            if isinstance(query, list):
-                for q in query:
-                    statement = statement.where(q)
+            if isinstance(query, Query):
+                statement = query
+            elif isinstance(query, list):
+                statement = statement.where(and_(*query))
             elif isinstance(query, dict):
                 statement = statement.filter_by(**query)
             else:

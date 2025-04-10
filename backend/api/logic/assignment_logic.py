@@ -47,33 +47,33 @@ class AssignmentLogic:
     @staticmethod
     def search_assignments(search_query: SearchQuery) -> list[AssignmentView]:
 
-        filters = []
-
-        # General search (matching name, location, or aboutMe)
-        if search_query.query:
-            general_query = f"%{search_query.query}%"  # SQL LIKE pattern
-            filters.append(or_(
-                Assignment.title.ilike(general_query),
-                Assignment.specialRequests.ilike(general_query),
-            ))
-
-        # get filters from the search query
-        parsed_filters = FilterLogic.parse_filters(search_query.filters)
-
-        # Filter by subjects
-        if "subject" in parsed_filters:
-            filters.append(Assignment.subjects.any(Subject.id.in_(parsed_filters["subject"])))
-
-        # Filter by levels
-        if "level" in parsed_filters:
-            filters.append(Assignment.levels.any(Level.id.in_(parsed_filters["level"])))
-
         with Session(StorageService.engine) as session:
+            filters = []
 
-            assignments = StorageService.find(session, filters, Assignment)
-            # raise HTTPException(
-            #     status_code=401,
-            #     detail=str(assignments)
-            # )
+            # General search (matching name, location, or aboutMe)
+            if search_query.query:
+                general_query = f"%{search_query.query}%"  # SQL LIKE pattern
+                filters.append(or_(
+                    Assignment.title.ilike(general_query),
+                    Assignment.specialRequests.ilike(general_query),
+                    Assignment.tutor.user.name.ilike(general_query),
+                    Assignment.requester.name.ilike(general_query),
+                ))
+
+            # get filters from the search query
+            parsed_filters = FilterLogic.parse_filters(search_query.filters)
+
+            # Filter by subjects
+            if "subject" in parsed_filters:
+                filters.append(Assignment.subjects.any(Subject.id.in_(parsed_filters["subject"])))
+
+            # Filter by levels
+            if "level" in parsed_filters:
+                filters.append(Assignment.levels.any(Level.id.in_(parsed_filters["level"])))
+
             # Convert the list of Tutor objects to TutorPublicSummary objects            
-            return [AssignmentLogic.convert_assignment_to_view(session, assgn) for assgn in assignments]
+            summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment) for assignment in assignments]
+
+            return summaries
+
+        

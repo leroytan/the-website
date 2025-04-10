@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 
 class TutorLogic:
@@ -86,11 +86,14 @@ class TutorLogic:
         with Session(StorageService.engine) as session:
             filters = []
 
+            user_alias = aliased(User)  # You'll need to import your User model
+            statement = session.query(Tutor).join(user_alias, Tutor.user)
+
             # General search (matching name, location, or aboutMe)
             if search_query.query:
                 general_query = f"%{search_query.query}%"  # SQL LIKE pattern
                 filters.append(or_(
-                    Tutor.name.ilike(general_query),
+                    user_alias.name.ilike(general_query),
                     Tutor.location.ilike(general_query),
                     Tutor.aboutMe.ilike(general_query)
                 ))
@@ -110,7 +113,9 @@ class TutorLogic:
             if "level" in parsed_filters:
                 filters.append(Tutor.levels.any(Level.id.in_(parsed_filters["level"])))
 
-            tutors = StorageService.find(session, filters, Tutor)
+            statement = statement.filter(or_(*filters))
+
+            tutors = StorageService.find(session, statement, Tutor)
 
             # Convert the list of Tutor objects to TutorPublicSummary objects            
             summaries = [TutorLogic.convert_tutor_to_public_summary(session, tutor) for tutor in tutors]
