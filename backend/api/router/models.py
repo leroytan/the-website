@@ -1,3 +1,5 @@
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 
@@ -129,3 +131,9 @@ class SearchQuery(BaseModel):
     query: str | None
     filters: list[str] | None
     sorts: list[str] | None
+
+T = TypeVar("T")
+
+class SearchResult(BaseModel, Generic[T]):
+    results: list[T]
+    filters: dict[str, list[dict[str, str]]]
