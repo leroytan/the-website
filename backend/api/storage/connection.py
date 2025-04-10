@@ -1,5 +1,5 @@
 from api.config import settings
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 
-print(f"Database URL: {settings.database_url}")
-engine = create_engine(settings.database_url)
+engine = settings.make_engine(create_engine, NullPool)

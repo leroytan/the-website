@@ -6,12 +6,12 @@ from api.storage.models import (Assignment, AssignmentLevel, AssignmentRequest,
                                 TutorSpecialSkill, TutorSubject, User)
 
 
-def insert_test_data(engine):
+def insert_test_data(engine: object) -> bool:
     """
     Populate the database with test data for development and testing purposes.
     
     Args:
-        session: SQLAlchemy session object
+        session: SQLAlchemy engine object
     """
     import datetime
 
@@ -33,7 +33,7 @@ def insert_test_data(engine):
         table_has_data(Assignment)
     ]):
         print("Database already contains data. Skipping test data insertion.")
-        return
+        return False
     
     # Create test subjects
     subjects = [
@@ -449,3 +449,4 @@ def insert_test_data(engine):
     session.commit()
     
     print("Test data successfully inserted into the database.")
+    return True

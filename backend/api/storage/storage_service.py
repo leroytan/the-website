@@ -1,12 +1,13 @@
 from typing import Type
 
 from api.config import settings
-from api.exceptions import TableEmptyError, UserAlreadyExistsError
+from api.exceptions import TableEmptyError
 from api.storage.connection import engine as default_engine
-from api.storage.models import Base, User
+from api.storage.models import Base
 from api.storage.populate import insert_test_data
 # from api.storage.validate import check_data
-from sqlalchemy import ColumnElement, Engine, and_, or_, select, update
+from sqlalchemy import (ColumnElement, Engine, and_, inspect, or_, select,
+                        update)
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy_utils import create_database, database_exists
@@ -19,17 +20,17 @@ class StorageService:
     @staticmethod
     def init_db(db_engine=default_engine):
         print("Initializing database")
-        # Create the tables if they don't exist
-        if not database_exists(db_engine.url):
-            print("Creating database")
-            create_database(db_engine.url)
-            print("Database created")
+        if not inspect(db_engine).get_table_names():
+            if not database_exists(db_engine.url):
+                print("Creating database")
+                create_database(db_engine.url)
+                print("Database created")
             # SQLAlchemy automatically creates tables from the Base metadata
             Base.metadata.create_all(db_engine)
             print("Tables created")
             if settings.db_populate_check:
                 print("Inserting test data")
-                insert_test_data(db_engine)
+                success = insert_test_data(db_engine)
                 # check_data(db_engine)
                 print("Test data inserted")
         StorageService.engine = db_engine

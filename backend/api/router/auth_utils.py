@@ -34,7 +34,7 @@ class RouterAuthUtils:
         Returns:
             bool: True if the user is logged out (both tokens are missing), False otherwise.
         """
-        if not request.cookies.get("access_token") or not request.cookies.get("refresh_token"):
+        if not request.cookies.get("access_token") and not request.cookies.get("refresh_token"):
             raise HTTPException(
                 status_code=200,
                 detail="User is already logged out",
