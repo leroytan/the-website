@@ -295,7 +295,6 @@ def insert_test_data(engine: object) -> bool:
     assignments = [
         Assignment(
             title="Calculus Finals Prep",
-            datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[0].id,  # John Doe requesting 
             tutorId=tutors[0].id,     # Alice as tutor
             estimatedRate="$45/hour",
@@ -305,7 +304,6 @@ def insert_test_data(engine: object) -> bool:
         ),
         Assignment(
             title="Essay-Writing Clinic",
-            datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[1].id,  # Jane Smith requesting
             tutorId=tutors[2].id,     # Carol as tutor
             estimatedRate="$35/hour",

@@ -3,7 +3,7 @@ from api.config import settings
 from api.logic.filter_logic import FilterLogic
 from api.logic.tutor_logic import TutorLogic
 from api.router.auth_utils import RouterAuthUtils
-from api.router.models import (CreatedTutorProfile, SearchQuery, SearchResult,
+from api.router.models import (NewTutorProfile, SearchQuery, SearchResult,
                                TutorProfile, TutorPublicSummary)
 from api.storage.models import Tutor, User
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -48,7 +48,7 @@ async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> 
 
 @router.post("/api/tutors/create")
 async def create_tutor(
-    tutorProfile: CreatedTutorProfile,
+    tutorProfile: NewTutorProfile,
     user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:
     # Returns the newly created tutor profile
@@ -56,10 +56,7 @@ async def create_tutor(
     if settings.is_use_mock:
         return mock.create_tutor()
     
-    if user.id != tutorProfile.id:
-        raise HTTPException(status_code=403, detail="Unauthorized action")
-    
-    return TutorLogic.create_tutor(tutorProfile)
+    return TutorLogic.create_tutor(tutorProfile, user.id)
 
 @router.get("/api/tutors/profile/{id}")
 async def get_tutor_profile(id: str | int, request: Request) -> TutorPublicSummary | TutorProfile | None:

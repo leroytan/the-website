@@ -1,11 +1,14 @@
 from api.logic.filter_logic import FilterLogic
 from api.router.models import Assignment as AssignmentView
 from api.router.models import AssignmentSlot as AssignmentSlotView
-from api.router.models import SearchQuery
-from api.storage.models import Assignment, Level, Subject, Tutor, User
+from api.router.models import NewAssignment, SearchQuery
+from api.storage.models import (Assignment, AssignmentSlot, AssignmentStatus,
+                                Level, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
+from psycopg2.errors import ForeignKeyViolation
 from sqlalchemy import and_, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
 
@@ -30,7 +33,7 @@ class AssignmentLogic:
         ]
         return AssignmentView(
             id=assignment.id,
-            datetime=assignment.datetime,
+            datetime=assignment.datetime.strftime("%Y-%m-%d %H:%M:%S"),
             title=assignment.title,
             requesterId=assignment.requesterId,
             tutorId=assignment.tutorId,
@@ -88,5 +91,51 @@ class AssignmentLogic:
             summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment) for assignment in assignments]
 
             return summaries
-
         
+    @staticmethod
+    def create_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentView:
+        with Session(StorageService.engine) as session:
+
+            # Create a new assignment
+            assignment = Assignment(
+                title=new_assignment.title,
+                requesterId=user_id,
+                estimatedRate=new_assignment.estimatedRate,
+                weeklyFrequency=new_assignment.weeklyFrequency,
+                specialRequests=new_assignment.specialRequests,
+                status=AssignmentStatus.OPEN
+            )
+
+            try:
+                assignment = StorageService.insert(session, assignment)
+            except IntegrityError as e:
+                if isinstance(e.orig, ForeignKeyViolation):
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Requester with this id={user_id} does not exist"
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Internal server error"
+                    )
+
+            session.add(assignment)
+
+            assignment.subjects = session.query(Subject).filter(Subject.name.in_(new_assignment.subjects)).all()
+            assignment.levels = session.query(Level).filter(Level.name.in_(new_assignment.levels)).all()
+        
+            # Create assignment slots
+            for slot in new_assignment.availableSlots:
+                assignment_slot = AssignmentSlot(
+                    day=slot.day,
+                    startTime=slot.startTime,
+                    endTime=slot.endTime,
+                    assignmentId=assignment.id
+                )
+                session.add(assignment_slot)
+            assignment.availableSlots = session.query(AssignmentSlot).filter(AssignmentSlot.assignmentId == assignment.id).all()
+
+            session.commit()
+            session.refresh(assignment)
+            return AssignmentLogic.convert_assignment_to_view(session, assignment)

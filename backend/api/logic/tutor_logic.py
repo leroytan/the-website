@@ -1,5 +1,5 @@
 from api.logic.filter_logic import FilterLogic
-from api.router.models import (CreatedTutorProfile, SearchQuery, TutorProfile,
+from api.router.models import (NewTutorProfile, SearchQuery, TutorProfile,
                                TutorPublicSummary)
 from api.storage.models import (Level, SpecialSkill, Subject, Tutor,
                                 TutorRequest, User)
@@ -123,7 +123,7 @@ class TutorLogic:
             return summaries
     
     @staticmethod
-    def create_tutor(tutor_profile: CreatedTutorProfile) -> TutorProfile:
+    def create_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:
     
         with Session(StorageService.engine) as session:
 
@@ -135,6 +135,7 @@ class TutorLogic:
 
             try:
                 tutor = StorageService.insert(session, Tutor(
+                    id=user_id,
                     **tutor_dict
                 ))
             except IntegrityError as e:
@@ -159,7 +160,7 @@ class TutorLogic:
             tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjectsTeachable)).all()
             tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levelsTeachable)).all()
             tutor.specialSkills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.specialSkills)).all()
-            tutor.user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
+            # tutor.user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
             session.commit()
             session.refresh(tutor)
 

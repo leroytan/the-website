@@ -20,8 +20,9 @@ class StorageService:
     @staticmethod
     def init_db(db_engine=default_engine):
         print("Initializing database")
-        if not inspect(db_engine).get_table_names():
-            if not database_exists(db_engine.url):
+        exists = database_exists(db_engine.url)
+        if not exists or not inspect(db_engine).get_table_names():
+            if not exists:
                 print("Creating database")
                 create_database(db_engine.url)
                 print("Database created")

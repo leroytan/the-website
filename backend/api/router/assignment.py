@@ -4,7 +4,7 @@ from api.logic.assignment_logic import AssignmentLogic
 from api.logic.filter_logic import FilterLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import Assignment as AssignmentView
-from api.router.models import SearchQuery, SearchResult
+from api.router.models import NewAssignment, SearchQuery, SearchResult
 from api.storage.models import Assignment, User
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
@@ -37,13 +37,11 @@ async def search_assignments(query: str = "", filters: str = "", sorts: str = ""
 
 
 @router.post("/api/assignments/create")
-async def create_assignment(user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentView:
+async def create_assignment(new_assignment: NewAssignment, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    
-        
-    raise NotImplementedError("Assignment creation is not yet implemented.")
+    return AssignmentLogic.create_assignment(new_assignment, user.id)
 
 @router.get("/api/assignments/item/{assignment_id}")
 async def get_assignment(assignment_id: int) -> AssignmentView:
