@@ -296,7 +296,7 @@ def insert_test_data(engine: object) -> bool:
         Assignment(
             title="Calculus Finals Prep",
             requesterId=users[0].id,  # John Doe requesting 
-            tutorId=tutors[0].id,     # Alice as tutor
+            tutorId=None,  # No tutor assigned yet
             estimatedRate="$45/hour",
             weeklyFrequency=2,
             specialRequests="Need help preparing for calculus final exam",
@@ -315,7 +315,7 @@ def insert_test_data(engine: object) -> bool:
             title="Programming Coaching (Python)",
             datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[0].id,  # John Doe requesting
-            tutorId=tutors[3].id,     # David as tutor
+            tutorId=None,  # No tutor assigned yet
             estimatedRate="$50/hour",
             weeklyFrequency=3,
             specialRequests="Need help with Python programming project",

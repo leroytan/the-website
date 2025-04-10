@@ -2,8 +2,8 @@ from api.logic.filter_logic import FilterLogic
 from api.router.models import Assignment as AssignmentView
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import NewAssignment, SearchQuery
-from api.storage.models import (Assignment, AssignmentSlot, AssignmentStatus,
-                                Level, Subject, Tutor, User)
+from api.storage.models import (Assignment, AssignmentRequest, AssignmentSlot,
+                                AssignmentStatus, Level, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation
@@ -139,3 +139,82 @@ class AssignmentLogic:
             session.commit()
             session.refresh(assignment)
             return AssignmentLogic.convert_assignment_to_view(session, assignment)
+        
+    @staticmethod
+    def get_assignment_by_id(id: str | int) -> AssignmentView | None:
+        with Session(StorageService.engine) as session:
+            assignment = StorageService.find(session, {"id": id}, Assignment, find_one=True)
+            if not assignment:
+                return None
+            return AssignmentLogic.convert_assignment_to_view(session, assignment)
+        
+    @staticmethod
+    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment) -> AssignmentView:
+        with Session(StorageService.engine) as session:
+            # Update the assignment
+            assignment_dict = assignment_update.model_dump()
+
+            assignment_dict.pop("availableSlots", None)
+            assignment_dict.pop("subjects", None)
+            assignment_dict.pop("levels", None)
+
+            assignment = StorageService.update(session, {"id": id}, assignment_dict, Assignment)
+            if not assignment:
+                return None
+            
+            # Update subjects and levels
+            assignment.subjects = session.query(Subject).filter(Subject.name.in_(assignment_update.subjects)).all()
+            assignment.levels = session.query(Level).filter(Level.name.in_(assignment_update.levels)).all()
+
+            # Clear slots
+            StorageService.delete(session, {"assignmentId": assignment.id}, AssignmentSlot)
+            # Update available slots
+            for slot in assignment_update.availableSlots:
+                assignment_slot = StorageService.insert(session, AssignmentSlot(
+                    day=slot.day,
+                    startTime=slot.startTime,
+                    endTime=slot.endTime,
+                    assignmentId=assignment.id
+                ))
+                session.add(assignment_slot)
+            assignment.availableSlots = session.query(AssignmentSlot).filter(AssignmentSlot.assignmentId == assignment.id).all()
+
+            session.commit()
+            session.refresh(assignment)
+            return AssignmentLogic.convert_assignment_to_view(session, assignment)
+        
+    @staticmethod
+    def request_assignment(assignment_id: str | int, tutor_id: str | int) -> None:
+        with Session(StorageService.engine) as session:
+            # Find the assignment
+            assignment = StorageService.find(session, {"id": assignment_id}, Assignment, find_one=True)
+            if not assignment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
+
+            # Check if the assignment is open
+            if assignment.status != AssignmentStatus.OPEN or assignment.tutorId is not None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Assignment is not open for requests"
+                )
+            
+            # Create a request
+            try:
+                StorageService.insert(session, AssignmentRequest(
+                    assignmentId=assignment.id,
+                    tutorId=tutor_id
+                ))
+            except IntegrityError as e:
+                if isinstance(e.orig, ForeignKeyViolation):
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Tutor with this id={tutor_id} does not exist"
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Internal server error"
+                    )

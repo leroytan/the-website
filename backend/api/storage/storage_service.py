@@ -99,3 +99,11 @@ class StorageService:
         session.commit()
         session.refresh(obj)
         return obj
+    
+    @staticmethod
+    def delete(session: Session, query: dict, TableClass: Type[DeclarativeMeta]) -> None:
+        statement = select(TableClass).where(and_(*[getattr(TableClass, key) == value for key, value in query.items()]))
+        result = session.execute(statement).scalars().all()
+        for obj in result:
+            session.delete(obj)
+        session.commit()

@@ -5,7 +5,7 @@ from api.logic.filter_logic import FilterLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import Assignment as AssignmentView
 from api.router.models import NewAssignment, SearchQuery, SearchResult
-from api.storage.models import Assignment, User
+from api.storage.models import Assignment, AssignmentRequest, User
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 
@@ -48,22 +48,19 @@ async def get_assignment(assignment_id: int) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    raise NotImplementedError("Assignment retrieval is not yet implemented.")
+    return AssignmentLogic.get_assignment_by_id(assignment_id)
 
 @router.put("/api/assignments/item/{assignment_id}")
-async def update_assignment(assignment: AssignmentView, assignment_id: int) -> AssignmentView:
+async def update_assignment(assignment_id: int, assignment: NewAssignment) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    raise NotImplementedError("Assignment update is not yet implemented.")
-
-class IncomingAssignmentRequest(BaseModel):
-    tutor_id: int
-    datetime: str
+    return AssignmentLogic.update_assignment_by_id(assignment_id, assignment)
 
 @router.post("/api/assignments/request/{assignment_id}")
-async def request_assignment(details: IncomingAssignmentRequest, assignment_id: int) -> AssignmentView:
+async def request_assignment(assignment_id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
     if settings.is_use_mock:
         return Response(200)
     
-    raise NotImplementedError("Assignment request is not yet implemented.")
+    AssignmentLogic.request_assignment(assignment_id, user.id)
+    return {"message": "Assignment requested successfully."}
