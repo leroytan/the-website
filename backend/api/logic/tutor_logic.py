@@ -6,7 +6,7 @@ from api.storage.models import (Level, SpecialSkill, Subject, Tutor,
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
@@ -113,7 +113,7 @@ class TutorLogic:
             if "level" in parsed_filters:
                 filters.append(Tutor.levels.any(Level.id.in_(parsed_filters["level"])))
 
-            statement = statement.filter(or_(*filters))
+            statement = statement.filter(and_(*filters))
 
             tutors = StorageService.find(session, statement, Tutor)
 

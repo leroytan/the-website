@@ -2,11 +2,11 @@ from api.logic.filter_logic import FilterLogic
 from api.router.models import Assignment as AssignmentView
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import SearchQuery
-from api.storage.models import Assignment, Level, Subject
+from api.storage.models import Assignment, Level, Subject, Tutor, User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
-from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session, aliased
 
 
 class AssignmentLogic:
@@ -50,14 +50,23 @@ class AssignmentLogic:
         with Session(StorageService.engine) as session:
             filters = []
 
+            tutor_alias = aliased(Tutor)
+            user_alias = aliased(User)
+            requester_alias = aliased(User)
+            # Join the Assignment table with the Tutor and User tables
+            statement = session.query(Assignment)
+            statement = statement.outerjoin(tutor_alias, Assignment.tutor)
+            statement = statement.outerjoin(user_alias, tutor_alias.user)
+            statement = statement.outerjoin(requester_alias, Assignment.requester)
+
             # General search (matching name, location, or aboutMe)
             if search_query.query:
                 general_query = f"%{search_query.query}%"  # SQL LIKE pattern
                 filters.append(or_(
                     Assignment.title.ilike(general_query),
                     Assignment.specialRequests.ilike(general_query),
-                    Assignment.tutor.user.name.ilike(general_query),
-                    Assignment.requester.name.ilike(general_query),
+                    user_alias.name.ilike(general_query),
+                    requester_alias.name.ilike(general_query),
                 ))
 
             # get filters from the search query
@@ -70,6 +79,10 @@ class AssignmentLogic:
             # Filter by levels
             if "level" in parsed_filters:
                 filters.append(Assignment.levels.any(Level.id.in_(parsed_filters["level"])))
+
+            statement = statement.filter(and_(*filters))
+
+            assignments = StorageService.find(session, statement, Assignment)
 
             # Convert the list of Tutor objects to TutorPublicSummary objects            
             summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment) for assignment in assignments]
