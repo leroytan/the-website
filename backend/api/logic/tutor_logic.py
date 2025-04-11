@@ -1,8 +1,7 @@
 from api.logic.filter_logic import FilterLogic
 from api.router.models import (NewTutorProfile, SearchQuery, TutorProfile,
                                TutorPublicSummary)
-from api.storage.models import (Level, SpecialSkill, Subject, Tutor,
-                                TutorRequest, User)
+from api.storage.models import Level, SpecialSkill, Subject, Tutor, User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
@@ -174,7 +173,10 @@ class TutorLogic:
             tutor = StorageService.find(session, {"id": id}, Tutor, find_one=True)
 
             if not tutor:
-                return None
+                raise HTTPException(
+                    status_code=404,
+                    detail="Tutor not found"
+                )
             
             if not is_self:
                 # Convert the Tutor object to a TutorPublicSummary object

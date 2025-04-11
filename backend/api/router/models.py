@@ -56,13 +56,6 @@ class TutorProfile(BaseModel):
     experience: str | None
     availability: str | None
 
-class ClientTutorRequest(BaseModel):
-    id: str
-    tutorId: int
-    requesterId: int
-    datetime: str
-    status: str
-
 class CoursePublicSummary(BaseModel):
     id: str
     name: str
@@ -126,11 +119,16 @@ class Assignment(BaseModel):
     levels: list[str]
     status: str
 
+class NewAssignmentSlot(BaseModel):
+    day: str
+    startTime: str
+    endTime: str
+
 class NewAssignment(BaseModel):
     title: str
     estimatedRate: str
     weeklyFrequency: int
-    availableSlots: list[AssignmentSlot]
+    availableSlots: list[NewAssignmentSlot]
     specialRequests: str | None
     subjects: list[str]
     levels: list[str]

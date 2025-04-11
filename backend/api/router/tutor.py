@@ -59,14 +59,14 @@ async def new_tutor(
     return TutorLogic.new_tutor(tutorProfile, user.id)
 
 @router.get("/api/tutors/{id}")
-async def get_tutor_profile(id: str | int, request: Request) -> TutorPublicSummary | TutorProfile | None:
+async def get_tutor_profile(id: int, request: Request) -> TutorPublicSummary | TutorProfile | None:
     
     if settings.is_use_mock:
         return mock.get_tutor_profile()
     
     try:
         user = await RouterAuthUtils.get_current_user(request)
-        is_self = user and str(user.id) == str(id)
+        is_self = user and user.id == id
     except HTTPException:
         is_self = False
     return TutorLogic.find_profile_by_id(id, is_self=is_self)
@@ -75,7 +75,7 @@ async def get_tutor_profile(id: str | int, request: Request) -> TutorPublicSumma
 @router.put("/api/tutors/{id}")
 async def update_tutor_profile(
     tutorProfile: TutorProfile,
-    id: str | int,
+    id: int,
     user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:
     # Returns the updated private profile
@@ -83,7 +83,7 @@ async def update_tutor_profile(
     if settings.is_use_mock:
         return mock.update_tutor_profile()
     
-    if str(user.id) != str(id):
+    if user.id != id:
         raise HTTPException(status_code=403, detail="Unauthorized action")
     
     return TutorLogic.update_profile(tutorProfile, id)

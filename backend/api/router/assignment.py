@@ -2,6 +2,7 @@ import api.router.mock as mock
 from api.config import settings
 from api.logic.assignment_logic import AssignmentLogic
 from api.logic.filter_logic import FilterLogic
+from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import Assignment as AssignmentView
 from api.router.models import NewAssignment, SearchQuery, SearchResult
@@ -51,11 +52,13 @@ async def get_assignment(id: int) -> AssignmentView:
     return AssignmentLogic.get_assignment_by_id(id)
 
 @router.put("/api/assignments/{id}")
-async def update_assignment(id: int, assignment: NewAssignment) -> AssignmentView:
+async def update_assignment(id: int, assignment: NewAssignment, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    return AssignmentLogic.update_assignment_by_id(id, assignment)
+    assert_user_authorized = Logic.create_assert_user_authorized(user.id)
+    
+    return AssignmentLogic.update_assignment_by_id(id, assignment, assert_user_authorized)
 
 @router.post("/api/assignments/{id}/request")
 async def request_assignment(id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
@@ -70,5 +73,6 @@ async def change_assignment_request_status(id: int, status: str, user: User = De
     if settings.is_use_mock:
         return Response(200)
     
-    AssignmentLogic.change_assignment_request_status(id, status, user.id)
+    assert_user_authorized = Logic.create_assert_user_authorized(user.id)
+    AssignmentLogic.change_assignment_request_status(id, status, assert_user_authorized)
     return {"message": "Assignment request status changed successfully."}

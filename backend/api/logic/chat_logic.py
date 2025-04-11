@@ -116,12 +116,10 @@ class ChatLogic:
 
             # Get the chat messages
             if last_message_id == -1: last_message_id = float('inf')
-            print(f"Getting chat history for user {user_id} with {chatroom.id} up to message ID {last_message_id}")
             chat_messages = session.query(ChatMessage).filter(
                 ChatMessage.chatRoomId == chatroom.id,
                 ChatMessage.id <= last_message_id
             ).order_by(ChatMessage.timestamp.desc()).limit(message_count).all()
-            print(f"Retrieved {len(chat_messages)} messages.")
             return [
                 message.to_dict(rules=(
                     "-sender",

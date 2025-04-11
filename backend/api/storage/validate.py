@@ -2,8 +2,7 @@ from api.storage.connection import engine
 from api.storage.models import (Assignment, AssignmentRequest, AssignmentSlot,
                                 AssignmentStatus, Client, ClientSubject, Level,
                                 SpecialSkill, Subject, Tutor, TutorLevel,
-                                TutorRequest, TutorSpecialSkill, TutorSubject,
-                                User, UserType)
+                                TutorSpecialSkill, TutorSubject, User)
 from sqlalchemy.orm import sessionmaker
 
 

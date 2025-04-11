@@ -2,7 +2,6 @@ from api.storage.models import (Assignment, AssignmentLevel, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, AssignmentSubject, Level,
                                 SpecialSkill, Subject, Tutor, TutorLevel,
-                                TutorRequest, TutorRequestStatus,
                                 TutorSpecialSkill, TutorSubject, User)
 
 
@@ -396,29 +395,6 @@ def insert_test_data(engine: object) -> bool:
         AssignmentLevel(assignmentId=assignments[2].id, levelId=levels[3].id)
     ]
     session.add_all(assignment_levels)
-    
-    # Create tutor requests
-    tutor_requests = [
-        TutorRequest(
-            datetime=datetime.datetime.now(),
-            requesterId=users[0].id,  # John requesting Alice
-            tutorId=tutors[0].id,
-            status=TutorRequestStatus.PENDING
-        ),
-        TutorRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=2),
-            requesterId=users[1].id,  # Jane requesting Carol
-            tutorId=tutors[2].id,
-            status=TutorRequestStatus.ACCEPTED
-        ),
-        TutorRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=5),
-            requesterId=users[0].id,  # John requesting Eva
-            tutorId=tutors[4].id,
-            status=TutorRequestStatus.REJECTED
-        )
-    ]
-    session.add_all(tutor_requests)
     
     # Create assignment requests
     assignment_requests = [

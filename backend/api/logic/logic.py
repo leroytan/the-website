@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
 from api.common.models import LoginRequest, SignupRequest
@@ -89,3 +91,10 @@ class Logic:
             return AuthService.refresh_tokens(refresh_token)
         except (JWTError, ValueError, ValidationError) as e:
             raise HTTPException(status_code=401, detail="Invalid refresh token") 
+        
+    @staticmethod
+    def create_assert_user_authorized(user_id: int) -> Callable[[int], None]:
+        def assert_user_authorized(correct_id: int) -> None:
+            if user_id != correct_id:
+                raise HTTPException(status_code=403, detail="Unauthorized action")
+        return assert_user_authorized

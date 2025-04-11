@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from api.logic.filter_logic import FilterLogic
 from api.router.models import Assignment as AssignmentView
 from api.router.models import AssignmentSlot as AssignmentSlotView
@@ -142,15 +144,18 @@ class AssignmentLogic:
             return AssignmentLogic.convert_assignment_to_view(session, assignment)
         
     @staticmethod
-    def get_assignment_by_id(id: str | int) -> AssignmentView | None:
+    def get_assignment_by_id(id: str | int) -> AssignmentView:
         with Session(StorageService.engine) as session:
             assignment = StorageService.find(session, {"id": id}, Assignment, find_one=True)
             if not assignment:
-                return None
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
             return AssignmentLogic.convert_assignment_to_view(session, assignment)
         
     @staticmethod
-    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment) -> AssignmentView:
+    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment, assert_user_authorized: Callable[[int], None]) -> AssignmentView:
         with Session(StorageService.engine) as session:
             # Update the assignment
             assignment_dict = assignment_update.model_dump()
@@ -161,8 +166,15 @@ class AssignmentLogic:
 
             assignment = StorageService.update(session, {"id": id}, assignment_dict, Assignment)
             if not assignment:
-                return None
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
             
+            # Check if the user is the requester of the assignment
+            assert_user_authorized(assignment.requesterId)
+
+            session.add(assignment)
             # Update subjects and levels
             assignment.subjects = session.query(Subject).filter(Subject.name.in_(assignment_update.subjects)).all()
             assignment.levels = session.query(Level).filter(Level.name.in_(assignment_update.levels)).all()
@@ -201,6 +213,11 @@ class AssignmentLogic:
                     status_code=400,
                     detail="Assignment is not open for requests"
                 )
+            if assignment.requesterId == tutor_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Tutor cannot request their own assignment"
+                )
             
             # Create a request
             try:
@@ -222,7 +239,7 @@ class AssignmentLogic:
     
 
     @staticmethod
-    def change_assignment_request_status(assignment_request_id: str | int, status: str, user_id: str | int) -> None:
+    def change_assignment_request_status(assignment_request_id: str | int, status: str, assert_user_authorized: Callable[[int], None]) -> None:
         with Session(StorageService.engine) as session:
             # Find the assignment request
             assignment_request = StorageService.find(session, {"id": assignment_request_id}, AssignmentRequest, find_one=True)
@@ -239,11 +256,7 @@ class AssignmentLogic:
                     detail="Assignment request is not pending. Cannot change status."
                 )
             # Check if the user is the requester of the assignment
-            if assignment_request.assignment.requesterId != user_id:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You are not authorized to accept this request"
-                )
+            assert_user_authorized(assignment_request.assignment.requesterId)
 
             # Update the assignment with the tutorId
             assignment = StorageService.update(session, {"id": assignment_request.assignmentId},

@@ -2,7 +2,7 @@ import datetime
 import enum
 
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        String, Table)
+                        String, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -119,6 +119,12 @@ class AssignmentRequest(Base):
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutorId])
     assignment = relationship('Assignment', foreign_keys=[assignmentId], back_populates='assignmentRequests')
+
+    # Constraints
+    # Composite unique constraint on column1 and column2
+    __table_args__ = (
+        UniqueConstraint('assignmentId', 'tutorId', name='uix_assignmentId_tutorId'),
+    )
 
 class SpecialSkill(Base):
     """

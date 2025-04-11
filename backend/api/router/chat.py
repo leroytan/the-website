@@ -44,8 +44,6 @@ async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_cu
     Returns:
         list[ChatMessage]: List of chat messages.
     """
-    # print(request.cookies.get("access_token"))
-    # user = await RouterAuthUtils.get_current_user(request)
     messages = ChatLogic.get_chat_history(id, user.id, last_message_id, message_count)
     message_count = len(messages)
     last_unretrieved_message_id = messages[message_count - 1].id - 1 if message_count > 0 else -1
