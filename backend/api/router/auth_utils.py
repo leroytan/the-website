@@ -3,7 +3,7 @@ from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
 from api.auth.models import TokenPair
 from api.logic.logic import Logic
 from api.storage.models import User
-from fastapi import HTTPException, Request, Response
+from fastapi import HTTPException, Request, Response, WebSocket
 
 
 class RouterAuthUtils:
@@ -78,3 +78,9 @@ class RouterAuthUtils:
         token = request.cookies.get("access_token")
         user = Logic.get_current_user(token)
         return user
+    
+    @staticmethod
+    async def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:
+        token = websocket.cookies.get("access_token")
+        user = Logic.get_current_user(token)
+        return user, websocket

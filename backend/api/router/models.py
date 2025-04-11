@@ -145,3 +145,15 @@ T = TypeVar("T")
 class SearchResult(BaseModel, Generic[T]):
     results: list[T]
     filters: dict[str, list[dict[str, str]]]
+
+class NewChatMessage(BaseModel):
+    receiverId: int
+    content: str
+
+class ChatMessage(BaseModel):
+    id: int
+    senderId: int
+    receiverId: int
+    content: str
+    timestamp: str
+    isRead: bool

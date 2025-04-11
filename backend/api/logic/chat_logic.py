@@ -1,0 +1,89 @@
+from api.router.models import NewChatMessage
+from api.storage.models import ChatMessage, ChatRoom
+from api.storage.storage_service import StorageService
+from fastapi import WebSocket, WebSocketDisconnect
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
+
+
+class ChatLogic:
+
+    @staticmethod
+    def get_or_create_chatroom(session: Session, user1_id: int, user2_id: int) -> ChatRoom:
+        """
+        Get an existing chatroom between two users or create a new one if it doesn't exist.
+        
+        Args:
+            session: SQLAlchemy session
+            user1_id: ID of the first user
+            user2_id: ID of the second user
+            
+        Returns:
+            ChatRoom: The existing or newly created chatroom
+        """
+        # Check for existing chatroom
+        # We need to check both possible user orderings
+        existing_chatroom = session.query(ChatRoom).filter(
+            or_(
+                and_(ChatRoom.user1Id == user1_id, ChatRoom.user2Id == user2_id),
+                and_(ChatRoom.user1Id == user2_id, ChatRoom.user2Id == user1_id)
+            )
+        ).first()
+        
+        # If a chatroom exists, return it
+        if existing_chatroom:
+            return existing_chatroom
+        
+        # Otherwise, create a new chatroom
+        new_chatroom = ChatRoom(
+            user1Id=user1_id,
+            user2Id=user2_id,
+            isLocked=False  # Set this according to your requirements
+        )
+
+        new_chatroom = StorageService.insert(session, new_chatroom)
+        
+        return new_chatroom
+
+    @staticmethod
+    async def handle_message(active_connections: dict[str|int, WebSocket], new_chat_message: NewChatMessage, from_id: int) -> None:
+        """
+        Handles the incoming chat message, processes it, and returns a ChatMessage object.
+
+        Args:
+            new_chat_message (NewChatMessage): The new chat message to be processed.
+            user_id (int): The ID of the user sending the message.
+
+        Returns:
+            ChatMessage: The processed chat message object.
+        """
+        # Validate the incoming message
+        with Session(StorageService.engine) as session:
+            receiver_id = new_chat_message.receiverId
+
+            # Create a chatroom between the two users if not exists
+            chatroom = ChatLogic.get_or_create_chatroom(session, from_id, receiver_id)
+            # Check if the chatroom is locked
+            if chatroom.isLocked:
+                # Do some content filtering
+                pass
+
+            # Create a ChatMessage object
+            chat_message = ChatMessage(
+                content=new_chat_message.content,
+                senderId=from_id,
+                receiverId=receiver_id,
+                chatRoomId=chatroom.id
+            )
+
+            # Add the message to the session
+            chat_message = StorageService.insert(session, chat_message)
+
+            # Send the message to the receiver via WebSocket
+            if receiver_id in active_connections:
+                # Send the message to the receiver's WebSocket
+                # Ensure that the receiver is connected
+                try:
+                    await active_connections[receiver_id].send_text(chat_message.content)
+                except WebSocketDisconnect:
+                    active_connections.pop(receiver_id, None)
