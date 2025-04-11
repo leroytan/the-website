@@ -26,7 +26,7 @@ export default function NotFound() {
             <Home size={24} />
           </Link>
           <Image
-            src=""
+            src="/images/logo.png"
             alt="THE Logo"
             width={100}
             height={50}

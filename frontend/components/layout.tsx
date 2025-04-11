@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, Book, Calendar, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "./AuthContent";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -97,6 +98,7 @@ export default function ComponentLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { isAuthenticated } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSideBar = () => {
@@ -111,10 +113,7 @@ export default function ComponentLayout({
       >
         <div className="container mx-auto px-4 py-2 sm:py-3 flex items-center justify-between">
           <BurgerMenu togglesideBar={toggleSideBar} />
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
             <Link href="/" passHref>
               <Image
                 src="/images/logo.png"
@@ -125,8 +124,20 @@ export default function ComponentLayout({
               />
             </Link>
           </motion.button>
-
-          <UserMenu />
+          {isAuthenticated && <UserMenu />}
+          {!isAuthenticated && (
+            <Link
+              href="/login"
+            >
+              <motion.button
+                whileHover={{ scale: 1.1 }} // Popup motion effect
+                whileTap={{ scale: 0.95 }} // Slight shrink on tap
+                className="lock px-4 py-2 text-md text-[#4a58b5] rounded-md transition-transform duration-200"
+              >
+                Log In
+              </motion.button>
+            </Link>
+          )}
         </div>
       </header>
 

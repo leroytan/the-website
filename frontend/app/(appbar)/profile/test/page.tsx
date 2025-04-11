@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
+import { useAuth } from "@/components/AuthContent";
 
 const tutorProfile = {
   name: "Lexus Tan",
@@ -63,6 +64,7 @@ const reviews = [
 ];
 
 export default function TutorProfile() {
+  const { isAuthenticated } = useAuth();
   const [selectedTab, setSelectedTab] = useState("tutor information");
   const [message, setMessage] = useState("");
   const handleSendMessage = (e: React.FormEvent) => {
@@ -131,7 +133,7 @@ export default function TutorProfile() {
         <div className="w-full sm:w-3/4 bg-white shadow-lg rounded-xl p-4 sm:p-6 max-w-full break-words">
           {/* Navigation Tabs */}
           <div className="flex flex-wrap justify-center sm:justify-start space-x-3 sm:space-x-6 border-b border-gray-200 pb-2 mb-4">
-            {["Tutor Information", "Reviews", "Message"].map((tab) => (
+            {["Tutor Information", "Reviews", ...(isAuthenticated ? ["Message"] : [])].map((tab) => (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

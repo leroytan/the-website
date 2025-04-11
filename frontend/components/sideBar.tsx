@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from './AuthContent';
 
 type SidebarProps = {
   isOpen: boolean;
@@ -11,6 +12,7 @@ type SidebarProps = {
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -48,16 +50,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </Link>
               </li>
               <li>
-                <Link href="#" className="text-lg font-semibold hover:underline" onClick={onClose}>
-                  THE Team
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-lg font-semibold hover:underline" onClick={onClose}>
-                  THE Courses
-                </Link>
-              </li>
-              <li>
                 <Link href="/tutors" className="text-lg font-semibold hover:underline" onClick={onClose}>
                   THE Tutors
                 </Link>
@@ -67,11 +59,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   THE Assignments
                 </Link>
               </li>
+              {isAuthenticated && (
               <li>
                 <Link href="/chat/tutee" className="text-lg font-semibold hover:underline " onClick={onClose}>
                   Chat
                 </Link>
               </li>
+              )}
             </ul>
           </nav>
         </motion.div>

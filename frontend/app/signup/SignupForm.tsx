@@ -1,8 +1,6 @@
 "use client";
 import "@/app/globals.css";
 import DropDown from "@/components/dropdown";
-import { apiClient } from "@/logic/apiClient";
-import { useAuth } from "@/logic/AuthContent";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Inter } from "next/font/google";
@@ -17,7 +15,6 @@ const ROLES = ["Tutor", "Tutee/Parent"] as const;
 
 export default function SignupPage() {
   const router = useRouter();
-  const { isAuthenticated, logout } = useAuth()
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,18 +36,18 @@ export default function SignupPage() {
 
     console.log("Sign up attempted with:", { name, email, password, userType });
 
-    const res = await apiClient("/api/auth/signup", {
+    const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password, userType }),
-    }, logout);
+    });
 
     if (res.status === 400) {
       setErrorMessage("User with the same email and role already exists.");
       return;
     }
     if (res.ok) {
-      router.push("/protected");
+      router.push("/login");
     } else {
       setErrorMessage("Error signing up. Please try again later.");
     }

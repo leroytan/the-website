@@ -8,14 +8,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/logic/apiClient";
-import { useAuth } from "@/logic/AuthContent";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, logout } = useAuth()
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,21 +23,31 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    console.log("Login attempted with:", { email, password, userType });
+    console.log('Login attempted with:', { email, password, userType })
 
-    console.log("Sending login request...");
+    console.log('Sending login request...')
+    
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, userType })
+    })
 
-    try {
-      await login(email, password, userType);
-      console.log("Login successful");
-      router.push("/");
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      setErrorMessage(error.message || "An error occurred during login.");
+    console.log('Login response:', res)
+
+    // if status code 401, show error message
+    if (res.status === 401) {
+      alert('Invalid email or password')
+      return
     }
-  };
+
+    // if successful, redirect to homepage
+    router.replace('/')
+    router.refresh()
+    
+  }
 
   return (
     <div
