@@ -1,5 +1,4 @@
-import ComponentLayout from "@/components/layout";
-import "./globals.css";
+import "@/app/globals.css"
 
 export default function RootLayout({
   children,
@@ -9,7 +8,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ComponentLayout>{children}</ComponentLayout>
+        {children}
       </body>
     </html>
   );

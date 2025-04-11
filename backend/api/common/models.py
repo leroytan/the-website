@@ -1,26 +1,25 @@
-from pydantic import BaseModel
 from typing import List, Optional
-from api.storage.models import UserType
+
+from pydantic import BaseModel
+
 
 # Pydantic models
 class LoginRequest(BaseModel):
     email: str
     password: str
-    userType: UserType
-
+    
 class SignupRequest(BaseModel):
     email: str
     password: str
     name: str
-    userType: UserType
 
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
-    photoUrl: Optional[str]
+    photo_url: Optional[str]
     rate: Optional[float]
     rating: Optional[int]
-    subjectsTeachable: List[str]
-    levelsTeachable: List[str]
+    subjects_teachable: List[str]
+    levels_teachable: List[str]
     experience: Optional[str]
     availability: Optional[str]

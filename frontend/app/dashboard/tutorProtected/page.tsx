@@ -128,14 +128,6 @@ export default function TutorDashboard() {
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
       <Subpage isOpen={isSubpageOpen} onClose={() => setIsSubpageOpen(false)} />
-      
-      <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
-        <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
-          <BurgerMenu toggleSubpage={toggleSubpage} />
-          <Image src="" alt="THE Logo" width={100} height={50} className="w-16 sm:w-20 md:w-24 lg:w-28" />
-          <UserMenu />
-        </div>
-      </header>
 
       <main className="pt-16 sm:pt-20 md:pt-24 pb-12">
         <div className="container mx-auto px-4">

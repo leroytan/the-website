@@ -1,10 +1,13 @@
 import unittest
-from unittest.mock import patch
-from api.storage.connection import engine
-from api.storage.storage_service import StorageService
+from unittest.mock import MagicMock, patch
+
+from api.exceptions import (TableEmptyError, UserAlreadyExistsError,
+                            UserNotFoundError)
 from api.storage.models import Base, Client, Tutor, UserType
-from api.exceptions import UserAlreadyExistsError, UserNotFoundError, TableEmptyError
+from api.storage.storage_service import StorageService
+from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists
+
 
 class TestStorageService(unittest.TestCase):
     def setUp(self):
@@ -12,9 +15,16 @@ class TestStorageService(unittest.TestCase):
         Prepare clean database state before each test
         Equivalence Partition: Test setup and database preparation
         """
+        # Use an in-memory SQLite database for testing
+        self.mock_engine = create_engine('sqlite:///:memory:', echo=False)
+        
+        # Patch the engine and database_exists method to avoid affecting production DB
+        patch('api.storage.connection.engine', self.mock_engine).start()
+        patch('sqlalchemy_utils.database_exists', MagicMock(return_value=False)).start()
+
         # Clear existing data before each test
-        if database_exists(engine.url): Base.metadata.drop_all(engine)
-        StorageService.init_db()
+        Base.metadata.create_all(self.mock_engine)  # Create tables in the mock database
+        StorageService.init_db(self.mock_engine)  # Initialize the mock database
 
     def test_create_client_user_successful(self):
         """

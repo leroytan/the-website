@@ -12,7 +12,7 @@ const Header = ({ toggleSubpage }: { toggleSubpage: () => void }) => {
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
-        <BurgerMenu toggleSubpage={toggleSubpage} />
+        <BurgerMenu toggleSidebar={toggleSubpage} />
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
