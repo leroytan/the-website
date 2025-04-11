@@ -1,3 +1,5 @@
+import json
+
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, ChatRoom
 from api.storage.storage_service import StorageService
@@ -38,7 +40,6 @@ class ChatLogic:
         new_chatroom = ChatRoom(
             user1Id=user1_id,
             user2Id=user2_id,
-            isLocked=False  # Set this according to your requirements
         )
 
         new_chatroom = StorageService.insert(session, new_chatroom)
@@ -78,13 +79,18 @@ class ChatLogic:
 
             # Add the message to the session
             chat_message = StorageService.insert(session, chat_message)
-
+            to_send = json.dumps(chat_message.to_dict(rules=(
+                            "-sender",
+                            "-receiver",
+                            "-chatRoom",
+                        )))
+            
             # Send the message to the receiver via WebSocket
             if receiver_id in active_connections:
                 # Send the message to the receiver's WebSocket
                 # Ensure that the receiver is connected
                 try:
-                    await active_connections[receiver_id].send_text(chat_message.content)
+                    await active_connections[receiver_id].send_text(to_send)
                 except WebSocketDisconnect:
                     active_connections.pop(receiver_id, None)
 

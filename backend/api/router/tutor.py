@@ -46,19 +46,19 @@ async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> 
     )
 
 
-@router.post("/api/tutors/create")
-async def create_tutor(
+@router.post("/api/tutors/new")
+async def new_tutor(
     tutorProfile: NewTutorProfile,
     user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:
     # Returns the newly created tutor profile
 
     if settings.is_use_mock:
-        return mock.create_tutor()
+        return mock.new_tutor()
     
-    return TutorLogic.create_tutor(tutorProfile, user.id)
+    return TutorLogic.new_tutor(tutorProfile, user.id)
 
-@router.get("/api/tutors/profile/{id}")
+@router.get("/api/tutors/{id}")
 async def get_tutor_profile(id: str | int, request: Request) -> TutorPublicSummary | TutorProfile | None:
     
     if settings.is_use_mock:
@@ -72,7 +72,7 @@ async def get_tutor_profile(id: str | int, request: Request) -> TutorPublicSumma
     return TutorLogic.find_profile_by_id(id, is_self=is_self)
 
 
-@router.put("/api/tutors/profile/{id}")
+@router.put("/api/tutors/{id}")
 async def update_tutor_profile(
     tutorProfile: TutorProfile,
     id: str | int,
@@ -87,12 +87,3 @@ async def update_tutor_profile(
         raise HTTPException(status_code=403, detail="Unauthorized action")
     
     return TutorLogic.update_profile(tutorProfile, id)
-
-@router.post("/api/tutors/request/{id}")
-async def request_tutor(id: str | int, user: User = Depends(RouterAuthUtils.get_current_user)):
-    # TODO: Enforce login authentication for clients
-
-    if settings.is_use_mock:
-        return Response(status_code=200)
-    
-    return TutorLogic.submit_request(user.id, id)

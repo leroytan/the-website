@@ -2,7 +2,8 @@ from api.logic.filter_logic import FilterLogic
 from api.router.models import Assignment as AssignmentView
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import NewAssignment, SearchQuery
-from api.storage.models import (Assignment, AssignmentRequest, AssignmentSlot,
+from api.storage.models import (Assignment, AssignmentRequest,
+                                AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, Level, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
@@ -93,7 +94,7 @@ class AssignmentLogic:
             return summaries
         
     @staticmethod
-    def create_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentView:
+    def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentView:
         with Session(StorageService.engine) as session:
 
             # Create a new assignment
@@ -218,3 +219,45 @@ class AssignmentLogic:
                         status_code=500,
                         detail="Internal server error"
                     )
+    
+
+    @staticmethod
+    def change_assignment_request_status(assignment_request_id: str | int, status: str, user_id: str | int) -> None:
+        with Session(StorageService.engine) as session:
+            # Find the assignment request
+            assignment_request = StorageService.find(session, {"id": assignment_request_id}, AssignmentRequest, find_one=True)
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+
+            session.add(assignment_request)
+            if assignment_request.status != AssignmentRequestStatus.PENDING:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Assignment request is not pending. Cannot change status."
+                )
+            # Check if the user is the requester of the assignment
+            if assignment_request.assignment.requesterId != user_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You are not authorized to accept this request"
+                )
+
+            # Update the assignment with the tutorId
+            assignment = StorageService.update(session, {"id": assignment_request.assignmentId},
+                                               {"tutorId": assignment_request.tutorId, "status": AssignmentStatus.FILLED},
+                                                 Assignment)
+            if not assignment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
+            match status:
+                case "ACCEPTED":
+                    assignment_request.status = AssignmentRequestStatus.ACCEPTED
+                case "REJECTED":
+                    assignment_request.status = AssignmentRequestStatus.REJECTED
+
+            session.commit()

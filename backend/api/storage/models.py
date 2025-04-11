@@ -47,27 +47,6 @@ class Tutor(Base):
     levels = relationship('Level', secondary='TutorLevel', back_populates='tutors')
     specialSkills = relationship('SpecialSkill', secondary='TutorSpecialSkill', back_populates='tutors')
     user = relationship('User', back_populates='tutorRole')
-    
-class TutorRequestStatus(enum.Enum):
-    """Enum for tutor request status"""
-    PENDING = 'PENDING'
-    ACCEPTED = 'ACCEPTED'
-    REJECTED = 'REJECTED'
-
-class TutorRequest(Base):
-    """Tutor Request model"""
-    __tablename__ = 'TutorRequest'
-
-    # Columns
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    datetime = Column(DateTime, default=datetime.datetime.now)
-    requesterId = Column(Integer, ForeignKey('User.id'))  # Foreign key to requester
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to tutor
-    status = Column(ENUM(TutorRequestStatus), default=TutorRequestStatus.PENDING)
-
-    # Relationships
-    requester = relationship('User', foreign_keys=[requesterId])
-    tutor = relationship('Tutor', foreign_keys=[tutorId])
 
 class AssignmentStatus(enum.Enum):
     """

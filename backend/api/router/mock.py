@@ -41,7 +41,7 @@ def search_tutors():
         )
     ]
 
-def create_tutor():
+def new_tutor():
     return TutorProfile(
         id="1",
         name="John Doe",

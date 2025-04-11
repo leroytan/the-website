@@ -123,7 +123,7 @@ class TutorLogic:
             return summaries
     
     @staticmethod
-    def create_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:
+    def new_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:
     
         with Session(StorageService.engine) as session:
 
@@ -221,21 +221,3 @@ class TutorLogic:
             session.refresh(updated_tutor)
 
             return TutorLogic.convert_tutor_to_profile(session, updated_tutor)
-        
-    @staticmethod
-    def submit_request(requester_id: int, tutor_id: int) -> None:
-
-        with Session(StorageService.engine) as session:
-
-            try:
-                StorageService.insert(session, TutorRequest(
-                    requesterId = requester_id,
-                    tutorId = tutor_id
-                ))
-            except IntegrityError as e:
-                raise HTTPException(
-                    status = 400,
-                    detail = str(e)
-                )
-
-

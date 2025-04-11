@@ -64,7 +64,9 @@ async def unlock_chat(id: int, user: User = Depends(RouterAuthUtils.get_current_
         id (int): The ID of the user to unlock chat with.
         user (User): The current user.
     """
-    return ChatLogic.unlock_chat(id, user.id)
+    ChatLogic.unlock_chat(id, user.id)
+
+    return {"message": "Chat unlocked."}
 
 @router.put("/api/chat/{id}/messages/read")
 async def mark_messages_as_read(id: int, message_ids: str, user: User = Depends(RouterAuthUtils.get_current_user)) -> None:
