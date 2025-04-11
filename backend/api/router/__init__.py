@@ -1,3 +1,4 @@
+import api.router.assignment
 import api.router.auth
 import api.router.course
 import api.router.mock

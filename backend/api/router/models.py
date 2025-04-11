@@ -1,3 +1,5 @@
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 
@@ -22,8 +24,7 @@ class TutorPublicSummary(BaseModel):
     experience: str | None
     availability: str | None
 
-class CreatedTutorProfile(BaseModel):
-    id: int
+class NewTutorProfile(BaseModel):
     photoUrl: str | None
     highestEducation: str | None
     availability: str | None
@@ -116,7 +117,7 @@ class Assignment(BaseModel):
     datetime: str
     title: str
     requesterId: int
-    tutorId: int
+    tutorId: int | None
     estimatedRate: str
     weeklyFrequency: int
     availableSlots: list[AssignmentSlot]
@@ -125,7 +126,26 @@ class Assignment(BaseModel):
     levels: list[str]
     status: str
 
+class NewAssignment(BaseModel):
+    title: str
+    estimatedRate: str
+    weeklyFrequency: int
+    availableSlots: list[AssignmentSlot]
+    specialRequests: str | None
+    subjects: list[str]
+    levels: list[str]
+
 class SearchQuery(BaseModel):
     query: str | None
     filters: list[str] | None
     sorts: list[str] | None
+
+T = TypeVar("T")
+
+class SearchResult(BaseModel, Generic[T]):
+    results: list[T]
+    filters: dict[str, list[dict[str, str]]]
+
+class NewChatMessage(BaseModel):
+    receiverId: int
+    content: str

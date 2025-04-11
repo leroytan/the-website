@@ -3,7 +3,7 @@ from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
 from api.auth.models import TokenPair
 from api.logic.logic import Logic
 from api.storage.models import User
-from fastapi import HTTPException, Request, Response
+from fastapi import HTTPException, Request, Response, WebSocket
 
 
 class RouterAuthUtils:
@@ -18,7 +18,7 @@ class RouterAuthUtils:
         Returns:
             bool: True if the user is logged out (both tokens are missing), False otherwise.
         """
-        if request.cookies.get("access_token") or request.cookies.get("refresh_token"):
+        if request.cookies.get("access_token") and request.cookies.get("refresh_token"):
             raise HTTPException(
                 status_code=401,
                 detail="User is already logged in",
@@ -34,7 +34,7 @@ class RouterAuthUtils:
         Returns:
             bool: True if the user is logged out (both tokens are missing), False otherwise.
         """
-        if not request.cookies.get("access_token") or not request.cookies.get("refresh_token"):
+        if not request.cookies.get("access_token") and not request.cookies.get("refresh_token"):
             raise HTTPException(
                 status_code=200,
                 detail="User is already logged out",
@@ -76,5 +76,12 @@ class RouterAuthUtils:
     @staticmethod
     async def get_current_user(request: Request) -> User:
         token = request.cookies.get("access_token")
+        print(token)
         user = Logic.get_current_user(token)
         return user
+    
+    @staticmethod
+    async def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:
+        token = websocket.cookies.get("access_token")
+        user = Logic.get_current_user(token)
+        return user, websocket

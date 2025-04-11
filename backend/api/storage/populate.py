@@ -6,12 +6,12 @@ from api.storage.models import (Assignment, AssignmentLevel, AssignmentRequest,
                                 TutorSpecialSkill, TutorSubject, User)
 
 
-def insert_test_data(engine):
+def insert_test_data(engine: object) -> bool:
     """
     Populate the database with test data for development and testing purposes.
     
     Args:
-        session: SQLAlchemy session object
+        session: SQLAlchemy engine object
     """
     import datetime
 
@@ -33,7 +33,7 @@ def insert_test_data(engine):
         table_has_data(Assignment)
     ]):
         print("Database already contains data. Skipping test data insertion.")
-        return
+        return False
     
     # Create test subjects
     subjects = [
@@ -295,9 +295,8 @@ def insert_test_data(engine):
     assignments = [
         Assignment(
             title="Calculus Finals Prep",
-            datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[0].id,  # John Doe requesting 
-            tutorId=tutors[0].id,     # Alice as tutor
+            tutorId=None,  # No tutor assigned yet
             estimatedRate="$45/hour",
             weeklyFrequency=2,
             specialRequests="Need help preparing for calculus final exam",
@@ -305,7 +304,6 @@ def insert_test_data(engine):
         ),
         Assignment(
             title="Essay-Writing Clinic",
-            datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[1].id,  # Jane Smith requesting
             tutorId=tutors[2].id,     # Carol as tutor
             estimatedRate="$35/hour",
@@ -317,7 +315,7 @@ def insert_test_data(engine):
             title="Programming Coaching (Python)",
             datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             requesterId=users[0].id,  # John Doe requesting
-            tutorId=tutors[3].id,     # David as tutor
+            tutorId=None,  # No tutor assigned yet
             estimatedRate="$50/hour",
             weeklyFrequency=3,
             specialRequests="Need help with Python programming project",
@@ -449,3 +447,4 @@ def insert_test_data(engine):
     session.commit()
     
     print("Test data successfully inserted into the database.")
+    return True

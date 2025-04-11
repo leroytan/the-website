@@ -1,14 +1,14 @@
 from api.logic.filter_logic import FilterLogic
-from api.router.models import (CreatedTutorProfile, SearchQuery, TutorProfile,
+from api.router.models import (NewTutorProfile, SearchQuery, TutorProfile,
                                TutorPublicSummary)
 from api.storage.models import (Level, SpecialSkill, Subject, Tutor,
                                 TutorRequest, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 
 class TutorLogic:
@@ -86,11 +86,14 @@ class TutorLogic:
         with Session(StorageService.engine) as session:
             filters = []
 
+            user_alias = aliased(User)  # You'll need to import your User model
+            statement = session.query(Tutor).join(user_alias, Tutor.user)
+
             # General search (matching name, location, or aboutMe)
             if search_query.query:
                 general_query = f"%{search_query.query}%"  # SQL LIKE pattern
                 filters.append(or_(
-                    Tutor.name.ilike(general_query),
+                    user_alias.name.ilike(general_query),
                     Tutor.location.ilike(general_query),
                     Tutor.aboutMe.ilike(general_query)
                 ))
@@ -110,7 +113,9 @@ class TutorLogic:
             if "level" in parsed_filters:
                 filters.append(Tutor.levels.any(Level.id.in_(parsed_filters["level"])))
 
-            tutors = StorageService.find(session, filters, Tutor)
+            statement = statement.filter(and_(*filters))
+
+            tutors = StorageService.find(session, statement, Tutor)
 
             # Convert the list of Tutor objects to TutorPublicSummary objects            
             summaries = [TutorLogic.convert_tutor_to_public_summary(session, tutor) for tutor in tutors]
@@ -118,7 +123,7 @@ class TutorLogic:
             return summaries
     
     @staticmethod
-    def create_tutor(tutor_profile: CreatedTutorProfile) -> TutorProfile:
+    def create_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:
     
         with Session(StorageService.engine) as session:
 
@@ -130,6 +135,7 @@ class TutorLogic:
 
             try:
                 tutor = StorageService.insert(session, Tutor(
+                    id=user_id,
                     **tutor_dict
                 ))
             except IntegrityError as e:
@@ -154,7 +160,7 @@ class TutorLogic:
             tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjectsTeachable)).all()
             tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levelsTeachable)).all()
             tutor.specialSkills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.specialSkills)).all()
-            tutor.user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
+            # tutor.user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
             session.commit()
             session.refresh(tutor)
 

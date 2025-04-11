@@ -84,10 +84,10 @@ class Assignment(Base):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    datetime = Column(String, nullable=False)
+    datetime = Column(DateTime, default=datetime.datetime.now)
     title = Column(String, nullable=False)
     requesterId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
+    tutorId = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
     estimatedRate = Column(String, nullable=False)
     weeklyFrequency = Column(Integer, nullable=False)
     specialRequests = Column(String, nullable=True)
@@ -227,4 +227,40 @@ class AssignmentLevel(Base):
     assignmentId = Column(Integer, ForeignKey('Assignment.id'))
     levelId = Column(Integer, ForeignKey('Level.id'))
 
+class ChatMessage(Base, SerializerMixin):
+    """
+    ChatMessage model
+    """
+    __tablename__ = 'ChatMessage'
 
+    # Columns
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    senderId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    receiverId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    content = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.datetime.now)
+    isRead = Column(Boolean, default=False)
+    chatRoomId = Column(Integer, ForeignKey('ChatRoom.id'))  # Foreign key to ChatRoom
+
+    # Relationships
+    sender = relationship('User', foreign_keys=[senderId])
+    receiver = relationship('User', foreign_keys=[receiverId])
+    chatRoom = relationship('ChatRoom', back_populates='messages')
+
+
+class ChatRoom(Base):
+    """
+    ChatRoom model
+    """
+    __tablename__ = 'ChatRoom'
+
+    # Columns
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user1Id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    user2Id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    isLocked = Column(Boolean, default=True)
+
+    # Relationships
+    user1 = relationship('User', foreign_keys=[user1Id])
+    user2 = relationship('User', foreign_keys=[user2Id])
+    messages = relationship('ChatMessage', back_populates='chatRoom')
