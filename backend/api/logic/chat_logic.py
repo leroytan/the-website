@@ -123,3 +123,50 @@ class ChatLogic:
                     "-chatRoom",
                 )) for message in chat_messages
             ]
+        
+    @staticmethod
+    def unlock_chat(chat_id: int, user_id: int) -> None:
+        """
+        Unlock chat with a user.
+
+        Args:
+            chat_id (int): The ID of the chatroom to unlock.
+            user_id (int): The ID of the current user.
+
+        Returns:
+            None
+        """
+        with Session(StorageService.engine) as session:
+            chatroom = StorageService.find(session, {"id": chat_id}, ChatRoom, find_one=True)
+            if chatroom.user1Id != user_id and chatroom.user2Id != user_id:
+                raise HTTPException(status_code=403, detail="You are not authorized to unlock this chatroom.")
+            
+            # Unlock the chatroom
+            chatroom.isLocked = False
+            session.commit()
+
+    @staticmethod
+    def mark_messages_as_read(chat_id: int, message_ids: list[int], user_id: int) -> None:
+        """
+        Mark chat messages as read.
+
+        Args:
+            chat_id (int): The ID of the chatroom.
+            message_ids (list[int]): List of message IDs to mark as read.
+            user_id (int): The ID of the current user.
+
+        Returns:
+            None
+        """
+        with Session(StorageService.engine) as session:
+            chatroom = StorageService.find(session, {"id": chat_id}, ChatRoom, find_one=True)
+            if chatroom.user1Id != user_id and chatroom.user2Id != user_id:
+                raise HTTPException(status_code=403, detail="You are not authorized to mark messages as read.")
+            
+            # Mark messages as read in one go
+            session.query(ChatMessage).filter(
+                ChatMessage.chatRoomId == chatroom.id,
+                ChatMessage.id.in_(message_ids)
+            ).update({"isRead": True})
+
+            session.commit()

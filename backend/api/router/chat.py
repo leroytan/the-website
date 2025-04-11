@@ -31,10 +31,10 @@ async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUt
         await ChatLogic.handle_message(active_connections, message, user.id)
 
 
-@router.get("/api/chat/history/{id}")
-async def get_chat_history(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> list[dict]:
+@router.get("/api/chat/{id}")
+async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> list[dict]:
     """
-    Get chat history between two users.
+    Get chat messages between two users.
 
     Args:
         id (int): The ID of the user to get chat history with.
@@ -46,7 +46,46 @@ async def get_chat_history(id: int, user: User = Depends(RouterAuthUtils.get_cur
     """
     # print(request.cookies.get("access_token"))
     # user = await RouterAuthUtils.get_current_user(request)
-    return ChatLogic.get_chat_history(id, user.id, last_message_id, message_count)
+    messages = ChatLogic.get_chat_history(id, user.id, last_message_id, message_count)
+    message_count = len(messages)
+    last_unretrieved_message_id = messages[message_count - 1].id - 1 if message_count > 0 else -1
+    return {
+        "messages": messages,
+        "message_count": message_count,
+        "last_unretrieved_message_id": last_unretrieved_message_id,
+    }
+
+@router.put("/api/chat/{id}/unlock")
+async def unlock_chat(id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> None:
+    """
+    Unlock chat with a user.
+
+    Args:
+        id (int): The ID of the user to unlock chat with.
+        user (User): The current user.
+    """
+    return ChatLogic.unlock_chat(id, user.id)
+
+@router.put("/api/chat/{id}/messages/read")
+async def mark_messages_as_read(id: int, message_ids: str, user: User = Depends(RouterAuthUtils.get_current_user)) -> None:
+    """
+    Mark chat messages as read.
+
+    Args:
+        id (int): The ID of the chat to mark messages as read.
+        message_ids: List of message IDs to mark as read.
+        user (User): The current user.
+    """
+    # Convert the message_ids string to a list of integers
+    message_ids = json.loads(message_ids)
+    # Ensure that message_ids is a list of integers
+    if not isinstance(message_ids, list) or not all(isinstance(i, int) for i in message_ids):
+        raise ValueError("message_ids must be a list of integers.")
+    
+    # Call the logic function to mark messages as read
+    ChatLogic.mark_messages_as_read(id, message_ids, user.id)
+
+    return {"message": "Messages marked as read."}
 
 html = """
 <!DOCTYPE html>
