@@ -69,7 +69,7 @@ def check_data():
         slots = session.query(AssignmentSlot).all()
         if len(slots) != 2:
             return False, f"Expected 2 assignment slots, found {len(slots)}"
-        slot1 = session.query(AssignmentSlot).filter_by(assignmentId=assignment1.id).first()
+        slot1 = session.query(AssignmentSlot).filter_by(assignment_id=assignment1.id).first()
         if not slot1 or slot1.day != "Monday":
             return False, "AssignmentSlot 1 data is incorrect"
 

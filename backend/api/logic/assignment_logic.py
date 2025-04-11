@@ -29,21 +29,21 @@ class AssignmentLogic:
             AssignmentSlotView(
                 id=slot.id,
                 day=slot.day,
-                startTime=slot.startTime,
-                endTime=slot.endTime,
+                start_time=slot.start_time,
+                end_time=slot.end_time,
             )
-            for slot in assignment.availableSlots
+            for slot in assignment.available_slots
         ]
         return AssignmentView(
             id=assignment.id,
             datetime=assignment.datetime.strftime("%Y-%m-%d %H:%M:%S"),
             title=assignment.title,
-            requesterId=assignment.requesterId,
-            tutorId=assignment.tutorId,
-            estimatedRate=assignment.estimatedRate,
-            weeklyFrequency=assignment.weeklyFrequency,
-            availableSlots=slots,
-            specialRequests=assignment.specialRequests,
+            owner_id=assignment.owner_id,
+            tutor_id=assignment.tutor_id,
+            estimated_rate=assignment.estimated_rate,
+            weekly_frequency=assignment.weekly_frequency,
+            available_slots=slots,
+            special_requests=assignment.special_requests,
             subjects=subject_names,
             levels=level_names,
             status=assignment.status
@@ -65,12 +65,12 @@ class AssignmentLogic:
             statement = statement.outerjoin(user_alias, tutor_alias.user)
             statement = statement.outerjoin(requester_alias, Assignment.requester)
 
-            # General search (matching name, location, or aboutMe)
+            # General search (matching name, location, or about_me)
             if search_query.query:
                 general_query = f"%{search_query.query}%"  # SQL LIKE pattern
                 filters.append(or_(
                     Assignment.title.ilike(general_query),
-                    Assignment.specialRequests.ilike(general_query),
+                    Assignment.special_requests.ilike(general_query),
                     user_alias.name.ilike(general_query),
                     requester_alias.name.ilike(general_query),
                 ))
@@ -102,10 +102,10 @@ class AssignmentLogic:
             # Create a new assignment
             assignment = Assignment(
                 title=new_assignment.title,
-                requesterId=user_id,
-                estimatedRate=new_assignment.estimatedRate,
-                weeklyFrequency=new_assignment.weeklyFrequency,
-                specialRequests=new_assignment.specialRequests,
+                owner_id=user_id,
+                estimated_rate=new_assignment.estimated_rate,
+                weekly_frequency=new_assignment.weekly_frequency,
+                special_requests=new_assignment.special_requests,
                 status=AssignmentStatus.OPEN
             )
 
@@ -129,15 +129,15 @@ class AssignmentLogic:
             assignment.levels = session.query(Level).filter(Level.name.in_(new_assignment.levels)).all()
         
             # Create assignment slots
-            for slot in new_assignment.availableSlots:
+            for slot in new_assignment.available_slots:
                 assignment_slot = AssignmentSlot(
                     day=slot.day,
-                    startTime=slot.startTime,
-                    endTime=slot.endTime,
-                    assignmentId=assignment.id
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                    assignment_id=assignment.id
                 )
                 session.add(assignment_slot)
-            assignment.availableSlots = session.query(AssignmentSlot).filter(AssignmentSlot.assignmentId == assignment.id).all()
+            assignment.available_slots = session.query(AssignmentSlot).filter(AssignmentSlot.assignment_id == assignment.id).all()
 
             session.commit()
             session.refresh(assignment)
@@ -160,7 +160,7 @@ class AssignmentLogic:
             # Update the assignment
             assignment_dict = assignment_update.model_dump()
 
-            assignment_dict.pop("availableSlots", None)
+            assignment_dict.pop("available_slots", None)
             assignment_dict.pop("subjects", None)
             assignment_dict.pop("levels", None)
 
@@ -172,7 +172,7 @@ class AssignmentLogic:
                 )
             
             # Check if the user is the requester of the assignment
-            assert_user_authorized(assignment.requesterId)
+            assert_user_authorized(assignment.owner_id)
 
             session.add(assignment)
             # Update subjects and levels
@@ -180,17 +180,17 @@ class AssignmentLogic:
             assignment.levels = session.query(Level).filter(Level.name.in_(assignment_update.levels)).all()
 
             # Clear slots
-            StorageService.delete(session, {"assignmentId": assignment.id}, AssignmentSlot)
+            StorageService.delete(session, {"assignment_id": assignment.id}, AssignmentSlot)
             # Update available slots
-            for slot in assignment_update.availableSlots:
+            for slot in assignment_update.available_slots:
                 assignment_slot = StorageService.insert(session, AssignmentSlot(
                     day=slot.day,
-                    startTime=slot.startTime,
-                    endTime=slot.endTime,
-                    assignmentId=assignment.id
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                    assignment_id=assignment.id
                 ))
                 session.add(assignment_slot)
-            assignment.availableSlots = session.query(AssignmentSlot).filter(AssignmentSlot.assignmentId == assignment.id).all()
+            assignment.available_slots = session.query(AssignmentSlot).filter(AssignmentSlot.assignment_id == assignment.id).all()
 
             session.commit()
             session.refresh(assignment)
@@ -208,12 +208,12 @@ class AssignmentLogic:
                 )
 
             # Check if the assignment is open
-            if assignment.status != AssignmentStatus.OPEN or assignment.tutorId is not None:
+            if assignment.status != AssignmentStatus.OPEN or assignment.tutor_id is not None:
                 raise HTTPException(
                     status_code=400,
                     detail="Assignment is not open for requests"
                 )
-            if assignment.requesterId == tutor_id:
+            if assignment.owner_id == tutor_id:
                 raise HTTPException(
                     status_code=400,
                     detail="Tutor cannot request their own assignment"
@@ -222,8 +222,8 @@ class AssignmentLogic:
             # Create a request
             try:
                 StorageService.insert(session, AssignmentRequest(
-                    assignmentId=assignment.id,
-                    tutorId=tutor_id
+                    assignment_id=assignment.id,
+                    tutor_id=tutor_id
                 ))
             except IntegrityError as e:
                 if isinstance(e.orig, ForeignKeyViolation):
@@ -256,11 +256,11 @@ class AssignmentLogic:
                     detail="Assignment request is not pending. Cannot change status."
                 )
             # Check if the user is the requester of the assignment
-            assert_user_authorized(assignment_request.assignment.requesterId)
+            assert_user_authorized(assignment_request.assignment.owner_id)
 
-            # Update the assignment with the tutorId
-            assignment = StorageService.update(session, {"id": assignment_request.assignmentId},
-                                               {"tutorId": assignment_request.tutorId, "status": AssignmentStatus.FILLED},
+            # Update the assignment with the tutor_id
+            assignment = StorageService.update(session, {"id": assignment_request.assignment_id},
+                                               {"tutor_id": assignment_request.tutor_id, "status": AssignmentStatus.FILLED},
                                                  Assignment)
             if not assignment:
                 raise HTTPException(

@@ -25,7 +25,7 @@ async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUt
         
         message = NewChatMessage(
             content=content,
-            receiverId=receiver_id,
+            receiver_id=receiver_id,
         )
 
         await ChatLogic.handle_message(active_connections, message, user.id)
