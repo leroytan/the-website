@@ -227,7 +227,7 @@ class AssignmentLevel(Base):
     assignmentId = Column(Integer, ForeignKey('Assignment.id'))
     levelId = Column(Integer, ForeignKey('Level.id'))
 
-class ChatMessage(Base):
+class ChatMessage(Base, SerializerMixin):
     """
     ChatMessage model
     """

@@ -4,11 +4,9 @@ from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import NewChatMessage
 from api.storage.models import User
-from api.storage.storage_service import StorageService
-from fastapi import Depends, WebSocket
+from fastapi import Depends, Request, WebSocket
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRouter
-from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -32,6 +30,23 @@ async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUt
 
         await ChatLogic.handle_message(active_connections, message, user.id)
 
+
+@router.get("/api/chat/history/{id}")
+async def get_chat_history(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> list[dict]:
+    """
+    Get chat history between two users.
+
+    Args:
+        id (int): The ID of the user to get chat history with.
+        last_message_id (int): The ID of the last message received.
+        message_count (int): The number of messages to retrieve prior to (and including) the last message.
+        user (User): The current user.
+    Returns:
+        list[ChatMessage]: List of chat messages.
+    """
+    # print(request.cookies.get("access_token"))
+    # user = await RouterAuthUtils.get_current_user(request)
+    return ChatLogic.get_chat_history(id, user.id, last_message_id, message_count)
 
 html = """
 <!DOCTYPE html>

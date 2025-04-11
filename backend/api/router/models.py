@@ -149,11 +149,3 @@ class SearchResult(BaseModel, Generic[T]):
 class NewChatMessage(BaseModel):
     receiverId: int
     content: str
-
-class ChatMessage(BaseModel):
-    id: int
-    senderId: int
-    receiverId: int
-    content: str
-    timestamp: str
-    isRead: bool

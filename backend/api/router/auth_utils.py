@@ -76,6 +76,7 @@ class RouterAuthUtils:
     @staticmethod
     async def get_current_user(request: Request) -> User:
         token = request.cookies.get("access_token")
+        print(token)
         user = Logic.get_current_user(token)
         return user
     

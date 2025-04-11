@@ -1,7 +1,7 @@
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, ChatRoom
 from api.storage.storage_service import StorageService
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
@@ -87,3 +87,39 @@ class ChatLogic:
                     await active_connections[receiver_id].send_text(chat_message.content)
                 except WebSocketDisconnect:
                     active_connections.pop(receiver_id, None)
+
+    @staticmethod
+    def get_chat_history(chat_id: int, user_id: int, last_message_id: int, message_count: int) -> list[ChatMessage]:
+        """
+        Get chat history between two users.
+
+        Args:
+            chat_id (int): The ID of the user to get chat history with.
+            user_id (int): The ID of the current user.
+            last_message_id (int): The ID of the last message received.
+            message_count (int): The number of messages to retrieve prior to (and including) the last message.
+
+        Returns:
+            list[ChatMessage]: List of chat messages.
+        """
+        with Session(StorageService.engine) as session:
+            chatroom = StorageService.find(session, {"id": chat_id}, ChatRoom, find_one=True)
+            if chatroom.user1Id != user_id and chatroom.user2Id != user_id:
+                raise HTTPException(status_code=403, detail="You are not authorized to view this chatroom.")
+            session.add(chatroom)
+
+            # Get the chat messages
+            if last_message_id == -1: last_message_id = float('inf')
+            print(f"Getting chat history for user {user_id} with {chatroom.id} up to message ID {last_message_id}")
+            chat_messages = session.query(ChatMessage).filter(
+                ChatMessage.chatRoomId == chatroom.id,
+                ChatMessage.id <= last_message_id
+            ).order_by(ChatMessage.timestamp.desc()).limit(message_count).all()
+            print(f"Retrieved {len(chat_messages)} messages.")
+            return [
+                message.to_dict(rules=(
+                    "-sender",
+                    "-receiver",
+                    "-chatRoom",
+                )) for message in chat_messages
+            ]
