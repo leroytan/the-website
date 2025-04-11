@@ -2,8 +2,7 @@ from api.storage.connection import engine
 from api.storage.models import (Assignment, AssignmentRequest, AssignmentSlot,
                                 AssignmentStatus, Client, ClientSubject, Level,
                                 SpecialSkill, Subject, Tutor, TutorLevel,
-                                TutorRequest, TutorSpecialSkill, TutorSubject,
-                                User, UserType)
+                                TutorSpecialSkill, TutorSubject, User)
 from sqlalchemy.orm import sessionmaker
 
 
@@ -70,7 +69,7 @@ def check_data():
         slots = session.query(AssignmentSlot).all()
         if len(slots) != 2:
             return False, f"Expected 2 assignment slots, found {len(slots)}"
-        slot1 = session.query(AssignmentSlot).filter_by(assignmentId=assignment1.id).first()
+        slot1 = session.query(AssignmentSlot).filter_by(assignment_id=assignment1.id).first()
         if not slot1 or slot1.day != "Monday":
             return False, "AssignmentSlot 1 data is incorrect"
 

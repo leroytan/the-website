@@ -1,8 +1,7 @@
 from api.logic.filter_logic import FilterLogic
 from api.router.models import (NewTutorProfile, SearchQuery, TutorProfile,
                                TutorPublicSummary)
-from api.storage.models import (Level, SpecialSkill, Subject, Tutor,
-                                TutorRequest, User)
+from api.storage.models import Level, SpecialSkill, Subject, Tutor, User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
@@ -34,11 +33,11 @@ class TutorLogic:
         return TutorPublicSummary(
             id=tutor.id,
             name=tutor.user.name,
-            photoUrl=tutor.photoUrl,
+            photo_url=tutor.photo_url,
             rate=tutor.rate,
             rating=tutor.rating,
-            subjectsTeachable=subject_names,
-            levelsTeachable=level_names,
+            subjects_teachable=subject_names,
+            levels_teachable=level_names,
             experience=tutor.experience,
             availability=tutor.availability
         )
@@ -66,16 +65,16 @@ class TutorLogic:
             name=tutor.user.name,
             contact=tutor.user.email,
             email=tutor.user.email,
-            photoUrl=tutor.photoUrl,
-            highestEducation=tutor.highestEducation,
+            photo_url=tutor.photo_url,
+            highest_education=tutor.highest_education,
             rate=tutor.rate,
             location=tutor.location,
             rating=tutor.rating,
-            aboutMe=tutor.aboutMe,
-            subjectsTeachable=subject_names,
-            levelsTeachable=level_names,
-            specialSkills=[skill.name for skill in tutor.specialSkills] if tutor.specialSkills else [],
-            resumeUrl=tutor.resumeUrl,
+            about_me=tutor.about_me,
+            subjects_teachable=subject_names,
+            levels_teachable=level_names,
+            special_skills=[skill.name for skill in tutor.special_skills] if tutor.special_skills else [],
+            resume_url=tutor.resume_url,
             experience=tutor.experience,
             availability=tutor.availability,
         )
@@ -89,13 +88,13 @@ class TutorLogic:
             user_alias = aliased(User)  # You'll need to import your User model
             statement = session.query(Tutor).join(user_alias, Tutor.user)
 
-            # General search (matching name, location, or aboutMe)
+            # General search (matching name, location, or about_me)
             if search_query.query:
                 general_query = f"%{search_query.query}%"  # SQL LIKE pattern
                 filters.append(or_(
                     user_alias.name.ilike(general_query),
                     Tutor.location.ilike(general_query),
-                    Tutor.aboutMe.ilike(general_query)
+                    Tutor.about_me.ilike(general_query)
                 ))
 
             # get filters from the search query
@@ -107,7 +106,7 @@ class TutorLogic:
 
             # Filter by special skills
             if "specialSkill" in parsed_filters:
-                filters.append(Tutor.specialSkills.any(SpecialSkill.id.in_(parsed_filters["specialSkill"])))
+                filters.append(Tutor.special_skills.any(SpecialSkill.id.in_(parsed_filters["specialSkill"])))
 
             # Filter by levels
             if "level" in parsed_filters:
@@ -123,15 +122,15 @@ class TutorLogic:
             return summaries
     
     @staticmethod
-    def create_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:
+    def new_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:
     
         with Session(StorageService.engine) as session:
 
             tutor_dict = tutor_profile.model_dump()
 
-            tutor_dict.pop("subjectsTeachable", None)
-            tutor_dict.pop("levelsTeachable", None)
-            tutor_dict.pop("specialSkills", None)
+            tutor_dict.pop("subjects_teachable", None)
+            tutor_dict.pop("levels_teachable", None)
+            tutor_dict.pop("special_skills", None)
 
             try:
                 tutor = StorageService.insert(session, Tutor(
@@ -157,9 +156,9 @@ class TutorLogic:
 
             session.add(tutor)
             # Fetch the related Subject, Level, and SpecialSkill objects
-            tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjectsTeachable)).all()
-            tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levelsTeachable)).all()
-            tutor.specialSkills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.specialSkills)).all()
+            tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjects_teachable)).all()
+            tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levels_teachable)).all()
+            tutor.special_skills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.special_skills)).all()
             # tutor.user = StorageService.find(session, {"id": tutor_profile.id}, User, find_one=True)
             session.commit()
             session.refresh(tutor)
@@ -174,7 +173,10 @@ class TutorLogic:
             tutor = StorageService.find(session, {"id": id}, Tutor, find_one=True)
 
             if not tutor:
-                return None
+                raise HTTPException(
+                    status_code=404,
+                    detail="Tutor not found"
+                )
             
             if not is_self:
                 # Convert the Tutor object to a TutorPublicSummary object
@@ -196,9 +198,9 @@ class TutorLogic:
             tutor_dict = tutor_profile.model_dump()
 
             tutor_dict.pop("id", None)
-            tutor_dict.pop("subjectsTeachable", None)
-            tutor_dict.pop("levelsTeachable", None)
-            tutor_dict.pop("specialSkills", None)
+            tutor_dict.pop("subjects_teachable", None)
+            tutor_dict.pop("levels_teachable", None)
+            tutor_dict.pop("special_skills", None)
 
             # TODO: settle the update logic to update User and Tutor
             user_dict = {
@@ -214,28 +216,10 @@ class TutorLogic:
             session.add(updated_tutor)
 
             # Fetch the related Subject, Level, and SpecialSkill objects
-            updated_tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjectsTeachable)).all()
-            updated_tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levelsTeachable)).all()
-            updated_tutor.specialSkills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.specialSkills)).all()
+            updated_tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjects_teachable)).all()
+            updated_tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levels_teachable)).all()
+            updated_tutor.special_skills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.special_skills)).all()
             session.commit()
             session.refresh(updated_tutor)
 
             return TutorLogic.convert_tutor_to_profile(session, updated_tutor)
-        
-    @staticmethod
-    def submit_request(requester_id: int, tutor_id: int) -> None:
-
-        with Session(StorageService.engine) as session:
-
-            try:
-                StorageService.insert(session, TutorRequest(
-                    requesterId = requester_id,
-                    tutorId = tutor_id
-                ))
-            except IntegrityError as e:
-                raise HTTPException(
-                    status = 400,
-                    detail = str(e)
-                )
-
-

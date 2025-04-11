@@ -16,10 +16,10 @@ class SignupRequest(BaseModel):
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
-    photoUrl: Optional[str]
+    photo_url: Optional[str]
     rate: Optional[float]
     rating: Optional[int]
-    subjectsTeachable: List[str]
-    levelsTeachable: List[str]
+    subjects_teachable: List[str]
+    levels_teachable: List[str]
     experience: Optional[str]
     availability: Optional[str]

@@ -1,8 +1,11 @@
+from collections.abc import Callable
+
 from api.logic.filter_logic import FilterLogic
 from api.router.models import Assignment as AssignmentView
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import NewAssignment, SearchQuery
-from api.storage.models import (Assignment, AssignmentRequest, AssignmentSlot,
+from api.storage.models import (Assignment, AssignmentRequest,
+                                AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, Level, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
@@ -26,21 +29,21 @@ class AssignmentLogic:
             AssignmentSlotView(
                 id=slot.id,
                 day=slot.day,
-                startTime=slot.startTime,
-                endTime=slot.endTime,
+                start_time=slot.start_time,
+                end_time=slot.end_time,
             )
-            for slot in assignment.availableSlots
+            for slot in assignment.available_slots
         ]
         return AssignmentView(
             id=assignment.id,
             datetime=assignment.datetime.strftime("%Y-%m-%d %H:%M:%S"),
             title=assignment.title,
-            requesterId=assignment.requesterId,
-            tutorId=assignment.tutorId,
-            estimatedRate=assignment.estimatedRate,
-            weeklyFrequency=assignment.weeklyFrequency,
-            availableSlots=slots,
-            specialRequests=assignment.specialRequests,
+            owner_id=assignment.owner_id,
+            tutor_id=assignment.tutor_id,
+            estimated_rate=assignment.estimated_rate,
+            weekly_frequency=assignment.weekly_frequency,
+            available_slots=slots,
+            special_requests=assignment.special_requests,
             subjects=subject_names,
             levels=level_names,
             status=assignment.status
@@ -62,12 +65,12 @@ class AssignmentLogic:
             statement = statement.outerjoin(user_alias, tutor_alias.user)
             statement = statement.outerjoin(requester_alias, Assignment.requester)
 
-            # General search (matching name, location, or aboutMe)
+            # General search (matching name, location, or about_me)
             if search_query.query:
                 general_query = f"%{search_query.query}%"  # SQL LIKE pattern
                 filters.append(or_(
                     Assignment.title.ilike(general_query),
-                    Assignment.specialRequests.ilike(general_query),
+                    Assignment.special_requests.ilike(general_query),
                     user_alias.name.ilike(general_query),
                     requester_alias.name.ilike(general_query),
                 ))
@@ -93,16 +96,16 @@ class AssignmentLogic:
             return summaries
         
     @staticmethod
-    def create_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentView:
+    def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentView:
         with Session(StorageService.engine) as session:
 
             # Create a new assignment
             assignment = Assignment(
                 title=new_assignment.title,
-                requesterId=user_id,
-                estimatedRate=new_assignment.estimatedRate,
-                weeklyFrequency=new_assignment.weeklyFrequency,
-                specialRequests=new_assignment.specialRequests,
+                owner_id=user_id,
+                estimated_rate=new_assignment.estimated_rate,
+                weekly_frequency=new_assignment.weekly_frequency,
+                special_requests=new_assignment.special_requests,
                 status=AssignmentStatus.OPEN
             )
 
@@ -126,58 +129,68 @@ class AssignmentLogic:
             assignment.levels = session.query(Level).filter(Level.name.in_(new_assignment.levels)).all()
         
             # Create assignment slots
-            for slot in new_assignment.availableSlots:
+            for slot in new_assignment.available_slots:
                 assignment_slot = AssignmentSlot(
                     day=slot.day,
-                    startTime=slot.startTime,
-                    endTime=slot.endTime,
-                    assignmentId=assignment.id
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                    assignment_id=assignment.id
                 )
                 session.add(assignment_slot)
-            assignment.availableSlots = session.query(AssignmentSlot).filter(AssignmentSlot.assignmentId == assignment.id).all()
+            assignment.available_slots = session.query(AssignmentSlot).filter(AssignmentSlot.assignment_id == assignment.id).all()
 
             session.commit()
             session.refresh(assignment)
             return AssignmentLogic.convert_assignment_to_view(session, assignment)
         
     @staticmethod
-    def get_assignment_by_id(id: str | int) -> AssignmentView | None:
+    def get_assignment_by_id(id: str | int) -> AssignmentView:
         with Session(StorageService.engine) as session:
             assignment = StorageService.find(session, {"id": id}, Assignment, find_one=True)
             if not assignment:
-                return None
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
             return AssignmentLogic.convert_assignment_to_view(session, assignment)
         
     @staticmethod
-    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment) -> AssignmentView:
+    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment, assert_user_authorized: Callable[[int], None]) -> AssignmentView:
         with Session(StorageService.engine) as session:
             # Update the assignment
             assignment_dict = assignment_update.model_dump()
 
-            assignment_dict.pop("availableSlots", None)
+            assignment_dict.pop("available_slots", None)
             assignment_dict.pop("subjects", None)
             assignment_dict.pop("levels", None)
 
             assignment = StorageService.update(session, {"id": id}, assignment_dict, Assignment)
             if not assignment:
-                return None
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
             
+            # Check if the user is the requester of the assignment
+            assert_user_authorized(assignment.owner_id)
+
+            session.add(assignment)
             # Update subjects and levels
             assignment.subjects = session.query(Subject).filter(Subject.name.in_(assignment_update.subjects)).all()
             assignment.levels = session.query(Level).filter(Level.name.in_(assignment_update.levels)).all()
 
             # Clear slots
-            StorageService.delete(session, {"assignmentId": assignment.id}, AssignmentSlot)
+            StorageService.delete(session, {"assignment_id": assignment.id}, AssignmentSlot)
             # Update available slots
-            for slot in assignment_update.availableSlots:
+            for slot in assignment_update.available_slots:
                 assignment_slot = StorageService.insert(session, AssignmentSlot(
                     day=slot.day,
-                    startTime=slot.startTime,
-                    endTime=slot.endTime,
-                    assignmentId=assignment.id
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                    assignment_id=assignment.id
                 ))
                 session.add(assignment_slot)
-            assignment.availableSlots = session.query(AssignmentSlot).filter(AssignmentSlot.assignmentId == assignment.id).all()
+            assignment.available_slots = session.query(AssignmentSlot).filter(AssignmentSlot.assignment_id == assignment.id).all()
 
             session.commit()
             session.refresh(assignment)
@@ -195,17 +208,22 @@ class AssignmentLogic:
                 )
 
             # Check if the assignment is open
-            if assignment.status != AssignmentStatus.OPEN or assignment.tutorId is not None:
+            if assignment.status != AssignmentStatus.OPEN or assignment.tutor_id is not None:
                 raise HTTPException(
                     status_code=400,
                     detail="Assignment is not open for requests"
+                )
+            if assignment.owner_id == tutor_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Tutor cannot request their own assignment"
                 )
             
             # Create a request
             try:
                 StorageService.insert(session, AssignmentRequest(
-                    assignmentId=assignment.id,
-                    tutorId=tutor_id
+                    assignment_id=assignment.id,
+                    tutor_id=tutor_id
                 ))
             except IntegrityError as e:
                 if isinstance(e.orig, ForeignKeyViolation):
@@ -218,3 +236,41 @@ class AssignmentLogic:
                         status_code=500,
                         detail="Internal server error"
                     )
+    
+
+    @staticmethod
+    def change_assignment_request_status(assignment_request_id: str | int, status: str, assert_user_authorized: Callable[[int], None]) -> None:
+        with Session(StorageService.engine) as session:
+            # Find the assignment request
+            assignment_request = StorageService.find(session, {"id": assignment_request_id}, AssignmentRequest, find_one=True)
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+
+            session.add(assignment_request)
+            if assignment_request.status != AssignmentRequestStatus.PENDING:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Assignment request is not pending. Cannot change status."
+                )
+            # Check if the user is the requester of the assignment
+            assert_user_authorized(assignment_request.assignment.owner_id)
+
+            # Update the assignment with the tutor_id
+            assignment = StorageService.update(session, {"id": assignment_request.assignment_id},
+                                               {"tutor_id": assignment_request.tutor_id, "status": AssignmentStatus.FILLED},
+                                                 Assignment)
+            if not assignment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found"
+                )
+            match status:
+                case "ACCEPTED":
+                    assignment_request.status = AssignmentRequestStatus.ACCEPTED
+                case "REJECTED":
+                    assignment_request.status = AssignmentRequestStatus.REJECTED
+
+            session.commit()

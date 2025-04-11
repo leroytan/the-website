@@ -2,6 +2,7 @@ import api.router.mock as mock
 from api.config import settings
 from api.logic.assignment_logic import AssignmentLogic
 from api.logic.filter_logic import FilterLogic
+from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import Assignment as AssignmentView
 from api.router.models import NewAssignment, SearchQuery, SearchResult
@@ -36,31 +37,42 @@ async def search_assignments(query: str = "", filters: str = "", sorts: str = ""
     )
 
 
-@router.post("/api/assignments/create")
-async def create_assignment(new_assignment: NewAssignment, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentView:
+@router.post("/api/assignments/new")
+async def new_assignment(new_assignment: NewAssignment, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    return AssignmentLogic.create_assignment(new_assignment, user.id)
+    return AssignmentLogic.new_assignment(new_assignment, user.id)
 
-@router.get("/api/assignments/item/{assignment_id}")
-async def get_assignment(assignment_id: int) -> AssignmentView:
+@router.get("/api/assignments/{id}")
+async def get_assignment(id: int) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    return AssignmentLogic.get_assignment_by_id(assignment_id)
+    return AssignmentLogic.get_assignment_by_id(id)
 
-@router.put("/api/assignments/item/{assignment_id}")
-async def update_assignment(assignment_id: int, assignment: NewAssignment) -> AssignmentView:
+@router.put("/api/assignments/{id}")
+async def update_assignment(id: int, assignment: NewAssignment, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    return AssignmentLogic.update_assignment_by_id(assignment_id, assignment)
+    assert_user_authorized = Logic.create_assert_user_authorized(user.id)
+    
+    return AssignmentLogic.update_assignment_by_id(id, assignment, assert_user_authorized)
 
-@router.post("/api/assignments/request/{assignment_id}")
-async def request_assignment(assignment_id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
+@router.post("/api/assignments/{id}/request")
+async def request_assignment(id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
     if settings.is_use_mock:
         return Response(200)
     
-    AssignmentLogic.request_assignment(assignment_id, user.id)
+    AssignmentLogic.request_assignment(id, user.id)
     return {"message": "Assignment requested successfully."}
+
+@router.put("/api/assignment-requests/{id}/change-status")
+async def change_assignment_request_status(id: int, status: str, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
+    if settings.is_use_mock:
+        return Response(200)
+    
+    assert_user_authorized = Logic.create_assert_user_authorized(user.id)
+    AssignmentLogic.change_assignment_request_status(id, status, assert_user_authorized)
+    return {"message": "Assignment request status changed successfully."}
