@@ -1,0 +1,42 @@
+put:
+  tags:
+    - assignment
+  summary: Owner accepts a tutor for the specified assignment, requiring tutor authorization
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The id of the assignment for which the tutor is being accepted
+      schema:
+        type: string
+    - name: status
+      in: path
+      required: true
+      description: The status to be set for the assignment request
+      schema:
+        type: string
+        enum:
+          - accepted
+          - rejected
+    - name: access_token
+      in: cookie
+      required: true
+      description: The access token used to authenticate the tutor and decode the tutor ID
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Confirmation that the user has accepted the tutor for the assignment
+    '400':
+      description: Bad request (e.g., invalid or expired token, or incorrect assignment ID)
+    '401':
+      description: Unauthorized (invalid access token or insufficient permissions)
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+  security:
+    - cookieAuth: []

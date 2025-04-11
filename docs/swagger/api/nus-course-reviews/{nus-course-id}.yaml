@@ -1,0 +1,18 @@
+get:
+  tags:
+    - reviews
+  summary: Retrieve reviews for a specific nus course
+  parameters:
+    - name: nus-course-id
+      in: path
+      required: true
+      description: The ID of the NUS course to retrieve reviews for
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Details and reviews for the specified course
+      content:
+        application/json:
+          schema:
+            $ref: '../nus-course-reviews.yaml#/Module'

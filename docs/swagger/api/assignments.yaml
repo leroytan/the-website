@@ -1,0 +1,44 @@
+get:
+  tags:
+    - assignment
+  summary: get the data to populate the page which shows all courses
+  parameters:
+    - in: query
+      name: query
+      schema:
+        type: string
+      required: false
+      description: query string to search
+    - in: query
+      name: filter
+      schema:
+        type: string
+      required: false
+      description: filter ids
+    - in: query
+      name: sort
+      schema:
+        type: string
+      required: false
+      description: ordering of assignments
+  responses:
+    '200':
+      description: Successful retrieval of assignments and filter options
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              assignments:
+                type: array
+                items:
+                  $ref: './assignments/assignment.yaml/#/Assignment'
+              filters:
+                type: object
+                properties:
+                  course:
+                    $ref: './filter.yaml/#/FilterList'
+                  subject:
+                    $ref: './filter.yaml/#/FilterList'
+                  level:
+                    $ref: './filter.yaml/#/FilterList'

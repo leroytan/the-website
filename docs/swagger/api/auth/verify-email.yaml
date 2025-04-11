@@ -1,0 +1,42 @@
+post:
+  tags:
+    - auth
+  summary: "Endpoint to send an email verification link to the user's email address."
+  description: |
+    This endpoint allows a user to request an email verification link to verify their email address. 
+    After submitting their email, the system will send a verification link to the provided email address. 
+    If the email is valid and associated with a registered account, a verification email will be sent.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+              description: "The email address of the user requesting the email verification."
+          required:
+            - email
+  responses:
+    '200':
+      description: "A verification link has been sent to the provided email address if it is valid."
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "A verification link has been sent to your email address if it's valid."
+    '400':
+      description: "Bad Request. The email address format is invalid."
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid email address format."
