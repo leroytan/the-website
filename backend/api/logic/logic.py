@@ -70,6 +70,8 @@ class Logic:
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
+            if access_token is None:
+                raise credentials_exception
             payload = AuthService.verify_token(access_token)
 
             if payload.email is None:
