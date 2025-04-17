@@ -1,6 +1,7 @@
 # contains all the mock data for each endpoint
 
-from api.router.models import Assignment, TutorProfile, TutorPublicSummary
+from api.router.models import (AssignmentPublicView, TutorProfile,
+                               TutorPublicSummary)
 
 
 def search_tutors():
@@ -105,7 +106,7 @@ def update_tutor_profile():
 
 def get_assignments():
     return [
-        Assignment(
+        AssignmentPublicView(
             id=1,
             clientId=1,
             tutor_id=1,
@@ -115,7 +116,7 @@ def get_assignments():
             special_requests="Please bring additional materials for the lesson.",
             status="Pending"
         ),
-        Assignment(
+        AssignmentPublicView(
             id=2,
             clientId=2,
             tutor_id=2,
@@ -125,7 +126,7 @@ def get_assignments():
             special_requests="Student requires additional help with homework.",
             status="Confirmed"
         ),
-        Assignment(
+        AssignmentPublicView(
             id=3,
             clientId=3,
             tutor_id=3,

@@ -96,19 +96,31 @@ class AssignmentSlot(BaseModel):
     start_time: str
     end_time: str
 
-class Assignment(BaseModel):
+class AssignmentRequest(BaseModel):
+    id: int
+    datetime: str
+    tutor_id: int
+    status: str
+
+class AssignmentBaseView(BaseModel):
     id: int
     datetime: str
     title: str
     owner_id: int
-    tutor_id: int | None
     estimated_rate: str
     weekly_frequency: int
     available_slots: list[AssignmentSlot]
-    special_requests: str | None
+    special_requests: str
     subjects: list[str]
     levels: list[str]
     status: str
+
+class AssignmentPublicView(AssignmentBaseView):
+    pass  # Inherits all fields from base
+
+class AssignmentOwnerView(AssignmentBaseView):
+    tutor_id: int | None
+    requests: list[AssignmentRequest]
 
 class NewAssignmentSlot(BaseModel):
     day: str

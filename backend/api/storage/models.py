@@ -55,7 +55,7 @@ class AssignmentStatus(enum.Enum):
     OPEN = 'OPEN'
     FILLED = 'FILLED'
 
-class Assignment(Base):
+class Assignment(Base, SerializerMixin):
     """
     Assignment model
     """
@@ -73,7 +73,7 @@ class Assignment(Base):
     status = Column(ENUM(AssignmentStatus), default=AssignmentStatus.OPEN)
 
     # Relationships
-    requester = relationship('User', foreign_keys=[owner_id])
+    owner = relationship('User', foreign_keys=[owner_id])
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     subjects = relationship('Subject', secondary='AssignmentSubject', back_populates='assignments')
     levels = relationship('Level', secondary='AssignmentLevel', back_populates='assignments')
