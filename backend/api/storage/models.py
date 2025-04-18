@@ -21,6 +21,7 @@ class User(Base, SerializerMixin):
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     password_hash = Column(String, nullable=False)
+    intends_to_be_tutor = Column(Boolean, default=False)
 
     tutor_role = relationship('Tutor', back_populates='user', uselist=False)
 
