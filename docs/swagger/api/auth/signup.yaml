@@ -28,3 +28,7 @@ SignupRequest:
       format: password
     name:
       type: string
+    intends_to_be_tutor:
+      type: boolean
+      description: Indicates if the user intends to be a tutor. Defaults to false.
+      default: false
