@@ -1,0 +1,34 @@
+post:
+  tags:
+    - auth
+  summary: Sign up a new user
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/SignupRequest'
+  responses:
+    '201':
+      description: User created successfully and logged in. Both refresh and access tokens are stored as http cookies in the browser.
+    '400':
+      description: Invalid input or email already exists
+SignupRequest:
+  type: object
+  required:
+    - email
+    - password
+    - name
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+      format: password
+    name:
+      type: string
+    intends_to_be_tutor:
+      type: boolean
+      description: Indicates if the user intends to be a tutor. Defaults to false.
+      default: false

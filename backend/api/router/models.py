@@ -16,62 +16,55 @@ class SignupRequest(BaseModel):
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
-    photoUrl: str | None
+    photo_url: str | None
     rate: str | None
     rating: float | None
-    subjectsTeachable: list[str]
-    levelsTeachable: list[str]
+    subjects_teachable: list[str]
+    levels_teachable: list[str]
     experience: str | None
     availability: str | None
 
 class NewTutorProfile(BaseModel):
-    photoUrl: str | None
-    highestEducation: str | None
+    photo_url: str | None
+    highest_education: str | None
     availability: str | None
-    resumeUrl: str | None
+    resume_url: str | None
     rate: str | None
     location: str | None
     rating: float | None
-    aboutMe: str | None
+    about_me: str | None
     experience: str | None
-    subjectsTeachable: list[str]
-    levelsTeachable: list[str]
-    specialSkills: list[str]
+    subjects_teachable: list[str]
+    levels_teachable: list[str]
+    special_skills: list[str]
 
 #TODO: Decide which fields in tutor are required and which are optional
 class TutorProfile(BaseModel):
     id: int
     name: str
     email: str
-    photoUrl: str | None
-    highestEducation: str | None
+    photo_url: str | None
+    highest_education: str | None
     rate: str | None
     location: str | None
     rating: float | None
-    aboutMe: str | None
-    subjectsTeachable: list[str]
-    levelsTeachable: list[str]
-    specialSkills: list[str]
-    resumeUrl: str | None
+    about_me: str | None
+    subjects_teachable: list[str]
+    levels_teachable: list[str]
+    special_skills: list[str]
+    resume_url: str | None
     experience: str | None
     availability: str | None
-
-class ClientTutorRequest(BaseModel):
-    id: str
-    tutorId: int
-    requesterId: int
-    datetime: str
-    status: str
 
 class CoursePublicSummary(BaseModel):
     id: str
     name: str
     description: str
     progress: float
-    fileLink: str | None
+    file_link: str | None
 
 class CourseModule(BaseModel):
-    courseOverview: str
+    course_overview: str
     progress: float
     id: int
     name: str
@@ -85,7 +78,7 @@ class Reviewer(BaseModel):
     specialization: str
 
 class Review(BaseModel):
-    yearSem: str
+    year_sem: str
     workload: str
     difficulty: int
     overview: str
@@ -97,41 +90,49 @@ class Module(BaseModel):
     name: str
     reviews: list[Review]
 
-class ClientProfile(BaseModel):
-    id: int
-    name: str
-    school: str | None
-    level: str | None
-    subjects: list[str]
-    contact: str
-    email: str
-
 class AssignmentSlot(BaseModel):
     id: int
     day: str
-    startTime: str
-    endTime: str
+    start_time: str
+    end_time: str
 
-class Assignment(BaseModel):
+class AssignmentRequest(BaseModel):
+    id: int
+    datetime: str
+    tutor_id: int
+    status: str
+
+class AssignmentBaseView(BaseModel):
     id: int
     datetime: str
     title: str
-    requesterId: int
-    tutorId: int | None
-    estimatedRate: str
-    weeklyFrequency: int
-    availableSlots: list[AssignmentSlot]
-    specialRequests: str | None
+    owner_id: int
+    estimated_rate: str
+    weekly_frequency: int
+    available_slots: list[AssignmentSlot]
+    special_requests: str
     subjects: list[str]
     levels: list[str]
     status: str
 
+class AssignmentPublicView(AssignmentBaseView):
+    pass  # Inherits all fields from base
+
+class AssignmentOwnerView(AssignmentBaseView):
+    tutor_id: int | None
+    requests: list[AssignmentRequest]
+
+class NewAssignmentSlot(BaseModel):
+    day: str
+    start_time: str
+    end_time: str
+
 class NewAssignment(BaseModel):
     title: str
-    estimatedRate: str
-    weeklyFrequency: int
-    availableSlots: list[AssignmentSlot]
-    specialRequests: str | None
+    estimated_rate: str
+    weekly_frequency: int
+    available_slots: list[NewAssignmentSlot]
+    special_requests: str | None
     subjects: list[str]
     levels: list[str]
 
@@ -147,5 +148,5 @@ class SearchResult(BaseModel, Generic[T]):
     filters: dict[str, list[dict[str, str]]]
 
 class NewChatMessage(BaseModel):
-    receiverId: int
+    receiver_id: int
     content: str

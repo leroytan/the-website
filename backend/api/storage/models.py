@@ -2,7 +2,7 @@ import datetime
 import enum
 
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        String, Table)
+                        String, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -20,9 +20,10 @@ class User(Base, SerializerMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    passwordHash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=False)
+    intends_to_be_tutor = Column(Boolean, default=False)
 
-    tutorRole = relationship('Tutor', back_populates='user', uselist=False)
+    tutor_role = relationship('Tutor', back_populates='user', uselist=False)
 
 #TODO: Decide which fields in tutor are required and which are optional
 class Tutor(Base):
@@ -32,42 +33,21 @@ class Tutor(Base):
     id = Column(Integer, ForeignKey('User.id'), primary_key=True)
     
     # Tutor-specific fields
-    photoUrl = Column(String, nullable=True)
-    highestEducation = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)
+    highest_education = Column(String, nullable=True)
     availability = Column(String, nullable=True)
-    resumeUrl = Column(String, nullable=True)
+    resume_url = Column(String, nullable=True)
     rate = Column(String, nullable=True)
     location = Column(String, nullable=True)
     rating = Column(Float, nullable=True)
-    aboutMe = Column(String, nullable=True)
+    about_me = Column(String, nullable=True)
     experience = Column(String, nullable=True)
     
     # Relationships
     subjects = relationship('Subject', secondary='TutorSubject', back_populates='tutors')
     levels = relationship('Level', secondary='TutorLevel', back_populates='tutors')
-    specialSkills = relationship('SpecialSkill', secondary='TutorSpecialSkill', back_populates='tutors')
-    user = relationship('User', back_populates='tutorRole')
-    
-class TutorRequestStatus(enum.Enum):
-    """Enum for tutor request status"""
-    PENDING = 'PENDING'
-    ACCEPTED = 'ACCEPTED'
-    REJECTED = 'REJECTED'
-
-class TutorRequest(Base):
-    """Tutor Request model"""
-    __tablename__ = 'TutorRequest'
-
-    # Columns
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    datetime = Column(DateTime, default=datetime.datetime.now)
-    requesterId = Column(Integer, ForeignKey('User.id'))  # Foreign key to requester
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to tutor
-    status = Column(ENUM(TutorRequestStatus), default=TutorRequestStatus.PENDING)
-
-    # Relationships
-    requester = relationship('User', foreign_keys=[requesterId])
-    tutor = relationship('Tutor', foreign_keys=[tutorId])
+    special_skills = relationship('SpecialSkill', secondary='TutorSpecialSkill', back_populates='tutors')
+    user = relationship('User', back_populates='tutor_role')
 
 class AssignmentStatus(enum.Enum):
     """
@@ -76,7 +56,7 @@ class AssignmentStatus(enum.Enum):
     OPEN = 'OPEN'
     FILLED = 'FILLED'
 
-class Assignment(Base):
+class Assignment(Base, SerializerMixin):
     """
     Assignment model
     """
@@ -86,20 +66,20 @@ class Assignment(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     datetime = Column(DateTime, default=datetime.datetime.now)
     title = Column(String, nullable=False)
-    requesterId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    tutorId = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
-    estimatedRate = Column(String, nullable=False)
-    weeklyFrequency = Column(Integer, nullable=False)
-    specialRequests = Column(String, nullable=True)
+    owner_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
+    estimated_rate = Column(String, nullable=False)
+    weekly_frequency = Column(Integer, nullable=False)
+    special_requests = Column(String, nullable=True)
     status = Column(ENUM(AssignmentStatus), default=AssignmentStatus.OPEN)
 
     # Relationships
-    requester = relationship('User', foreign_keys=[requesterId])
-    tutor = relationship('Tutor', foreign_keys=[tutorId])
+    owner = relationship('User', foreign_keys=[owner_id])
+    tutor = relationship('Tutor', foreign_keys=[tutor_id])
     subjects = relationship('Subject', secondary='AssignmentSubject', back_populates='assignments')
     levels = relationship('Level', secondary='AssignmentLevel', back_populates='assignments')
-    assignmentRequests = relationship('AssignmentRequest', back_populates='assignment')
-    availableSlots = relationship('AssignmentSlot', back_populates='assignment', primaryjoin="Assignment.id == AssignmentSlot.assignmentId")
+    assignment_requests = relationship('AssignmentRequest', back_populates='assignment')
+    available_slots = relationship('AssignmentSlot', back_populates='assignment', primaryjoin="Assignment.id == AssignmentSlot.assignment_id")
 
 
 class AssignmentSlot(Base):
@@ -110,11 +90,11 @@ class AssignmentSlot(Base):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    assignmentId = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
-    assignment = relationship('Assignment', back_populates='availableSlots')
+    assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
+    assignment = relationship('Assignment', back_populates='available_slots')
     day = Column(String, nullable=False)
-    startTime = Column(String, nullable=False)
-    endTime = Column(String, nullable=False)
+    start_time = Column(String, nullable=False)
+    end_time = Column(String, nullable=False)
 
 class AssignmentRequestStatus(enum.Enum):
     """
@@ -132,14 +112,20 @@ class AssignmentRequest(Base):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    assignmentId = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
+    assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
     datetime = Column(DateTime, default=datetime.datetime.now)
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
+    tutor_id = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
     status = Column(ENUM(AssignmentRequestStatus), default=AssignmentRequestStatus.PENDING)
 
     # Relationships
-    tutor = relationship('Tutor', foreign_keys=[tutorId])
-    assignment = relationship('Assignment', foreign_keys=[assignmentId], back_populates='assignmentRequests')
+    tutor = relationship('Tutor', foreign_keys=[tutor_id])
+    assignment = relationship('Assignment', foreign_keys=[assignment_id], back_populates='assignment_requests')
+
+    # Constraints
+    # Composite unique constraint on column1 and column2
+    __table_args__ = (
+        UniqueConstraint('assignment_id', 'tutor_id', name='uix_assignment_id_tutor_id'),
+    )
 
 class SpecialSkill(Base):
     """
@@ -150,14 +136,14 @@ class SpecialSkill(Base):
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
-    tutors = relationship('Tutor', secondary='TutorSpecialSkill', back_populates='specialSkills')
+    tutors = relationship('Tutor', secondary='TutorSpecialSkill', back_populates='special_skills')
 
 class TutorSpecialSkill(Base):
     __tablename__ = "TutorSpecialSkill"
 
     id = Column(Integer, primary_key=True)
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))
-    specialSkillId = Column(Integer, ForeignKey('SpecialSkill.id'))
+    tutor_id = Column(Integer, ForeignKey('Tutor.id'))
+    special_skill_id = Column(Integer, ForeignKey('SpecialSkill.id'))
 
 class Subject(Base):
     """
@@ -183,14 +169,14 @@ class TutorSubject(Base):
     __tablename__ = "TutorSubject"
 
     id = Column(Integer, primary_key=True)
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))
+    tutor_id = Column(Integer, ForeignKey('Tutor.id'))
     subjectId = Column(Integer, ForeignKey('Subject.id'))
 
 class AssignmentSubject(Base):
     __tablename__ = "AssignmentSubject"
 
     id = Column(Integer, primary_key=True)
-    assignmentId = Column(Integer, ForeignKey('Assignment.id'))
+    assignment_id = Column(Integer, ForeignKey('Assignment.id'))
     subjectId = Column(Integer, ForeignKey('Subject.id'))
 
 class Level(Base):
@@ -217,15 +203,15 @@ class TutorLevel(Base):
     __tablename__ = "TutorLevel"
 
     id = Column(Integer, primary_key=True)
-    tutorId = Column(Integer, ForeignKey('Tutor.id'))
-    levelId = Column(Integer, ForeignKey('Level.id'))
+    tutor_id = Column(Integer, ForeignKey('Tutor.id'))
+    level_id = Column(Integer, ForeignKey('Level.id'))
 
 class AssignmentLevel(Base):
     __tablename__ = "AssignmentLevel"
 
     id = Column(Integer, primary_key=True)
-    assignmentId = Column(Integer, ForeignKey('Assignment.id'))
-    levelId = Column(Integer, ForeignKey('Level.id'))
+    assignment_id = Column(Integer, ForeignKey('Assignment.id'))
+    level_id = Column(Integer, ForeignKey('Level.id'))
 
 class ChatMessage(Base, SerializerMixin):
     """
@@ -235,16 +221,16 @@ class ChatMessage(Base, SerializerMixin):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    senderId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    receiverId = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    sender_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    receiver_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     content = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.now)
     isRead = Column(Boolean, default=False)
-    chatRoomId = Column(Integer, ForeignKey('ChatRoom.id'))  # Foreign key to ChatRoom
+    chatroom_id = Column(Integer, ForeignKey('ChatRoom.id'))  # Foreign key to ChatRoom
 
     # Relationships
-    sender = relationship('User', foreign_keys=[senderId])
-    receiver = relationship('User', foreign_keys=[receiverId])
+    sender = relationship('User', foreign_keys=[sender_id])
+    receiver = relationship('User', foreign_keys=[receiver_id])
     chatRoom = relationship('ChatRoom', back_populates='messages')
 
 
@@ -256,11 +242,11 @@ class ChatRoom(Base):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user1Id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    user2Id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    user1_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
+    user2_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     isLocked = Column(Boolean, default=True)
 
     # Relationships
-    user1 = relationship('User', foreign_keys=[user1Id])
-    user2 = relationship('User', foreign_keys=[user2Id])
+    user1 = relationship('User', foreign_keys=[user1_id])
+    user2 = relationship('User', foreign_keys=[user2_id])
     messages = relationship('ChatMessage', back_populates='chatRoom')

@@ -25,7 +25,7 @@ async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUt
         
         message = NewChatMessage(
             content=content,
-            receiverId=receiver_id,
+            receiver_id=receiver_id,
         )
 
         await ChatLogic.handle_message(active_connections, message, user.id)
@@ -44,8 +44,6 @@ async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_cu
     Returns:
         list[ChatMessage]: List of chat messages.
     """
-    # print(request.cookies.get("access_token"))
-    # user = await RouterAuthUtils.get_current_user(request)
     messages = ChatLogic.get_chat_history(id, user.id, last_message_id, message_count)
     message_count = len(messages)
     last_unretrieved_message_id = messages[message_count - 1].id - 1 if message_count > 0 else -1
@@ -64,7 +62,9 @@ async def unlock_chat(id: int, user: User = Depends(RouterAuthUtils.get_current_
         id (int): The ID of the user to unlock chat with.
         user (User): The current user.
     """
-    return ChatLogic.unlock_chat(id, user.id)
+    ChatLogic.unlock_chat(id, user.id)
+
+    return {"message": "Chat unlocked."}
 
 @router.put("/api/chat/{id}/messages/read")
 async def mark_messages_as_read(id: int, message_ids: str, user: User = Depends(RouterAuthUtils.get_current_user)) -> None:

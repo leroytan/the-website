@@ -1,0 +1,108 @@
+Assignment:
+  type: object
+  properties:
+    id:
+      type: integer
+    datetime:
+      type: string
+    title:
+      type: string
+    owner_id:
+      type: integer
+    tutor_id:
+      type: integer
+      nullable: true
+    estimated_rate:
+      type: string
+    weekly_frequency:
+      type: integer
+    available_slots:
+      type: array
+      items:
+        $ref: '#/AssignmentSlot'
+    special_requests:
+      type: string
+      nullable: true
+    subjects:
+      type: array
+      items:
+        type: string
+    levels:
+      type: array
+      items:
+        type: string
+    status:
+      type: string
+  required:
+    - id
+    - datetime
+    - title
+    - owner_id
+    - estimated_rate
+    - weekly_frequency
+    - available_slots
+    - subjects
+    - levels
+    - status
+
+AssignmentSlot:
+  type: object
+  properties:
+    id:
+      type: integer
+    day:
+      type: string
+    start_time:
+      type: string
+    end_time:
+      type: string
+  required:
+    - id
+    - day
+    - start_time
+    - end_time
+
+NewAssignment:
+  type: object
+  properties:
+    title:
+      type: string
+    estimated_rate:
+      type: string
+    weekly_frequency:
+      type: integer
+    available_slots:
+      type: array
+      items:
+        $ref: '#/NewAssignmentSlot'
+    special_requests:
+      type: string
+      nullable: true
+    subjects:
+      type: array
+      items:
+        type: string
+    levels:
+      type: array
+      items:
+        type: string
+  required:
+    - title
+    - estimated_rate
+    - weekly_frequency
+    - available_slots
+    - subjects
+    - levels
+NewAssignmentSlot:
+  type: object
+  properties:
+    day:
+      type: string
+    start_time:
+      type: string
+    end_time:
+      type: string
+  required:
+    - day
+    - start_time
+    - end_time

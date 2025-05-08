@@ -1,0 +1,39 @@
+post:
+  tags:
+    - auth
+  summary: Refresh the access and refresh tokens
+  description: |
+    This endpoint allows users to refresh their authentication tokens (access token and refresh token). 
+    The refresh token is retrieved from the user's cookies, and if it's valid, new access and refresh tokens are issued and stored in the cookies.
+  operationId: refreshTokens
+  responses:
+    '200':
+      description: Successfully refreshed the tokens
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Tokens refreshed successfully"
+    '400':
+      description: Bad request, for instance, if the refresh token is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid or missing refresh token"
+    '401':
+      description: Unauthorized, if the refresh token is invalid or expired
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid refresh token or token expired"

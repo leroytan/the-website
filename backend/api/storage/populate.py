@@ -2,7 +2,6 @@ from api.storage.models import (Assignment, AssignmentLevel, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, AssignmentSubject, Level,
                                 SpecialSkill, Subject, Tutor, TutorLevel,
-                                TutorRequest, TutorRequestStatus,
                                 TutorSpecialSkill, TutorSubject, User)
 
 
@@ -63,7 +62,7 @@ def insert_test_data(engine: object) -> bool:
     session.add_all(levels)
     
     # Create test special skills
-    special_skills = [
+    populate_special_skills = [
         SpecialSkill(name="Test Preparation"),
         SpecialSkill(name="Special Education"),
         SpecialSkill(name="Advanced Placement"),
@@ -72,7 +71,7 @@ def insert_test_data(engine: object) -> bool:
         SpecialSkill(name="Career Counseling"),
         SpecialSkill(name="English as Second Language")
     ]
-    session.add_all(special_skills)
+    session.add_all(populate_special_skills)
     
     # Commit these tables first to get IDs
     session.commit()
@@ -82,42 +81,42 @@ def insert_test_data(engine: object) -> bool:
         User(
             name="John Doe",
             email="john.doe@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="Jane Smith",
             email="jane.smith@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="Alice Johnson",
             email="alice.johnson@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="Bob Williams",
             email="bob.williams@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="Carol Brown",
             email="carol.brown@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="David Miller",
             email="david.miller@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="Eva Garcia",
             email="eva.garcia@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         ),
         User(
             name="Frank Rodriguez",
             email="frank.rodriguez@example.com",
-            passwordHash="someHash"
+            password_hash="someHash"
         )
     ]
     session.add_all(users)
@@ -127,74 +126,74 @@ def insert_test_data(engine: object) -> bool:
     tutors = [
         Tutor(
             id=users[2].id,  # Alice
-            photoUrl="https://randomuser.me/api/portraits/women/1.jpg",
-            highestEducation="Ph.D. in Mathematics",
+            photo_url="https://randomuser.me/api/portraits/women/1.jpg",
+            highest_education="Ph.D. in Mathematics",
             availability="Weekdays 3PM-8PM, Weekends 10AM-4PM",
-            resumeUrl="https://example.com/alice_resume.pdf",
+            resume_url="https://example.com/alice_resume.pdf",
             rate="$45/hour",
             location="New York, NY",
             rating=4.8,
-            aboutMe="I've been teaching mathematics for over 10 years with a focus on calculus and statistics.",
+            about_me="I've been teaching mathematics for over 10 years with a focus on calculus and statistics.",
             experience="10+ years"
         ),
         Tutor(
             id=users[3].id,  # Bob
-            photoUrl="https://randomuser.me/api/portraits/men/1.jpg",
-            highestEducation="Master's in Physics",
+            photo_url="https://randomuser.me/api/portraits/men/1.jpg",
+            highest_education="Master's in Physics",
             availability="Weekends and evenings",
-            resumeUrl="https://example.com/bob_resume.pdf",
+            resume_url="https://example.com/bob_resume.pdf",
             rate="$40/hour",
             location="Boston, MA",
             rating=4.6,
-            aboutMe="Passionate physics teacher with experience preparing students for AP exams.",
+            about_me="Passionate physics teacher with experience preparing students for AP exams.",
             experience="5 years"
         ),
         Tutor(
             id=users[4].id,  # Carol
-            photoUrl="https://randomuser.me/api/portraits/women/2.jpg",
-            highestEducation="Bachelor's in English Literature",
+            photo_url="https://randomuser.me/api/portraits/women/2.jpg",
+            highest_education="Bachelor's in English Literature",
             availability="Flexible schedule",
-            resumeUrl="https://example.com/carol_resume.pdf",
+            resume_url="https://example.com/carol_resume.pdf",
             rate="$35/hour",
             location="San Francisco, CA",
             rating=4.9,
-            aboutMe="I help students improve their writing skills and critical analysis of literature.",
+            about_me="I help students improve their writing skills and critical analysis of literature.",
             experience="7 years"
         ),
         Tutor(
             id=users[5].id,  # David
-            photoUrl="https://randomuser.me/api/portraits/men/2.jpg",
-            highestEducation="Master's in Computer Science",
+            photo_url="https://randomuser.me/api/portraits/men/2.jpg",
+            highest_education="Master's in Computer Science",
             availability="Weekday evenings",
-            resumeUrl="https://example.com/david_resume.pdf",
+            resume_url="https://example.com/david_resume.pdf",
             rate="$50/hour",
             location="Seattle, WA",
             rating=4.7,
-            aboutMe="Software engineer by day, programming tutor by night. I specialize in Python and Java.",
+            about_me="Software engineer by day, programming tutor by night. I specialize in Python and Java.",
             experience="8 years"
         ),
         Tutor(
             id=users[6].id,  # Eva
-            photoUrl="https://randomuser.me/api/portraits/women/3.jpg",
-            highestEducation="Ph.D. in Chemistry",
+            photo_url="https://randomuser.me/api/portraits/women/3.jpg",
+            highest_education="Ph.D. in Chemistry",
             availability="Weekends only",
-            resumeUrl="https://example.com/eva_resume.pdf",
+            resume_url="https://example.com/eva_resume.pdf",
             rate="$45/hour",
             location="Chicago, IL",
             rating=4.5,
-            aboutMe="I make complex chemistry concepts easy to understand for students of all levels.",
+            about_me="I make complex chemistry concepts easy to understand for students of all levels.",
             experience="6 years"
         ),
         Tutor(
             id=users[7].id,  # Frank
-            photoUrl="https://randomuser.me/api/portraits/men/3.jpg",
-            highestEducation="Master's in Spanish",
+            photo_url="https://randomuser.me/api/portraits/men/3.jpg",
+            highest_education="Master's in Spanish",
             availability="Afternoons and weekends",
-            resumeUrl="https://example.com/frank_resume.pdf",
+            resume_url="https://example.com/frank_resume.pdf",
             rate="$38/hour",
             location="Miami, FL",
             rating=4.9,
-            aboutMe="Native Spanish speaker with a passion for teaching language and culture.",
+            about_me="Native Spanish speaker with a passion for teaching language and culture.",
             experience="9 years"
         )
     ]
@@ -204,121 +203,121 @@ def insert_test_data(engine: object) -> bool:
     # Assign subjects to tutors
     tutor_subjects = [
         # Alice teaches Math and Statistics
-        TutorSubject(tutorId=tutors[0].id, subjectId=subjects[0].id),  # Math
+        TutorSubject(tutor_id=tutors[0].id, subjectId=subjects[0].id),  # Math
         
         # Bob teaches Physics and Math
-        TutorSubject(tutorId=tutors[1].id, subjectId=subjects[1].id),  # Physics
-        TutorSubject(tutorId=tutors[1].id, subjectId=subjects[0].id),  # Math
+        TutorSubject(tutor_id=tutors[1].id, subjectId=subjects[1].id),  # Physics
+        TutorSubject(tutor_id=tutors[1].id, subjectId=subjects[0].id),  # Math
         
         # Carol teaches English Literature and History
-        TutorSubject(tutorId=tutors[2].id, subjectId=subjects[4].id),  # English Literature
-        TutorSubject(tutorId=tutors[2].id, subjectId=subjects[6].id),  # History
+        TutorSubject(tutor_id=tutors[2].id, subjectId=subjects[4].id),  # English Literature
+        TutorSubject(tutor_id=tutors[2].id, subjectId=subjects[6].id),  # History
         
         # David teaches Computer Science and Math
-        TutorSubject(tutorId=tutors[3].id, subjectId=subjects[5].id),  # Computer Science
-        TutorSubject(tutorId=tutors[3].id, subjectId=subjects[0].id),  # Math
+        TutorSubject(tutor_id=tutors[3].id, subjectId=subjects[5].id),  # Computer Science
+        TutorSubject(tutor_id=tutors[3].id, subjectId=subjects[0].id),  # Math
         
         # Eva teaches Chemistry and Biology
-        TutorSubject(tutorId=tutors[4].id, subjectId=subjects[2].id),  # Chemistry
-        TutorSubject(tutorId=tutors[4].id, subjectId=subjects[3].id),  # Biology
+        TutorSubject(tutor_id=tutors[4].id, subjectId=subjects[2].id),  # Chemistry
+        TutorSubject(tutor_id=tutors[4].id, subjectId=subjects[3].id),  # Biology
         
         # Frank teaches Spanish and Music
-        TutorSubject(tutorId=tutors[5].id, subjectId=subjects[7].id),  # Spanish
-        TutorSubject(tutorId=tutors[5].id, subjectId=subjects[9].id)   # Music
+        TutorSubject(tutor_id=tutors[5].id, subjectId=subjects[7].id),  # Spanish
+        TutorSubject(tutor_id=tutors[5].id, subjectId=subjects[9].id)   # Music
     ]
     session.add_all(tutor_subjects)
     
     # Assign levels to tutors
     tutor_levels = [
         # Alice teaches High School, College, University
-        TutorLevel(tutorId=tutors[0].id, levelId=levels[2].id),  # High School
-        TutorLevel(tutorId=tutors[0].id, levelId=levels[3].id),  # College
-        TutorLevel(tutorId=tutors[0].id, levelId=levels[4].id),  # University
+        TutorLevel(tutor_id=tutors[0].id, level_id=levels[2].id),  # High School
+        TutorLevel(tutor_id=tutors[0].id, level_id=levels[3].id),  # College
+        TutorLevel(tutor_id=tutors[0].id, level_id=levels[4].id),  # University
         
         # Bob teaches High School, College
-        TutorLevel(tutorId=tutors[1].id, levelId=levels[2].id),  # High School
-        TutorLevel(tutorId=tutors[1].id, levelId=levels[3].id),  # College
+        TutorLevel(tutor_id=tutors[1].id, level_id=levels[2].id),  # High School
+        TutorLevel(tutor_id=tutors[1].id, level_id=levels[3].id),  # College
         
         # Carol teaches Middle School, High School, College
-        TutorLevel(tutorId=tutors[2].id, levelId=levels[1].id),  # Middle School
-        TutorLevel(tutorId=tutors[2].id, levelId=levels[2].id),  # High School
-        TutorLevel(tutorId=tutors[2].id, levelId=levels[3].id),  # College
+        TutorLevel(tutor_id=tutors[2].id, level_id=levels[1].id),  # Middle School
+        TutorLevel(tutor_id=tutors[2].id, level_id=levels[2].id),  # High School
+        TutorLevel(tutor_id=tutors[2].id, level_id=levels[3].id),  # College
         
         # David teaches High School, College, University, Graduate
-        TutorLevel(tutorId=tutors[3].id, levelId=levels[2].id),  # High School
-        TutorLevel(tutorId=tutors[3].id, levelId=levels[3].id),  # College
-        TutorLevel(tutorId=tutors[3].id, levelId=levels[4].id),  # University
-        TutorLevel(tutorId=tutors[3].id, levelId=levels[5].id),  # Graduate
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[2].id),  # High School
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[3].id),  # College
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[4].id),  # University
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[5].id),  # Graduate
         
         # Eva teaches Middle School, High School, College
-        TutorLevel(tutorId=tutors[4].id, levelId=levels[1].id),  # Middle School
-        TutorLevel(tutorId=tutors[4].id, levelId=levels[2].id),  # High School
-        TutorLevel(tutorId=tutors[4].id, levelId=levels[3].id),  # College
+        TutorLevel(tutor_id=tutors[4].id, level_id=levels[1].id),  # Middle School
+        TutorLevel(tutor_id=tutors[4].id, level_id=levels[2].id),  # High School
+        TutorLevel(tutor_id=tutors[4].id, level_id=levels[3].id),  # College
         
         # Frank teaches Elementary, Middle School, High School
-        TutorLevel(tutorId=tutors[5].id, levelId=levels[0].id),  # Elementary School
-        TutorLevel(tutorId=tutors[5].id, levelId=levels[1].id),  # Middle School
-        TutorLevel(tutorId=tutors[5].id, levelId=levels[2].id)   # High School
+        TutorLevel(tutor_id=tutors[5].id, level_id=levels[0].id),  # Elementary School
+        TutorLevel(tutor_id=tutors[5].id, level_id=levels[1].id),  # Middle School
+        TutorLevel(tutor_id=tutors[5].id, level_id=levels[2].id)   # High School
     ]
     session.add_all(tutor_levels)
     
     # Assign special skills to tutors
-    tutor_special_skills = [
+    tutor_populate_special_skills = [
         # Alice: Test Prep, AP
-        TutorSpecialSkill(tutorId=tutors[0].id, specialSkillId=special_skills[0].id),  # Test Prep
-        TutorSpecialSkill(tutorId=tutors[0].id, specialSkillId=special_skills[2].id),  # AP
+        TutorSpecialSkill(tutor_id=tutors[0].id, special_skill_id=populate_special_skills[0].id),  # Test Prep
+        TutorSpecialSkill(tutor_id=tutors[0].id, special_skill_id=populate_special_skills[2].id),  # AP
         
         # Bob: Test Prep, AP, Project-Based Learning
-        TutorSpecialSkill(tutorId=tutors[1].id, specialSkillId=special_skills[0].id),  # Test Prep
-        TutorSpecialSkill(tutorId=tutors[1].id, specialSkillId=special_skills[2].id),  # AP
-        TutorSpecialSkill(tutorId=tutors[1].id, specialSkillId=special_skills[3].id),  # Project-Based
+        TutorSpecialSkill(tutor_id=tutors[1].id, special_skill_id=populate_special_skills[0].id),  # Test Prep
+        TutorSpecialSkill(tutor_id=tutors[1].id, special_skill_id=populate_special_skills[2].id),  # AP
+        TutorSpecialSkill(tutor_id=tutors[1].id, special_skill_id=populate_special_skills[3].id),  # Project-Based
         
         # Carol: Homework Help, Career Counseling
-        TutorSpecialSkill(tutorId=tutors[2].id, specialSkillId=special_skills[4].id),  # Homework Help
-        TutorSpecialSkill(tutorId=tutors[2].id, specialSkillId=special_skills[5].id),  # Career Counseling
+        TutorSpecialSkill(tutor_id=tutors[2].id, special_skill_id=populate_special_skills[4].id),  # Homework Help
+        TutorSpecialSkill(tutor_id=tutors[2].id, special_skill_id=populate_special_skills[5].id),  # Career Counseling
         
         # David: Project-Based Learning, Homework Help
-        TutorSpecialSkill(tutorId=tutors[3].id, specialSkillId=special_skills[3].id),  # Project-Based
-        TutorSpecialSkill(tutorId=tutors[3].id, specialSkillId=special_skills[4].id),  # Homework Help
+        TutorSpecialSkill(tutor_id=tutors[3].id, special_skill_id=populate_special_skills[3].id),  # Project-Based
+        TutorSpecialSkill(tutor_id=tutors[3].id, special_skill_id=populate_special_skills[4].id),  # Homework Help
         
         # Eva: AP, Special Education
-        TutorSpecialSkill(tutorId=tutors[4].id, specialSkillId=special_skills[2].id),  # AP
-        TutorSpecialSkill(tutorId=tutors[4].id, specialSkillId=special_skills[1].id),  # Special Education
+        TutorSpecialSkill(tutor_id=tutors[4].id, special_skill_id=populate_special_skills[2].id),  # AP
+        TutorSpecialSkill(tutor_id=tutors[4].id, special_skill_id=populate_special_skills[1].id),  # Special Education
         
         # Frank: ESL, Special Education
-        TutorSpecialSkill(tutorId=tutors[5].id, specialSkillId=special_skills[6].id),  # ESL
-        TutorSpecialSkill(tutorId=tutors[5].id, specialSkillId=special_skills[1].id)   # Special Education
+        TutorSpecialSkill(tutor_id=tutors[5].id, special_skill_id=populate_special_skills[6].id),  # ESL
+        TutorSpecialSkill(tutor_id=tutors[5].id, special_skill_id=populate_special_skills[1].id)   # Special Education
     ]
-    session.add_all(tutor_special_skills)
+    session.add_all(tutor_populate_special_skills)
     
     # Create test assignments
     assignments = [
         Assignment(
             title="Calculus Finals Prep",
-            requesterId=users[0].id,  # John Doe requesting 
-            tutorId=None,  # No tutor assigned yet
-            estimatedRate="$45/hour",
-            weeklyFrequency=2,
-            specialRequests="Need help preparing for calculus final exam",
+            owner_id=users[0].id,  # John Doe requesting 
+            tutor_id=None,  # No tutor assigned yet
+            estimated_rate="$45/hour",
+            weekly_frequency=2,
+            special_requests="Need help preparing for calculus final exam",
             status=AssignmentStatus.OPEN
         ),
         Assignment(
             title="Essay-Writing Clinic",
-            requesterId=users[1].id,  # Jane Smith requesting
-            tutorId=tutors[2].id,     # Carol as tutor
-            estimatedRate="$35/hour",
-            weeklyFrequency=1,
-            specialRequests="Essay writing assistance needed",
+            owner_id=users[1].id,  # Jane Smith requesting
+            tutor_id=tutors[2].id,     # Carol as tutor
+            estimated_rate="$35/hour",
+            weekly_frequency=1,
+            special_requests="Essay writing assistance needed",
             status=AssignmentStatus.FILLED
         ),
         Assignment(
             title="Programming Coaching (Python)",
             datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            requesterId=users[0].id,  # John Doe requesting
-            tutorId=None,  # No tutor assigned yet
-            estimatedRate="$50/hour",
-            weeklyFrequency=3,
-            specialRequests="Need help with Python programming project",
+            owner_id=users[0].id,  # John Doe requesting
+            tutor_id=None,  # No tutor assigned yet
+            estimated_rate="$50/hour",
+            weekly_frequency=3,
+            special_requests="Need help with Python programming project",
             status=AssignmentStatus.OPEN
         )
     ]
@@ -329,44 +328,44 @@ def insert_test_data(engine: object) -> bool:
     assignment_slots = [
         # For assignment 1 (John & Alice)
         AssignmentSlot(
-            assignmentId=assignments[0].id,
+            assignment_id=assignments[0].id,
             day="Monday",
-            startTime="16:00",
-            endTime="18:00"
+            start_time="16:00",
+            end_time="18:00"
         ),
         AssignmentSlot(
-            assignmentId=assignments[0].id,
+            assignment_id=assignments[0].id,
             day="Wednesday",
-            startTime="16:00",
-            endTime="18:00"
+            start_time="16:00",
+            end_time="18:00"
         ),
         
         # For assignment 2 (Jane & Carol)
         AssignmentSlot(
-            assignmentId=assignments[1].id,
+            assignment_id=assignments[1].id,
             day="Saturday",
-            startTime="10:00",
-            endTime="12:00"
+            start_time="10:00",
+            end_time="12:00"
         ),
         
         # For assignment 3 (John & David)
         AssignmentSlot(
-            assignmentId=assignments[2].id,
+            assignment_id=assignments[2].id,
             day="Tuesday",
-            startTime="18:00",
-            endTime="19:30"
+            start_time="18:00",
+            end_time="19:30"
         ),
         AssignmentSlot(
-            assignmentId=assignments[2].id,
+            assignment_id=assignments[2].id,
             day="Thursday",
-            startTime="18:00",
-            endTime="19:30"
+            start_time="18:00",
+            end_time="19:30"
         ),
         AssignmentSlot(
-            assignmentId=assignments[2].id,
+            assignment_id=assignments[2].id,
             day="Sunday",
-            startTime="15:00",
-            endTime="16:30"
+            start_time="15:00",
+            end_time="16:30"
         )
     ]
     session.add_all(assignment_slots)
@@ -374,69 +373,46 @@ def insert_test_data(engine: object) -> bool:
     # Link subjects to assignments
     assignment_subjects = [
         # Assignment 1: Math
-        AssignmentSubject(assignmentId=assignments[0].id, subjectId=subjects[0].id),
+        AssignmentSubject(assignment_id=assignments[0].id, subjectId=subjects[0].id),
         
         # Assignment 2: English Literature
-        AssignmentSubject(assignmentId=assignments[1].id, subjectId=subjects[4].id),
+        AssignmentSubject(assignment_id=assignments[1].id, subjectId=subjects[4].id),
         
         # Assignment 3: Computer Science
-        AssignmentSubject(assignmentId=assignments[2].id, subjectId=subjects[5].id)
+        AssignmentSubject(assignment_id=assignments[2].id, subjectId=subjects[5].id)
     ]
     session.add_all(assignment_subjects)
     
     # Link levels to assignments
     assignment_levels = [
         # Assignment 1: College level math
-        AssignmentLevel(assignmentId=assignments[0].id, levelId=levels[3].id),
+        AssignmentLevel(assignment_id=assignments[0].id, level_id=levels[3].id),
         
         # Assignment 2: High School English
-        AssignmentLevel(assignmentId=assignments[1].id, levelId=levels[2].id),
+        AssignmentLevel(assignment_id=assignments[1].id, level_id=levels[2].id),
         
         # Assignment 3: College Computer Science
-        AssignmentLevel(assignmentId=assignments[2].id, levelId=levels[3].id)
+        AssignmentLevel(assignment_id=assignments[2].id, level_id=levels[3].id)
     ]
     session.add_all(assignment_levels)
-    
-    # Create tutor requests
-    tutor_requests = [
-        TutorRequest(
-            datetime=datetime.datetime.now(),
-            requesterId=users[0].id,  # John requesting Alice
-            tutorId=tutors[0].id,
-            status=TutorRequestStatus.PENDING
-        ),
-        TutorRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=2),
-            requesterId=users[1].id,  # Jane requesting Carol
-            tutorId=tutors[2].id,
-            status=TutorRequestStatus.ACCEPTED
-        ),
-        TutorRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=5),
-            requesterId=users[0].id,  # John requesting Eva
-            tutorId=tutors[4].id,
-            status=TutorRequestStatus.REJECTED
-        )
-    ]
-    session.add_all(tutor_requests)
     
     # Create assignment requests
     assignment_requests = [
         AssignmentRequest(
             datetime=datetime.datetime.now() - datetime.timedelta(days=1),
-            tutorId=tutors[1].id,  # Bob requesting assignment
+            tutor_id=tutors[1].id,  # Bob requesting assignment
             status=AssignmentRequestStatus.PENDING,
             assignment=assignments[0]  # For the first assignment
         ),
         AssignmentRequest(
             datetime=datetime.datetime.now() - datetime.timedelta(days=3),
-            tutorId=tutors[2].id,  # Carol requesting assignment
+            tutor_id=tutors[2].id,  # Carol requesting assignment
             status=AssignmentRequestStatus.ACCEPTED,
             assignment=assignments[1]  # For the second assignment
         ),
         AssignmentRequest(
             datetime=datetime.datetime.now() - datetime.timedelta(days=4),
-            tutorId=tutors[5].id,  # Frank requesting assignment
+            tutor_id=tutors[5].id,  # Frank requesting assignment
             status=AssignmentRequestStatus.REJECTED,
             assignment=assignments[0]  # For the first assignment
         )

@@ -1,0 +1,70 @@
+get:
+  tags:
+    - chat
+  summary: Retrieve chat messages
+  description: Retrieves the chat messages for a specific chat. This endpoint is used to fetch the messages in a chat room, allowing users to view their conversation history.
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The chat id
+      schema:
+        type: string
+    - name: last_message_id
+      in: query
+      required: false
+      description: The ID of the most recent message to be retrieved.
+      schema:
+        type: integer
+    - name: message_count
+      in: query
+      required: false
+      description: The number of messages to retrieve per page
+      schema:
+        type: integer
+        default: 50
+  responses:
+    '200':
+      description: Successful retrieval of chat messages
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              messages:
+                type: array
+                items:
+                  $ref: '#/ChatMessage'
+              last_unretrieved_message_id:
+                type: string
+                description: The ID of the last unretrieved message
+              message_count:
+                type: integer
+                description: The number of messages retrieved in the current page
+    '401':
+      description: Invalid credentials
+ChatMessage:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: Unique identifier for the message
+    senderId:
+      type: string
+      description: The ID of the user who sent the message
+    receiverId:
+      type: string
+      description: The ID of the user who received the message
+    content:
+      type: string
+      description: The content of the message
+    timestamp:
+      type: string
+      format: date-time
+      description: The timestamp of when the message was sent
+    isRead:
+      type: boolean
+      description: Indicates whether the message has been read
+    chatRoomId:
+      type: string
+      description: The ID of the chat room where the message was sent

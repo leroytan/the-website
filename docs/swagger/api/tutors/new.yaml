@@ -1,0 +1,70 @@
+post:
+  tags:
+    - tutor
+  summary: Creates a tutor profile. authorization required
+  requestBody:
+    required: true
+    description: parameters tutors are expected to have
+    content:
+      application/json:
+        schema:
+          $ref: '#/NewTutorProfile'
+  responses:
+    '200':
+      description: confirmation of successful creation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Tutor profile created successfully."
+
+NewTutorProfile:
+    type: object
+    properties:
+      photo_url:
+        type: string
+        nullable: true
+      highest_education:
+        type: string
+        nullable: true
+      availability:
+        type: string
+        nullable: true
+      resume_url:
+        type: string
+        nullable: true
+      rate:
+        type: string
+        nullable: true
+      location:
+        type: string
+        nullable: true
+      rating:
+        type: number
+        format: float
+        nullable: true
+      about_me:
+        type: string
+        nullable: true
+      experience:
+        type: string
+        nullable: true
+      subjects_teachable:
+        type: array
+        items:
+          type: string
+      levels_teachable:
+        type: array
+        items:
+          type: string
+      special_skills:
+        type: array
+        items:
+          type: string
+    required:
+      - subjects_teachable
+      - levels_teachable
+      - special_skills

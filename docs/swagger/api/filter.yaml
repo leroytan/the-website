@@ -1,0 +1,12 @@
+FilterList:
+  type: array
+  items:
+    type: object
+    required:
+      - text
+      - id
+    properties:
+      text:
+        type: string
+      id:
+        type: string

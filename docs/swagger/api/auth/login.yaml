@@ -1,0 +1,27 @@
+post:
+  tags:
+    - auth
+  summary: Log in a user
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/LoginRequest'
+  responses:
+    '200':
+      description: Successful login. Both refresh and access tokens are stored as http cookies in the browser.
+    '401':
+      description: Invalid credentials
+LoginRequest:
+  type: object
+  required:
+    - email
+    - password
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+      format: password

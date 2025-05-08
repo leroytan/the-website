@@ -1,0 +1,40 @@
+get:
+  tags:
+    - course
+  summary: get the data to populate the page which shows all courses
+  parameters:
+    - name: query
+      in: query
+      required: false
+      description: The search query. Omitting means all results are returned.
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful retrieval of courses
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/CoursePublicSummary'
+CoursePublicSummary:
+  type: object
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    description:
+      type: string
+    progress:
+      type: number
+      format: float
+    file_link:
+      type: string
+      nullable: true
+  required:
+    - id
+    - name
+    - description
+    - progress

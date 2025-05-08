@@ -1,0 +1,76 @@
+get:
+  tags:
+    - reviews
+  summary: Retrieve a list of all nus courses with their majors
+  responses:
+    '200':
+      description: A list of nus courses with their corresponding majors
+      content:
+        application/json:
+          schema:
+            $ref: '#/MajorList'
+MajorList:
+  type: array
+  items:
+    type: object
+    required:
+      - name
+      - modules
+    properties:
+      name:
+        type: string
+      modules:
+        type: array
+        items:
+          # type: object
+          $ref: '#/Module'
+Module:
+  type: object
+  properties:
+    code:
+      type: string
+    name:
+      type: string
+    reviews:
+      type: array
+      items:
+        $ref: '#/Review'
+  required:
+    - code
+    - name
+    - reviews
+Review:
+  type: object
+  properties:
+    year_sem:
+      type: string
+    workload:
+      type: string
+    difficulty:
+      type: integer
+    overview:
+      type: string
+    otherPoints:
+      type: string
+    reviewer:
+      $ref: '#/Reviewer'
+  required:
+    - year_sem
+    - workload
+    - difficulty
+    - overview
+    - otherPoints
+    - reviewer
+Reviewer:
+  type: object
+  properties:
+    year:
+      type: integer
+    course:
+      type: string
+    specialization:
+      type: string
+  required:
+    - year
+    - course
+    - specialization

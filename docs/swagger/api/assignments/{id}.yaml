@@ -1,0 +1,40 @@
+get:
+  tags:
+    - assignment
+  summary: retrieves the details of an assignment specified by id. if user is owner, then will see tutors who requested
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: the id of the assignment to retrieve
+      schema:
+        type: string
+  responses:
+    '200':
+      description: the details of a single assignment, with fields depending on the authorization level of the user
+      content:
+        application/json:
+          schema:
+            $ref: './assignment.yaml/#/Assignment'
+put:
+  tags:
+    - assignment
+  summary: updates details of an assignment. specific user authorization required
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: the id of the assignment to update
+      schema:
+        type: string
+  requestBody:
+    required: true
+    description: parameters tutors are expected to have
+    content:
+      application/json:
+        schema:
+          $ref: './assignment.yaml/#/NewAssignment'
+  responses:
+    '200':
+      description: confirmation of successful update
+

@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
 from api.common.models import LoginRequest, SignupRequest
@@ -19,7 +21,7 @@ class Logic:
         with Session(StorageService.engine) as session:
             # Check if user exists
             user = StorageService.find(session, {"email": login_data.email}, User, find_one=True)
-            if not user or not AuthService.verify_password(login_data.password, user.passwordHash):
+            if not user or not AuthService.verify_password(login_data.password, user.password_hash):
                 raise HTTPException(status_code=401, detail="Incorrect email or password")
     
         token_data = TokenData(email=login_data.email)
@@ -35,17 +37,17 @@ class Logic:
     @staticmethod
     def handle_signup(signup_data: SignupRequest) -> TokenPair:
 
+        signup_data_dict = signup_data.model_dump()
+        signup_data_dict.pop("password")
+
         hashed_password = AuthService.hash_password(signup_data.password)
+        signup_data_dict["password_hash"] = hashed_password
 
         with Session(StorageService.engine) as session:
             try:
                 StorageService.insert(
                     session, 
-                    User(
-                        email=signup_data.email,
-                        name=signup_data.name,
-                        passwordHash=hashed_password,
-                    )
+                    User(**signup_data_dict)
                 )
             except IntegrityError as e:
                 raise HTTPException(status_code=409, detail="User already exists")
@@ -68,6 +70,8 @@ class Logic:
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
+            if access_token is None:
+                raise credentials_exception
             payload = AuthService.verify_token(access_token)
 
             if payload.email is None:
@@ -89,3 +93,10 @@ class Logic:
             return AuthService.refresh_tokens(refresh_token)
         except (JWTError, ValueError, ValidationError) as e:
             raise HTTPException(status_code=401, detail="Invalid refresh token") 
+        
+    @staticmethod
+    def create_assert_user_authorized(user_id: int) -> Callable[[int], None]:
+        def assert_user_authorized(correct_id: int) -> None:
+            if user_id != correct_id:
+                raise HTTPException(status_code=403, detail="Unauthorized action")
+        return assert_user_authorized
