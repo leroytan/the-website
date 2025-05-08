@@ -49,6 +49,7 @@ async def get_assignment(id: int, request: Request) -> AssignmentOwnerView | Ass
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
+    user = None
     try:
         user = RouterAuthUtils.get_current_user(request)
     except HTTPException as e:
