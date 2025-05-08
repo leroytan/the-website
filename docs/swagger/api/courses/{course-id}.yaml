@@ -1,0 +1,48 @@
+get:
+  tags:
+    - course
+  summary: Get the data to populate the page which shows all modules in a course
+  description: This endpoint retrieves the data to populate the page which shows all modules in a course.
+  parameters:
+    - name: course-id
+      in: path
+      required: true
+      description: The ID of the course to retrieve modules for
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful retrieval of modules
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/CourseModule'
+
+CourseModule:
+  type: object
+  properties:
+    course_overview:
+      type: string
+    progress:
+      type: number
+      format: float
+    id:
+      type: integer
+    name:
+      type: string
+    completed:
+      type: boolean
+    locked:
+      type: boolean
+    videoUrl:
+      type: string
+  required:
+    - course_overview
+    - progress
+    - id
+    - name
+    - completed
+    - locked
+    - videoUrl

@@ -1,0 +1,89 @@
+get:
+  tags:
+    - tutor
+  summary: Search for tutors + returns filter types in the form of id and text to display
+  parameters:
+    - name: query
+      in: query
+      required: false
+      description: The search query for tutors
+      schema:
+        type: string
+    - name: sort
+      in: query
+      required: false
+      description: Sorting criteria for the tutor list
+      schema:
+        type: string
+    - name: filter
+      in: query
+      required: false
+      description: Filter criteria for the tutor list
+      schema:
+        type: array
+        items:
+          type: string
+  responses:
+    '200':
+      description: A list of tutor summaries and filters (string, int) separated by type
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              results:
+                type: array
+                items:
+                  $ref: '#/TutorPublicSummary'
+              filters:
+                type: object
+                properties:
+                  subjects:
+                    $ref: './filter.yaml/#/FilterList'
+                  levels:
+                    $ref: './filter.yaml/#/FilterList'
+                  location:
+                    $ref: './filter.yaml/#/FilterList'
+                required:
+                  - subjects
+                  - levels
+                  - location
+            required:
+              - results
+              - filters
+TutorPublicSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        rate:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          format: float
+          nullable: true
+        subjects_teachable:
+          type: array
+          items:
+            type: string
+        levels_teachable:
+          type: array
+          items:
+            type: string
+        experience:
+          type: string
+          nullable: true
+        availability:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - subjects_teachable
+        - levels_teachable

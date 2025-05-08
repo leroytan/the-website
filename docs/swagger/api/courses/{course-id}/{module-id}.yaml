@@ -1,0 +1,25 @@
+get:
+  tags:
+    - module
+  summary: Get data of each module specified by id
+  description: This endpoint retrieves the data of a specific module in a course.
+  parameters:
+    - name: course-id
+      in: path
+      required: true
+      description: The ID of the course to retrieve the module from
+      schema:
+        type: string
+    - name: module-id 
+      in: path
+      required: true
+      description: The ID of the module to retrieve
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successful retrieval of module
+      content:
+        application/json:
+          schema:
+            $ref: '../{course-id}.yaml/#/CourseModule'

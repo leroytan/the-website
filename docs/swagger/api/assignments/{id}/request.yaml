@@ -1,0 +1,29 @@
+post:
+  tags:
+    - assignment
+  summary: creates a request for an assignment specified by id. tutor authorization required
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: the id of the assignment to request
+      schema:
+        type: string
+    - name: access_token
+      in: cookie
+      required: true
+      description: The access token used to authenticate the tutor and decode the tutor ID
+      schema:
+        type: string
+  responses:
+    '200':
+      description: confirmation of successful creation
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+  security:
+    - cookieAuth: []

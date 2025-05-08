@@ -1,0 +1,14 @@
+post:
+  tags:
+    - assignment
+  summary: creates an assignment. user authorization required
+  requestBody:
+    required: true
+    description: parameters assignments are expected to have
+    content:
+      application/json:
+        schema:
+          $ref: './assignment.yaml/#/NewAssignment'
+  responses:
+    '200':
+      description: confirmation of successful creation

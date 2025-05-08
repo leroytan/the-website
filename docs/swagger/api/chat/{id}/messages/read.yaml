@@ -1,0 +1,25 @@
+put:
+  tags:
+    - chat
+  summary: Marks messages as read in the chat specified by chat id
+  description: Marks the specified messages as read in the chat. This is typically used to update the status of messages in the chat interface.
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The chat id
+      schema:
+        type: integer
+    - name: message_ids
+      in: query
+      required: false
+      description: The IDs of the messages to mark as read
+      schema:
+        type: array
+        items:
+          type: integer
+  responses:
+    '200':
+      description: Successful unlocking of chat
+    '401':
+      description: Invalid credentials

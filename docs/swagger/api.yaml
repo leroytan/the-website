@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: THE (Teach Honor Excel) API
+  description: API for a tutor agency website providing login, signup, profile, and tutoring functionalities for tutors and users.
+  version: 1.0.0
+servers:
+  - url: https://api.teachhonorexcel.com/v1
+tags:
+  - name: auth
+    description: Authentication operations
+  - name: chat
+    description: endpoints for the live chat feature between users and tutors
+  - name: tutor
+    description: Tutor-specific operations
+  - name: assignment
+    description: Assignment-specific operations
+  - name: course
+    description: Course-specific operations
+  - name: reviews
+    description: Course reviews operations
+paths:
+  /ws/chat:
+    $ref: './ws/chat.yaml'
+  /api/chat/{id}:
+    $ref: ./api/chat/{id}.yaml
+  /api/chat/{id}/unlock:
+    $ref: ./api/chat/{id}/unlock.yaml
+  /api/chat/{id}/messages/read:
+    $ref: ./api/chat/{id}/messages/read.yaml
+  /api/auth/login:
+    $ref: './api/auth/login.yaml'
+  /api/auth/signup:
+    $ref: './api/auth/signup.yaml'
+  /api/auth/forget-password:
+    $ref: './api/auth/forgot-password.yaml'
+  /api/auth/reset-password:
+    $ref: './api/auth/reset-password.yaml'
+  /api/auth/logout:
+    $ref: './api/auth/logout.yaml'
+  /api/auth/refresh:
+    $ref: './api/auth/refresh.yaml'
+  /api/auth/verify-email:
+    $ref: './api/auth/verify-email.yaml'
+  /api/tutors:
+    $ref: './api/tutors.yaml'
+  /api/tutors/new:
+    $ref: './api/tutors/new.yaml'
+  /api/tutors/{id}:
+    $ref: './api/tutors/{id}.yaml'
+  /api/assignments:
+    $ref: './api/assignments.yaml'
+  /api/assignments/new:
+    $ref: './api/assignments/new.yaml'
+  /api/assignments/{id}:
+    $ref: './api/assignments/{id}.yaml'
+  /api/assignments/{id}/request:
+    $ref: './api/assignments/{id}/request.yaml'
+  /api/assignment-requests/{id}/change-status:
+    $ref: './api/assignment-requests/{id}/change-status.yaml'
+  /api/courses:
+    $ref: './api/courses.yaml'
+  /api/courses/{course-id}:
+    $ref: './api/courses/{course-id}.yaml'
+  /api/courses/{course-id}/{module-id}:
+    $ref: './api/courses/{course-id}/{module-id}.yaml'
+  /api/nus-course-reviews:
+    $ref: './api/nus-course-reviews.yaml'
+  /api/nus-course-reviews/{nus-course-id}:
+    $ref: './api/nus-course-reviews/{nus-course-id}.yaml'

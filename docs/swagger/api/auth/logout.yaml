@@ -1,0 +1,18 @@
+post:
+  tags:
+    - auth
+  summary: "Endpoint to log out the user."
+  description: |
+    This endpoint allows a user to log out of their account. 
+    Upon successful logout, the user's session will be terminated, and they will no longer have access to protected resources.
+  responses:
+    '200':
+      description: "User logged out successfully."
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Successfully logged out."
