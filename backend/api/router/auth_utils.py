@@ -18,11 +18,24 @@ class RouterAuthUtils:
         Returns:
             bool: True if the user is logged out (both tokens are missing), False otherwise.
         """
-        if request.cookies.get("access_token") and request.cookies.get("refresh_token"):
-            raise HTTPException(
-                status_code=401,
-                detail="User is already logged in",
-            )
+        try:
+            _ = RouterAuthUtils.get_current_user(request)
+        except HTTPException as e:
+            # if get_current_user raises an exception, it means the user is logged out
+            # and we can proceed with the login/signup process
+            if e.status_code == 401:
+                return
+            # if the exception is not due to missing tokens, re-raise it
+            # could be internal server error or other issues
+            raise e
+        # if we reach this point, it means the user is logged in
+            
+        # if get_current_user does not raise an exception, it means the user is logged in
+        # and we should not allow login/signup
+        raise HTTPException(
+            status_code=403,
+            detail="User is already logged in",
+        )
         
     @staticmethod
     def assert_not_logged_out(request: Request) -> None:
@@ -74,13 +87,13 @@ class RouterAuthUtils:
 
 
     @staticmethod
-    async def get_current_user(request: Request) -> User:
+    def get_current_user(request: Request) -> User:
         token = request.cookies.get("access_token")
         user = Logic.get_current_user(token)
         return user
     
     @staticmethod
-    async def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:
+    def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:
         token = websocket.cookies.get("access_token")
         user = Logic.get_current_user(token)
         return user, websocket

@@ -1,7 +1,9 @@
+import enum
 from collections.abc import Callable
 
 from api.logic.filter_logic import FilterLogic
-from api.router.models import Assignment as AssignmentView
+from api.router.models import AssignmentOwnerView, AssignmentPublicView
+from api.router.models import AssignmentRequest as AssignmentRequestView
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import NewAssignment, SearchQuery
 from api.storage.models import (Assignment, AssignmentRequest,
@@ -15,55 +17,69 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
 
+class ViewType(enum.Enum):
+    OWNER = "owner"
+    PUBLIC = "public"
+
 class AssignmentLogic:
 
     @staticmethod
-    def convert_assignment_to_view(session: Session, assignment: Assignment):
-
+    def convert_assignment_to_view(session: Session, assignment: Assignment, view_type: ViewType = ViewType.PUBLIC) -> AssignmentOwnerView | AssignmentPublicView:
         session.add(assignment)
-
-        # Extract subject and level names
-        subject_names = [subject.name for subject in assignment.subjects] if assignment.subjects else []
-        level_names = [level.name for level in assignment.levels] if assignment.levels else []
-        slots = [
-            AssignmentSlotView(
-                id=slot.id,
-                day=slot.day,
-                start_time=slot.start_time,
-                end_time=slot.end_time,
-            )
-            for slot in assignment.available_slots
-        ]
-        return AssignmentView(
-            id=assignment.id,
-            datetime=assignment.datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            title=assignment.title,
-            owner_id=assignment.owner_id,
-            tutor_id=assignment.tutor_id,
-            estimated_rate=assignment.estimated_rate,
-            weekly_frequency=assignment.weekly_frequency,
-            available_slots=slots,
-            special_requests=assignment.special_requests,
-            subjects=subject_names,
-            levels=level_names,
-            status=assignment.status
-        )
+        
+        # Common conversion logic
+        base_data = {
+            "id": assignment.id,
+            "datetime": assignment.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "title": assignment.title,
+            "owner_id": assignment.owner_id,
+            "estimated_rate": assignment.estimated_rate,
+            "weekly_frequency": assignment.weekly_frequency,
+            "available_slots": [
+                AssignmentSlotView(
+                    id=slot.id,
+                    day=slot.day,
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                )
+                for slot in assignment.available_slots
+            ],
+            "special_requests": assignment.special_requests,
+            "subjects": [subject.name for subject in assignment.subjects] if assignment.subjects else [],
+            "levels": [level.name for level in assignment.levels] if assignment.levels else [],
+            "status": assignment.status
+        }
+        
+        if view_type == ViewType.OWNER:
+            base_data["tutor_id"] = assignment.tutor_id
+            base_data["requests"] = [
+                AssignmentRequestView(
+                    id=request.id,
+                    datetime=request.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                    tutor_id=request.tutor_id,
+                    status=request.status
+                )
+                for request in assignment.assignment_requests
+            ]
+            return AssignmentOwnerView(**base_data)
+        else:
+            return AssignmentPublicView(**base_data)
         
 
     @staticmethod
-    def search_assignments(search_query: SearchQuery) -> list[AssignmentView]:
+    def search_assignments(search_query: SearchQuery) -> list[AssignmentPublicView]:
 
         with Session(StorageService.engine) as session:
             filters = []
 
             tutor_alias = aliased(Tutor)
             user_alias = aliased(User)
-            requester_alias = aliased(User)
+            owner_alias = aliased(User)
             # Join the Assignment table with the Tutor and User tables
             statement = session.query(Assignment)
             statement = statement.outerjoin(tutor_alias, Assignment.tutor)
             statement = statement.outerjoin(user_alias, tutor_alias.user)
-            statement = statement.outerjoin(requester_alias, Assignment.requester)
+            statement = statement.outerjoin(owner_alias, Assignment.owner)
 
             # General search (matching name, location, or about_me)
             if search_query.query:
@@ -72,7 +88,7 @@ class AssignmentLogic:
                     Assignment.title.ilike(general_query),
                     Assignment.special_requests.ilike(general_query),
                     user_alias.name.ilike(general_query),
-                    requester_alias.name.ilike(general_query),
+                    owner_alias.name.ilike(general_query),
                 ))
 
             # get filters from the search query
@@ -91,12 +107,12 @@ class AssignmentLogic:
             assignments = StorageService.find(session, statement, Assignment)
 
             # Convert the list of Tutor objects to TutorPublicSummary objects            
-            summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment) for assignment in assignments]
+            summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC) for assignment in assignments]
 
             return summaries
         
     @staticmethod
-    def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentView:
+    def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentOwnerView:
         with Session(StorageService.engine) as session:
 
             # Create a new assignment
@@ -141,10 +157,10 @@ class AssignmentLogic:
 
             session.commit()
             session.refresh(assignment)
-            return AssignmentLogic.convert_assignment_to_view(session, assignment)
+            return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
         
     @staticmethod
-    def get_assignment_by_id(id: str | int) -> AssignmentView:
+    def get_assignment_by_id(id: str | int, user_id: int = None) -> AssignmentOwnerView | AssignmentPublicView:
         with Session(StorageService.engine) as session:
             assignment = StorageService.find(session, {"id": id}, Assignment, find_one=True)
             if not assignment:
@@ -152,10 +168,11 @@ class AssignmentLogic:
                     status_code=404,
                     detail="Assignment not found"
                 )
-            return AssignmentLogic.convert_assignment_to_view(session, assignment)
+            view_type = ViewType.OWNER if assignment.owner_id == user_id else ViewType.PUBLIC
+            return AssignmentLogic.convert_assignment_to_view(session, assignment, view_type)
         
     @staticmethod
-    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment, assert_user_authorized: Callable[[int], None]) -> AssignmentView:
+    def update_assignment_by_id(id: str | int, assignment_update: NewAssignment, assert_user_authorized: Callable[[int], None]) -> AssignmentOwnerView:
         with Session(StorageService.engine) as session:
             # Update the assignment
             assignment_dict = assignment_update.model_dump()
@@ -171,7 +188,7 @@ class AssignmentLogic:
                     detail="Assignment not found"
                 )
             
-            # Check if the user is the requester of the assignment
+            # Check if the user is the owner of the assignment
             assert_user_authorized(assignment.owner_id)
 
             session.add(assignment)
@@ -194,7 +211,7 @@ class AssignmentLogic:
 
             session.commit()
             session.refresh(assignment)
-            return AssignmentLogic.convert_assignment_to_view(session, assignment)
+            return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
         
     @staticmethod
     def request_assignment(assignment_id: str | int, tutor_id: str | int) -> None:
@@ -250,12 +267,15 @@ class AssignmentLogic:
                 )
 
             session.add(assignment_request)
-            if assignment_request.status != AssignmentRequestStatus.PENDING:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Assignment request is not pending. Cannot change status."
-                )
-            # Check if the user is the requester of the assignment
+
+            # TODO: Determine if owner should be allowed to reopen request once it is rejected or accepted
+            # if assignment_request.status != AssignmentRequestStatus.PENDING:
+            #     raise HTTPException(
+            #         status_code=409,
+            #         detail="Assignment request is not pending. Cannot change status."
+            #     )
+
+            # Check if the user is the owner of the assignment
             assert_user_authorized(assignment_request.assignment.owner_id)
 
             # Update the assignment with the tutor_id
@@ -267,10 +287,12 @@ class AssignmentLogic:
                     status_code=404,
                     detail="Assignment not found"
                 )
-            match status:
-                case "ACCEPTED":
-                    assignment_request.status = AssignmentRequestStatus.ACCEPTED
-                case "REJECTED":
-                    assignment_request.status = AssignmentRequestStatus.REJECTED
+            
+            # Directly access the enum member using getattr
+            assignment_request.status = getattr(AssignmentRequestStatus, status, None)
+
+            # Optionally handle invalid status
+            if assignment_request.status is None:
+                raise ValueError(f"Invalid status: {status}")
 
             session.commit()

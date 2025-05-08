@@ -12,6 +12,7 @@ class SignupRequest(BaseModel):
     email: str
     password: str
     name: str
+    intends_to_be_tutor: bool = False
 
 class TutorPublicSummary(BaseModel):
     id: int

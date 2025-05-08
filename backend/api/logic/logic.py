@@ -37,17 +37,17 @@ class Logic:
     @staticmethod
     def handle_signup(signup_data: SignupRequest) -> TokenPair:
 
+        signup_data_dict = signup_data.model_dump()
+        signup_data_dict.pop("password")
+
         hashed_password = AuthService.hash_password(signup_data.password)
+        signup_data_dict["password_hash"] = hashed_password
 
         with Session(StorageService.engine) as session:
             try:
                 StorageService.insert(
                     session, 
-                    User(
-                        email=signup_data.email,
-                        name=signup_data.name,
-                        password_hash=hashed_password,
-                    )
+                    User(**signup_data_dict)
                 )
             except IntegrityError as e:
                 raise HTTPException(status_code=409, detail="User already exists")
@@ -70,6 +70,8 @@ class Logic:
             headers={"WWW-Authenticate": "Bearer"},
         )
         try:
+            if access_token is None:
+                raise credentials_exception
             payload = AuthService.verify_token(access_token)
 
             if payload.email is None:
