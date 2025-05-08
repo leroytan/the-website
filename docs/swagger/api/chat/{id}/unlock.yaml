@@ -1,0 +1,17 @@
+put:
+  tags:
+    - chat
+  summary: unlocks the chat specified by chat id
+  description: To be called as a webhook by the payment gateway, or triggered once payment has been verified
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The chat id
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Successful unlocking of chat
+    '401':
+      description: Invalid credentials

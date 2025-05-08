@@ -1,0 +1,20 @@
+get:
+  tags:
+    - chat
+  summary: The WebSocket endpoint for the chat feature
+  description: This endpoint is used to establish a WebSocket connection for real-time chat functionality. It allows users to send and receive messages in real-time.
+  operationId: chatWebSocket
+  requestBody:
+    required: true
+    description: The request body when sending a message through the WebSocket connection. It should be converted to a string.
+    content:
+      string:
+        schema:
+          type: object
+          properties:
+            receiver_id:
+              type: integer
+              description: The ID of the user establishing the WebSocket connection
+            content: 
+              type: string
+              description: The content of the message being sent

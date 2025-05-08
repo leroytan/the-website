@@ -1,0 +1,144 @@
+get:
+  tags:
+    - tutor
+  summary: Retrieves the details of a tutor specified by ID
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The ID of the tutor to retrieve
+      schema:
+        type: string
+  responses:
+    '200':
+      description: The details of a single tutor, with fields depending on the authorization level of the user
+      content:
+        application/json:
+          schema:
+            $ref: '#/TutorProfile'
+    '400':
+      description: Bad request, for example if the ID is malformed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid tutor ID format."
+put:
+  tags:
+    - tutor
+  summary: Updates details of a tutor profile. Specific tutor authorization required
+  parameters: 
+    - name: id
+      in: path
+      required: true
+      description: The ID of the tutor to update
+      schema:
+        type: string
+  requestBody:
+    required: true
+    description: Parameters tutors are expected to have
+    content:
+      application/json:
+        schema:
+          $ref: '#/TutorProfile'
+  responses:
+    '200':
+      description: Confirmation of successful update
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Tutor profile updated successfully."
+    '400':
+      description: Bad request, for example if the request body is malformed or required fields are missing
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid request body. Please check the fields."
+    '401':
+      description: Unauthorized, user is not logged in
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "You are not authorized to update this tutor's profile."
+    '403':
+      description: Forbidden, the user is not the tutor or does not have sufficient privileges to perform this update
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "You are not authorized to modify this profile."
+
+TutorProfile:
+  type: object
+  properties:
+    id:
+      type: integer
+    name:
+      type: string
+    email:
+      type: string
+    photo_url:
+      type: string
+      nullable: true
+    highest_education:
+      type: string
+      nullable: true
+    rate:
+      type: string
+      nullable: true
+    location:
+      type: string
+      nullable: true
+    rating:
+      type: number
+      format: float
+      nullable: true
+    about_me:
+      type: string
+      nullable: true
+    subjects_teachable:
+      type: array
+      items:
+        type: string
+    levels_teachable:
+      type: array
+      items:
+        type: string
+    special_skills:
+      type: array
+      items:
+        type: string
+    resume_url:
+      type: string
+      nullable: true
+    experience:
+      type: string
+      nullable: true
+    availability:
+      type: string
+      nullable: true
+  required:
+    - id
+    - name
+    - email
+    - subjects_teachable
+    - levels_teachable
+    - special_skills
