@@ -13,7 +13,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 @router.get("/api/assignments")
-async def search_assignments(query: str = "", filters: str = "", sorts: str = "") -> SearchResult[AssignmentPublicView]:
+async def search_assignments(request: Request, query: str = "", filters: str = "", sorts: str = "") -> SearchResult[AssignmentPublicView]:
     if settings.is_use_mock:
         return mock.get_assignments()
     
@@ -28,7 +28,14 @@ async def search_assignments(query: str = "", filters: str = "", sorts: str = ""
         sorts=sort_ids,
     )
 
-    results = AssignmentLogic.search_assignments(search_query)
+    user = None
+    try:
+        user = RouterAuthUtils.get_current_user(request)
+    except HTTPException as e:
+        if e.status_code != 401:
+            raise e
+
+    results = AssignmentLogic.search_assignments(search_query, user.id if user else None)
     filters = FilterLogic.get_filters(Assignment)
 
     return SearchResult[AssignmentPublicView](

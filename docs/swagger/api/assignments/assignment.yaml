@@ -3,8 +3,6 @@ Assignment:
   properties:
     id:
       type: integer
-    datetime:
-      type: string
     title:
       type: string
     owner_id:
@@ -33,9 +31,17 @@ Assignment:
         type: string
     status:
       type: string
+    location:
+      type: string
+      nullable: true
+    created_at:
+      type: string
+    updated_at:
+      type: string
+    applied:
+      type: boolean
   required:
     - id
-    - datetime
     - title
     - owner_id
     - estimated_rate
@@ -44,6 +50,9 @@ Assignment:
     - subjects
     - levels
     - status
+    - created_at
+    - updated_at
+    - applied
 
 AssignmentSlot:
   type: object

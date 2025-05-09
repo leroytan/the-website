@@ -98,13 +98,15 @@ class AssignmentSlot(BaseModel):
 
 class AssignmentRequest(BaseModel):
     id: int
-    datetime: str
+    created_at: str
+    updated_at: str
     tutor_id: int
     status: str
 
 class AssignmentBaseView(BaseModel):
     id: int
-    datetime: str
+    created_at: str
+    updated_at: str
     title: str
     owner_id: int
     estimated_rate: str
@@ -114,9 +116,10 @@ class AssignmentBaseView(BaseModel):
     subjects: list[str]
     levels: list[str]
     status: str
+    location: str
 
 class AssignmentPublicView(AssignmentBaseView):
-    pass  # Inherits all fields from base
+    applied: bool = False  # Indicates if the user has applied for the assignment
 
 class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
@@ -127,7 +130,7 @@ class NewAssignmentSlot(BaseModel):
     start_time: str
     end_time: str
 
-class NewAssignment(BaseModel):
+class NewAssignment(BaseModel):  # TODO: add location
     title: str
     estimated_rate: str
     weekly_frequency: int
