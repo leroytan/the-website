@@ -1,5 +1,5 @@
-import datetime
 import enum
+from datetime import datetime
 
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
                         String, UniqueConstraint)
@@ -10,7 +10,12 @@ from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy_serializer import SerializerMixin
 
 # Create a base class for declarative models
-Base = declarative_base()
+Decl_Base = declarative_base()
+
+class Base(Decl_Base):
+    __abstract__ = True
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 class User(Base, SerializerMixin):
     """Base User model"""
@@ -64,13 +69,13 @@ class Assignment(Base, SerializerMixin):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    datetime = Column(DateTime, default=datetime.datetime.now)
     title = Column(String, nullable=False)
     owner_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
     estimated_rate = Column(String, nullable=False)
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
+    location = Column(String, nullable=False)
     status = Column(ENUM(AssignmentStatus), default=AssignmentStatus.OPEN)
 
     # Relationships
@@ -113,7 +118,6 @@ class AssignmentRequest(Base):
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
     assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
-    datetime = Column(DateTime, default=datetime.datetime.now)
     tutor_id = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
     status = Column(ENUM(AssignmentRequestStatus), default=AssignmentRequestStatus.PENDING)
 
@@ -224,7 +228,6 @@ class ChatMessage(Base, SerializerMixin):
     sender_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     receiver_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     content = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.now)
     isRead = Column(Boolean, default=False)
     chatroom_id = Column(Integer, ForeignKey('ChatRoom.id'))  # Foreign key to ChatRoom
 

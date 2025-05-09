@@ -3,7 +3,7 @@ FilterList:
   items:
     type: object
     required:
-      - text
+      - name
       - id
     properties:
       text:
