@@ -71,7 +71,6 @@ class AssignmentLogic:
                     if request.tutor_id == user_id:
                         base_data["applied"] = True
                         break
-                
             return AssignmentPublicView(**base_data)
         
 
