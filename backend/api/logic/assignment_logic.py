@@ -24,13 +24,14 @@ class ViewType(enum.Enum):
 class AssignmentLogic:
 
     @staticmethod
-    def convert_assignment_to_view(session: Session, assignment: Assignment, view_type: ViewType = ViewType.PUBLIC) -> AssignmentOwnerView | AssignmentPublicView:
+    def convert_assignment_to_view(session: Session, assignment: Assignment, view_type: ViewType = ViewType.PUBLIC, user_id: int = None) -> AssignmentOwnerView | AssignmentPublicView:
         session.add(assignment)
         
         # Common conversion logic
         base_data = {
             "id": assignment.id,
-            "datetime": assignment.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": assignment.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "updated_at": assignment.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
             "title": assignment.title,
             "owner_id": assignment.owner_id,
             "estimated_rate": assignment.estimated_rate,
@@ -47,7 +48,8 @@ class AssignmentLogic:
             "special_requests": assignment.special_requests,
             "subjects": [subject.name for subject in assignment.subjects] if assignment.subjects else [],
             "levels": [level.name for level in assignment.levels] if assignment.levels else [],
-            "status": assignment.status
+            "status": assignment.status,
+            "location": assignment.location,
         }
         
         if view_type == ViewType.OWNER:
@@ -55,7 +57,8 @@ class AssignmentLogic:
             base_data["requests"] = [
                 AssignmentRequestView(
                     id=request.id,
-                    datetime=request.datetime.strftime("%Y-%m-%d %H:%M:%S"),
+                    created_at=request.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    updated_at=request.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
                     tutor_id=request.tutor_id,
                     status=request.status
                 )
@@ -63,11 +66,16 @@ class AssignmentLogic:
             ]
             return AssignmentOwnerView(**base_data)
         else:
+            if user_id is not None:
+                for request in assignment.assignment_requests:
+                    if request.tutor_id == user_id:
+                        base_data["applied"] = True
+                        break
             return AssignmentPublicView(**base_data)
         
 
     @staticmethod
-    def search_assignments(search_query: SearchQuery) -> list[AssignmentPublicView]:
+    def search_assignments(search_query: SearchQuery, user_id: int = None) -> list[AssignmentPublicView]:
 
         with Session(StorageService.engine) as session:
             filters = []
@@ -107,7 +115,7 @@ class AssignmentLogic:
             assignments = StorageService.find(session, statement, Assignment)
 
             # Convert the list of Tutor objects to TutorPublicSummary objects            
-            summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC) for assignment in assignments]
+            summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC, user_id) for assignment in assignments]
 
             return summaries
         
@@ -169,7 +177,7 @@ class AssignmentLogic:
                     detail="Assignment not found"
                 )
             view_type = ViewType.OWNER if assignment.owner_id == user_id else ViewType.PUBLIC
-            return AssignmentLogic.convert_assignment_to_view(session, assignment, view_type)
+            return AssignmentLogic.convert_assignment_to_view(session, assignment, view_type, user_id)
         
     @staticmethod
     def update_assignment_by_id(id: str | int, assignment_update: NewAssignment, assert_user_authorized: Callable[[int], None]) -> AssignmentOwnerView:

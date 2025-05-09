@@ -119,7 +119,7 @@ class ChatLogic:
             chat_messages = session.query(ChatMessage).filter(
                 ChatMessage.chatroom_id == chatroom.id,
                 ChatMessage.id <= last_message_id
-            ).order_by(ChatMessage.timestamp.desc()).limit(message_count).all()
+            ).order_by(ChatMessage.created_at.desc()).limit(message_count).all()
             return [
                 message.to_dict(rules=(
                     "-sender",

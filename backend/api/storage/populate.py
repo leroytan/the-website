@@ -299,7 +299,8 @@ def insert_test_data(engine: object) -> bool:
             estimated_rate="$45/hour",
             weekly_frequency=2,
             special_requests="Need help preparing for calculus final exam",
-            status=AssignmentStatus.OPEN
+            status=AssignmentStatus.OPEN,
+            location="Jurong East, Singapore"  # Example location
         ),
         Assignment(
             title="Essay-Writing Clinic",
@@ -308,17 +309,18 @@ def insert_test_data(engine: object) -> bool:
             estimated_rate="$35/hour",
             weekly_frequency=1,
             special_requests="Essay writing assistance needed",
-            status=AssignmentStatus.FILLED
+            status=AssignmentStatus.FILLED,
+            location="Bukit Batok, Singapore"  # Example location
         ),
         Assignment(
             title="Programming Coaching (Python)",
-            datetime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             owner_id=users[0].id,  # John Doe requesting
             tutor_id=None,  # No tutor assigned yet
             estimated_rate="$50/hour",
             weekly_frequency=3,
             special_requests="Need help with Python programming project",
-            status=AssignmentStatus.OPEN
+            status=AssignmentStatus.OPEN,
+            location="Bedok South, Singapore"  # Example location
         )
     ]
     session.add_all(assignments)
@@ -399,19 +401,19 @@ def insert_test_data(engine: object) -> bool:
     # Create assignment requests
     assignment_requests = [
         AssignmentRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=1),
+            created_at=datetime.datetime.now() - datetime.timedelta(days=1),
             tutor_id=tutors[1].id,  # Bob requesting assignment
             status=AssignmentRequestStatus.PENDING,
             assignment=assignments[0]  # For the first assignment
         ),
         AssignmentRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=3),
+            created_at=datetime.datetime.now() - datetime.timedelta(days=3),
             tutor_id=tutors[2].id,  # Carol requesting assignment
             status=AssignmentRequestStatus.ACCEPTED,
             assignment=assignments[1]  # For the second assignment
         ),
         AssignmentRequest(
-            datetime=datetime.datetime.now() - datetime.timedelta(days=4),
+            created_at=datetime.datetime.now() - datetime.timedelta(days=4),
             tutor_id=tutors[5].id,  # Frank requesting assignment
             status=AssignmentRequestStatus.REJECTED,
             assignment=assignments[0]  # For the first assignment
