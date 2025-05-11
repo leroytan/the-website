@@ -125,13 +125,6 @@ class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
     requests: list[AssignmentRequest]
 
-class AssignmentPublicView(AssignmentBaseView):
-    pass  # Inherits all fields from base
-
-class AssignmentOwnerView(AssignmentBaseView):
-    tutor_id: int | None
-    requests: list[AssignmentRequest]
-
 class NewAssignmentSlot(BaseModel):
     day: str
     start_time: str
