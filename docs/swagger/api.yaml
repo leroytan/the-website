@@ -14,6 +14,8 @@ tags:
     description: Tutor-specific operations
   - name: assignment
     description: Assignment-specific operations
+  - name: payment
+    description: Payment operations
   - name: course
     description: Course-specific operations
   - name: reviews
@@ -57,6 +59,8 @@ paths:
     $ref: './api/assignments/{id}/request.yaml'
   /api/assignment-requests/{id}/change-status:
     $ref: './api/assignment-requests/{id}/change-status.yaml'
+  /api/payment/create-checkout-session:
+    $ref: './api/payment/create-checkout-session.yaml'
   /api/courses:
     $ref: './api/courses.yaml'
   /api/courses/{course-id}:

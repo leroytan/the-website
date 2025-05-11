@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_url_prod: str
     is_use_mock: bool = True
     db_populate_check: bool = False
+    stripe_api_key: str
 
     # Dynamically determine which database URL to use
     @property
