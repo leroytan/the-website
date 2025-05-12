@@ -11,7 +11,7 @@ from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentStatus, Level, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
-from psycopg2.errors import ForeignKeyViolation
+from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
@@ -256,11 +256,13 @@ class AssignmentLogic:
                         status_code=409,
                         detail=f"Tutor with this id={tutor_id} does not exist"
                     )
-                else:
+                elif isinstance(e.orig, UniqueViolation):  # Should not happen
                     raise HTTPException(
-                        status_code=500,
-                        detail="Internal server error"
+                        status_code=409,
+                        detail="Assignment request already exists"
                     )
+                else:
+                    raise e
     
 
     @staticmethod
