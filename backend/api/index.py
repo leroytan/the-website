@@ -26,12 +26,13 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         content={"message": exc.detail}
     )
 
-@app.get('/api/test')
-async def test():
-    query = {"id": "1"}
-    update = {"name": "Algebra"}
-    with Session(StorageService.engine) as session:
-        return StorageService.update(session, query, update, Subject)
+@app.get('/api/ping')
+async def ping_get():
+    return {"message": "pong"}
+
+@app.post('/api/ping')
+async def ping_post():
+    return {"message": "pong"}
 
 app.add_middleware(
     CORSMiddleware,
