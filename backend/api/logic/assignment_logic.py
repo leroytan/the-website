@@ -254,7 +254,7 @@ class AssignmentLogic:
                 if isinstance(e.orig, ForeignKeyViolation):
                     raise HTTPException(
                         status_code=409,
-                        detail=f"Tutor with this id={tutor_id} does not exist"
+                        detail=f"Tutor with this id={tutor_id} does not exist. You have not signed up to be a tutor."
                     )
                 elif isinstance(e.orig, UniqueViolation):  # Should not happen
                     raise HTTPException(

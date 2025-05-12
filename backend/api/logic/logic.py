@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+import boto3
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
 from api.common.models import LoginRequest, SignupRequest
@@ -61,6 +62,12 @@ class Logic:
                 access_token=access_token,
                 refresh_token=refresh_token
             )
+        
+    @staticmethod
+    def handle_update_photo(user_id: int, photo_file: bytes) -> None:
+        # TODO: Implement S3 upload logic
+        pass
+
 
     @staticmethod
     def get_current_user(access_token: str) -> User:

@@ -20,7 +20,8 @@ dependencies = [
     "python-multipart (>=0.0.20,<0.0.21)",
     "sqlalchemy-serializer (>=1.4.22,<2.0.0)",
     "sqlalchemy-utils (>=0.41.2,<0.42.0)",
-    "stripe (>=12.1.0,<13.0.0)"
+    "stripe (>=12.1.0,<13.0.0)",
+    "boto3 (>=1.38.13,<2.0.0)"
 ]
 
 [tool.poetry]

@@ -89,13 +89,45 @@ async def check(_: User = Depends(RouterAuthUtils.get_current_user)):
     return {"message": "Valid token"}
 
 @router.get("/api/auth/idk")
-def auth_idk():
+async def auth_idk():
     return {"message": "Hello from FastAPI auth router"}
 
 @router.get("/api/auth/me")
-def me(user: User = Depends(RouterAuthUtils.get_current_user)):
+async def me(user: User = Depends(RouterAuthUtils.get_current_user)):
     return {
         "id": user.id,
         "email": user.email,
         "name": user.name,
     }
+
+@router.post("/api/auth/update-photo")
+async def update_photo(
+    request: Request,
+    response: Response,
+    user: User = Depends(RouterAuthUtils.get_current_user),
+):
+    """
+    Handles user photo update by processing the provided photo data, 
+    updating the user's profile picture, and generating an authentication token. 
+    The token is then set as an HTTP-only cookie in the response for secure 
+    and persistent access.
+
+    Args:
+        request (Request): The request object containing the photo data
+        response (Response): The response object used to set the authentication 
+                              token as a secure HTTP-only cookie.
+
+    Raises:
+        HTTPException: If the photo update process fails (e.g., due to validation errors 
+                        or a conflict with existing accounts), an HTTP error is 
+                        raised with an appropriate status code.
+    """
+    # Get photo data
+    photo = await request.form()
+    photo = photo.get("photo")
+    if not photo:
+        return {"message": "No photo provided"}
+
+    Logic.handle_update_photo(user.id, photo)
+
+    return {"message": "Photo updated successfully"}
