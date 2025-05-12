@@ -1,0 +1,34 @@
+post:
+  tags:
+    - payment
+  summary: creates a checkout session for a payment. user authorization required
+  description: creates a checkout session for a payment. user authorization required
+  requestBody:
+    required: true
+    description: parameters assignments are expected to have
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            price_id:
+              type: string
+              description: ID of the price to be charged
+            success_url:
+              type: string
+              description: URL to redirect to after successful payment
+            cancel_url:
+              type: string
+              description: URL to redirect to after payment cancellation
+
+  responses:
+    '200':
+      description: confirmation of successful creation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              session_id:
+                type: string
+                description: ID of the created checkout session

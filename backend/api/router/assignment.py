@@ -6,7 +6,7 @@ from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                NewAssignment, SearchQuery, SearchResult)
-from api.storage.models import Assignment, AssignmentRequest, User
+from api.storage.models import Assignment, User
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
