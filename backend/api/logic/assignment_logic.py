@@ -130,7 +130,8 @@ class AssignmentLogic:
                 estimated_rate=new_assignment.estimated_rate,
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
-                status=AssignmentStatus.OPEN
+                status=AssignmentStatus.OPEN,
+                location=new_assignment.location,
             )
 
             try:
@@ -144,7 +145,7 @@ class AssignmentLogic:
                 else:
                     raise HTTPException(
                         status_code=500,
-                        detail="Internal server error"
+                        detail=e.orig.args[0]
                     )
 
             session.add(assignment)

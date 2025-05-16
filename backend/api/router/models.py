@@ -138,6 +138,7 @@ class NewAssignment(BaseModel):  # TODO: add location
     special_requests: str | None
     subjects: list[str]
     levels: list[str]
+    location: str
 
 class SearchQuery(BaseModel):
     query: str | None
