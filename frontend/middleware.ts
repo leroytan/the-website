@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { BASE_URL } from "./utils/constants";
 
 export async function middleware(request: NextRequest) {
   const accesstoken = request.cookies.get("access_token");
@@ -32,7 +33,7 @@ export async function middleware(request: NextRequest) {
       }
 
       // Try refreshing access token
-      const refreshResponse = await fetch(`/api/auth/refresh`, {
+      const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
       });
 
