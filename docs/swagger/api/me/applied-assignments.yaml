@@ -1,0 +1,13 @@
+get:
+  tags:
+    - me
+  summary: Get applied assignments
+  description: Get all assignments that have been applied to by the user.
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '../assignments/assignment.yaml/#/AppliedAssignment'

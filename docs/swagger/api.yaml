@@ -8,6 +8,8 @@ servers:
 tags:
   - name: auth
     description: Authentication operations
+  - name: me
+    description: Operations related to the authenticated user
   - name: user
     description: User-specific operations (not related to authorization)
   - name: chat
@@ -38,10 +40,16 @@ paths:
     $ref: './api/auth/refresh.yaml'
   /api/auth/verify-email:
     $ref: './api/auth/verify-email.yaml'
-  /api/user/upload-profile-photo:
-    $ref: './api/user/upload-profile-photo.yaml'
-  /api/user/profile-photo/{user-id}:
-    $ref: './api/user/profile-photo/{user-id}.yaml'
+  /api/me/upload-profile-photo:  # Uploads a profile photo. User authorization required
+    $ref: './api/me/upload-profile-photo.yaml'
+  /api/user/{user-id}/:  # Retireves user profile information (name, profile photo url, etc.)
+    $ref: './api/user/{user-id}.yaml'
+  # /api/user/{id}/created-assignments:  # for tutors to see created assignments in the chat
+  #   $ref: './api/user/{id}/created-assignments.yaml'
+  /api/me/created-assignments:  # for parents/clients to see created assignments
+    $ref: './api/me/created-assignments.yaml'
+  /api/me/applied-assignments:  # for tutors to see assignments they are assigned to or pending
+    $ref: './api/me/applied-assignments.yaml'
   /ws/chat:
     $ref: './ws/chat.yaml'
   /api/chat/{id}:

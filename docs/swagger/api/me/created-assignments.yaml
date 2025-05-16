@@ -1,0 +1,13 @@
+get:
+  tags:
+    - me
+  summary: Get created assignments
+  description: Get all assignments that have been created by the user.
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '../assignments/assignment.yaml/#/AssignmentOwnerView'

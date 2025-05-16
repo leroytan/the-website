@@ -1,6 +1,6 @@
 post:
   tags:
-    - user
+    - me
   summary: uploads a profile photo. user authorization required
   requestBody:
     required: true
