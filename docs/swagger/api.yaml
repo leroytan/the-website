@@ -8,6 +8,8 @@ servers:
 tags:
   - name: auth
     description: Authentication operations
+  - name: user
+    description: User-specific operations (not related to authorization)
   - name: chat
     description: endpoints for the live chat feature between users and tutors
   - name: tutor
@@ -21,14 +23,7 @@ tags:
   - name: reviews
     description: Course reviews operations
 paths:
-  /ws/chat:
-    $ref: './ws/chat.yaml'
-  /api/chat/{id}:
-    $ref: ./api/chat/{id}.yaml
-  /api/chat/{id}/unlock:
-    $ref: ./api/chat/{id}/unlock.yaml
-  /api/chat/{id}/messages/read:
-    $ref: ./api/chat/{id}/messages/read.yaml
+
   /api/auth/login:
     $ref: './api/auth/login.yaml'
   /api/auth/signup:
@@ -43,6 +38,18 @@ paths:
     $ref: './api/auth/refresh.yaml'
   /api/auth/verify-email:
     $ref: './api/auth/verify-email.yaml'
+  /api/user/upload-profile-photo:
+    $ref: './api/user/upload-profile-photo.yaml'
+  /api/user/profile-photo/{user-id}:
+    $ref: './api/user/profile-photo/{user-id}.yaml'
+  /ws/chat:
+    $ref: './ws/chat.yaml'
+  /api/chat/{id}:
+    $ref: ./api/chat/{id}.yaml
+  /api/chat/{id}/unlock:
+    $ref: ./api/chat/{id}/unlock.yaml
+  /api/chat/{id}/messages/read:
+    $ref: ./api/chat/{id}/messages/read.yaml
   /api/tutors:
     $ref: './api/tutors.yaml'
   /api/tutors/new:

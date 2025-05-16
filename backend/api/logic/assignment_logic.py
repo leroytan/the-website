@@ -11,7 +11,7 @@ from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentStatus, Level, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
-from psycopg2.errors import ForeignKeyViolation
+from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
@@ -130,7 +130,8 @@ class AssignmentLogic:
                 estimated_rate=new_assignment.estimated_rate,
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
-                status=AssignmentStatus.OPEN
+                status=AssignmentStatus.OPEN,
+                location=new_assignment.location,
             )
 
             try:
@@ -144,7 +145,7 @@ class AssignmentLogic:
                 else:
                     raise HTTPException(
                         status_code=500,
-                        detail="Internal server error"
+                        detail=e.orig.args[0]
                     )
 
             session.add(assignment)
@@ -254,13 +255,15 @@ class AssignmentLogic:
                 if isinstance(e.orig, ForeignKeyViolation):
                     raise HTTPException(
                         status_code=409,
-                        detail=f"Tutor with this id={tutor_id} does not exist"
+                        detail=f"Tutor with this id={tutor_id} does not exist. You have not signed up to be a tutor."
+                    )
+                elif isinstance(e.orig, UniqueViolation):  # Should not happen
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Assignment request already exists"
                     )
                 else:
-                    raise HTTPException(
-                        status_code=500,
-                        detail="Internal server error"
-                    )
+                    raise e
     
 
     @staticmethod

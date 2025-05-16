@@ -1,9 +1,8 @@
 from api.common.models import LoginRequest, SignupRequest
-from api.common.utils import Utils
 from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
 from api.storage.models import User
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 
 router = APIRouter()
 
@@ -89,11 +88,11 @@ async def check(_: User = Depends(RouterAuthUtils.get_current_user)):
     return {"message": "Valid token"}
 
 @router.get("/api/auth/idk")
-def auth_idk():
+async def auth_idk():
     return {"message": "Hello from FastAPI auth router"}
 
 @router.get("/api/auth/me")
-def me(user: User = Depends(RouterAuthUtils.get_current_user)):
+async def me(user: User = Depends(RouterAuthUtils.get_current_user)):
     return {
         "id": user.id,
         "email": user.email,

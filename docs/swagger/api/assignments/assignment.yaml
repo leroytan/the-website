@@ -53,6 +53,7 @@ Assignment:
     - created_at
     - updated_at
     - applied
+    - location
 
 AssignmentSlot:
   type: object
@@ -95,6 +96,8 @@ NewAssignment:
       type: array
       items:
         type: string
+    location: 
+      type: string
   required:
     - title
     - estimated_rate
@@ -102,6 +105,7 @@ NewAssignment:
     - available_slots
     - subjects
     - levels
+    - location
 NewAssignmentSlot:
   type: object
   properties:
