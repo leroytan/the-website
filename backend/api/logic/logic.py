@@ -1,6 +1,5 @@
 from collections.abc import Callable
 
-import boto3
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
 from api.common.models import LoginRequest, SignupRequest
