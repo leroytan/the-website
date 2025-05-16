@@ -2,142 +2,144 @@ import { useState } from "react";
 import { Button } from "./button";
 import DropDown from "./dropdown";
 import Image from "next/image";
-const convertTo12HourFormat = (hours: string, minutes: string) => {
-    let hour = parseInt(hours, 10);
-    const minute = minutes.padStart(2, "0");
-    const ampm = hour >= 12 ? "PM" : "AM";
-    hour = hour % 12 || 12; // Convert 0 to 12 for 12 AM
-    return `${hour.toString().padStart(2, "0")}:${minute} ${ampm}`;
-  };
-function Input({
-  type,
-  name,
-  placeholder,
-  value,
-  onChange,
-  required,
-}: {
-  type: string;
-  name: string;
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  required?: boolean;
-}) {
-  return (
-    <input
-      type={type}
-      name={name}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      required={required}
-      className="w-full p-2 border rounded"
-    />
-  );
-}
+import { TuitionListing, TuitionListingFilters } from "./types";
+import Dialog from "./dialog";
+import Input from "./input";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-function Dialog({
-  open,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96">{children}</div>
-    </div>
-  );
-}
-
-const levelFeesMapping: { [key: string]: string[] } = {
-  "Primary 1": ["$25", "$30", "$35"],
-  "Primary 2": ["$25", "$30", "$35"],
-  "Primary 3": ["$30", "$35", "$40"],
-  "Primary 4": ["$30", "$35", "$40"],
-  "Primary 5": ["$35", "$40", "$45"],
-  "Primary 6": ["$35", "$40", "$45"],
-};
-
-export default function AddAssignmentButton({
+export default function AddAssignmentOverlay({
+  filters,
   addListingController,
+  onClose,
 }: {
-  addListingController: (listing: {
-    id: number;
-    time: string;
-    title: string;
-    location: string;
-    duration: string;
-    price: string;
-    averagePrice: number;
-    status: string;
-    level: string;
-    subject: string;
-  }) => void;
+  filters: TuitionListingFilters;
+  addListingController: (listing: TuitionListing) => void;
+  onClose: () => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     level: "Select Level",
     subject: "Select Subject",
     location: "",
-    day: "Select Day",
-    hours: "Hour",
-    minutes: "Minute",
-    duration: "1 hour",
+    slots: [
+      {
+        day: "Select Day",
+        hours: "Hour",
+        minutes: "Minute",
+        duration: "1 hour",
+      },
+    ],
+
     fees: "",
   });
-
+  const [currentSlot, setCurrentSlot] = useState(0);
+  const goToPrevSlot = () => setCurrentSlot((prev) => Math.max(prev - 1, 0));
+  const goToNextSlot = () =>
+    setCurrentSlot((prev) => Math.min(prev + 1, formData.slots.length - 1));
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  async function handleSubmit(): Promise<void> {
+    //check if fields are filled
+    if (
+      formData.level === "Select Level" ||
+      formData.subject === "Select Subject" ||
+      !formData.location ||
+      !formData.fees
+    ) {
+      alert("Please fill in all main fields.");
+      return;
+    }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitted Data:", formData);
-    setIsOpen(false);
-  };
+    // Check all slots
+    for (const slot of formData.slots) {
+      if (
+        slot.day === "Select Day" ||
+        slot.hours === "Hour" ||
+        slot.minutes === "Minute" ||
+        slot.duration === ""
+      ) {
+        alert("Please fill in all slot fields.");
+        return;
+      }
+    }
+    onClose();
+    const listingToAdd: TuitionListing = {
+      title: formData.level + " " + formData.subject,
+      estimated_rate: "$" + formData.fees + "/hour",
+      weekly_frequency: formData.slots.length,
+      available_slots: formData.slots.map((slot) => {
+        // Parse start time
+        const startHour = parseInt(slot.hours, 10);
+        const startMinute = parseInt(slot.minutes, 10);
+        const [durationHour, durationMinute] = slot.duration
+          .split(" ")
+          .shift()!
+          .split(".")
+          .map(Number);
 
-  const handleLevelChange = (value: string) => {
-    setFormData({ ...formData, level: value, fees: "" });
-  };
+        // Calculate duration in minutes
+        const totalDurationMinutes = (durationHour ? durationHour : 0) * 60 +
+          (durationMinute ? durationMinute * 6 : 0);
+
+        // Calculate end time
+        const startDate = new Date(0, 0, 0, startHour, startMinute);
+        const endDate = new Date(
+          startDate.getTime() + totalDurationMinutes * 60000
+        );
+
+        const pad = (n: number) => n.toString().padStart(2, "0");
+
+        return {
+          day: slot.day,
+          start_time: `${pad(startHour)}:${pad(startMinute)}`,
+          end_time: `${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`,
+        };
+      }),
+      special_requests: "",
+      subjects: [formData.subject],
+      levels: [formData.level],
+      location: formData.location
+    };
+    console.log(listingToAdd)
+    addListingController(listingToAdd);
+    try {
+      const data = await fetch("/api/assignments/new", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(listingToAdd),
+      })
+      if (!data.ok) {
+        throw new Error("Failed to create assignment");
+      }
+    } catch (error) {
+        console.log(error)
+        alert(error)
+    }
+  }
 
   return (
-    <div className="flex justify-center items-center">
-      <Button
-        onClick={() => setIsOpen(true)}
-        className="bg-customDarkBlue text-white"
-      >
-        Add Assignment
-      </Button>
-
-      <Dialog open={isOpen} onClose={() => setIsOpen(false)}>
+    <Dialog>
+      <div className="overflow-y-auto max-h-[80vh] overflow-x-hidden">
         <h2 className="text-xl font-semibold mb-4">Add Assignment</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="gap-4 flex flex-col">
           <DropDown
             stringOnDisplay={formData.level}
-            stateController={handleLevelChange}
-            iterable={[
-              "Primary 1",
-              "Primary 2",
-              "Primary 3",
-              "Primary 4",
-              "Primary 5",
-              "Primary 6",
-            ]}
+            stateController={(value) =>
+              setFormData({ ...formData, level: value })
+            }
+            iterable={filters.level.map((level) => level.name)}
           />
           <DropDown
             stringOnDisplay={formData.subject}
             stateController={(value) =>
               setFormData({ ...formData, subject: value })
             }
-            iterable={["English", "Mathematics", "Science", "Chinese"]}
+            iterable={filters.subject.map((subject) => subject.name)}
           />
 
           <Input
@@ -148,61 +150,133 @@ export default function AddAssignmentButton({
             onChange={handleChange}
             required
           />
-          <DropDown
-            stringOnDisplay={formData.day}
-            stateController={(value) =>
-              setFormData({ ...formData, day: value })
-            }
-            iterable={[
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday",
-            ]}
-          />
-          <div className="flex flex-row space-x-4 items-center w-full">
-            <DropDown
-              stringOnDisplay={formData.hours}
-              iterable={Array.from({ length: 24 }, (_, i) =>
-                i.toString().padStart(2, "0")
-              )}
-              stateController={(value) =>
-                setFormData({ ...formData, hours: value })
-              }
-            />
-            <p>:</p>
-            <DropDown
-              stringOnDisplay={formData.minutes}
-              iterable={Array.from({ length: 60 }, (_, i) =>
-                i.toString().padStart(2, "0")
-              )}
-              stateController={(value) =>
-                setFormData({ ...formData, minutes: value })
-              }
-            />
+          <div className="flex flex-row">
+            <div className="flex justify-between mt-4">
+              <Button onClick={goToPrevSlot} disabled={currentSlot === 0}>
+                <ChevronLeft />
+              </Button>
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlot}
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-full gap-4 flex flex-col border-black border-2 rounded-md p-3"
+              >
+                <span>
+                  Slot {currentSlot + 1} / {formData.slots.length}
+                </span>
+                <DropDown
+                  stringOnDisplay={formData.slots[currentSlot].day}
+                  stateController={(value) => {
+                    const newSlots = [...formData.slots];
+                    newSlots[currentSlot].day = value;
+                    setFormData({ ...formData, slots: newSlots });
+                  }}
+                  iterable={[
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                  ]}
+                />
+                <div className="flex flex-row space-x-4 items-center w-full">
+                  <DropDown
+                    stringOnDisplay={formData.slots[currentSlot].hours}
+                    iterable={Array.from({ length: 24 }, (_, i) =>
+                      i.toString().padStart(2, "0")
+                    )}
+                    stateController={(value) => {
+                      const newSlots = [...formData.slots];
+                      newSlots[currentSlot].hours = value;
+                      setFormData({ ...formData, slots: newSlots });
+                    }}
+                  />
+                  <p>:</p>
+                  <DropDown
+                    stringOnDisplay={formData.slots[currentSlot].minutes}
+                    iterable={Array.from({ length: 60 }, (_, i) =>
+                      i.toString().padStart(2, "0")
+                    )}
+                    stateController={(value) => {
+                      const newSlots = [...formData.slots];
+                      newSlots[currentSlot].minutes = value;
+                      setFormData({ ...formData, slots: newSlots });
+                    }}
+                  />
+                </div>
+
+                <DropDown
+                  stringOnDisplay={formData.slots[currentSlot].duration}
+                  iterable={[
+                    "1 hour",
+                    "1.5 hours",
+                    "2 hours",
+                    "2.5 hours",
+                    "3 hours",
+                  ]}
+                  stateController={(value) => {
+                    const newSlots = [...formData.slots];
+                    newSlots[currentSlot].duration = value;
+                    setFormData({ ...formData, slots: newSlots });
+                  }}
+                />
+              </motion.div>
+            </AnimatePresence>
+            <div className="flex justify-between mt-4">
+              <Button
+                onClick={goToNextSlot}
+                disabled={currentSlot === formData.slots.length - 1}
+              >
+                <ChevronRight />
+              </Button>
+            </div>
           </div>
 
-          <DropDown
-            stringOnDisplay={formData.duration}
-            iterable={[
-              "1 hour",
-              "1.5 hours",
-              "2 hours",
-              "2.5 hours",
-              "3 hours",
-            ]}
-            stateController={(value) =>
-              setFormData({ ...formData, duration: value })
-            }
-          />
+          <div className="flex justify-end mt-2 space-x-2">
+            {formData.slots.length > 1 && (
+              <Button
+                onClick={() => {
+                  const newSlots = formData.slots.filter(
+                    (_, idx) => idx !== currentSlot
+                  );
+                  setFormData({ ...formData, slots: newSlots });
+                  setCurrentSlot((prev) => Math.max(prev - 1, 0));
+                }}
+              >
+                Remove Slot
+              </Button>
+            )}
+            <Button
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  slots: [
+                    ...formData.slots,
+                    {
+                      day: "Select Day",
+                      hours: "Hour",
+                      minutes: "Minute",
+                      duration: "1 hour",
+                    },
+                  ],
+                })
+              }
+            >
+              Add Slot
+            </Button>
+          </div>
           <DropDown
             stringOnDisplay={
               formData.fees || "Select Fees (Must select level first)"
             }
-            iterable={levelFeesMapping[formData.level] || []}
+            iterable={[5]}
             stateController={(value) =>
               setFormData({ ...formData, fees: value })
             }
@@ -216,33 +290,18 @@ export default function AddAssignmentButton({
             ></Image>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => setIsOpen(false)}
-              className="bg-customYellow text-white"
-            >
+            <Button onClick={onClose} className="bg-customYellow text-white">
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                setIsOpen(false);
-                addListingController({
-                  ...formData,
-                  level: "Primary",
-                  id: Date.now(),
-                  time: `${formData.day.slice(0,3).toLocaleUpperCase()+ " "} ${convertTo12HourFormat(formData.hours, formData.minutes)}`,
-                  title: `P5 Math`,
-                  price: formData.fees,
-                  averagePrice: parseFloat(formData.fees.replace('$', '')),
-                  status: "apply",
-                });
-              }}
+              onClick={() => handleSubmit()}
               className="bg-customDarkBlue text-white"
             >
               Submit
             </Button>
           </div>
         </form>
-      </Dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }

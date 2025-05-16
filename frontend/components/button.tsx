@@ -3,18 +3,22 @@ import { motion } from "framer-motion";
 export function Button({
     children,
     className,
+    disabled,
     onClick,
   }: {
     children: React.ReactNode;
     className?: string;
+    disabled?: boolean;
     onClick: () => void;
   }) {
     return (
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className={`px-4 py-2 rounded-lg shadow-md ${className}`}
+        type="button"
+        whileHover={!disabled ? { scale: 1.05 } : undefined}
+        whileTap={!disabled ? { scale: 0.95 } : undefined}
+        className={`${className}`}
         onClick={onClick}
+        disabled={disabled}
       >
         {children}
       </motion.button>

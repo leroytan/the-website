@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { BASE_URL } from "@/utils/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,7 +37,7 @@ export default function SignupPage() {
 
     console.log("Sign up attempted with:", { name, email, password, userType });
 
-    const res = await fetch("/api/auth/signup", {
+    const res = await fetch(`api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password, userType }),
