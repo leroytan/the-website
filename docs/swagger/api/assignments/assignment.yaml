@@ -52,7 +52,7 @@ Assignment:
     - updated_at
     - applied
     - location
-
+    
 AppliedAssignment:
   allOf: # Combines the Assignment and the inline model
     - $ref: '#/Assignment'
@@ -94,7 +94,6 @@ AssignmentRequestView:
     - status
     - created_at
     - updated_at
-          
 
 AssignmentSlot:
   type: object
