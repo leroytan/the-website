@@ -1,0 +1,31 @@
+get:
+  tags:
+    - user
+  summary: retrieves user profile information
+  parameters:
+    - name: user-id
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              email:
+                type: string
+              profile_photo_url:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+              updated_at:
+                type: string
+                format: date-time

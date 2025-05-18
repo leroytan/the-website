@@ -25,10 +25,8 @@ Assignment:
       type: array
       items:
         type: string
-    levels:
-      type: array
-      items:
-        type: string
+    level:
+      type: string
     status:
       type: string
     location:
@@ -48,12 +46,54 @@ Assignment:
     - weekly_frequency
     - available_slots
     - subjects
-    - levels
+    - level
     - status
     - created_at
     - updated_at
     - applied
     - location
+    
+AppliedAssignment:
+  allOf: # Combines the Assignment and the inline model
+    - $ref: '#/Assignment'
+    - type: object
+      properties:
+        request_status:
+          type: string
+          nullable: true
+
+AssignmentOwnerView:
+  allOf: # Combines the Assignment and the inline model
+    - $ref: '#/Assignment'
+    - type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/AssignmentRequestView'
+
+AssignmentRequestView:
+  type: object
+  properties:
+    tutor_id:
+      type: integer
+    tutor_name:
+      type: string
+    tutor_profile_photo_url:
+      type: string
+    status:
+      type: string
+    created_at:
+      type: string
+    updated_at:
+      type: string
+  required:
+    - tutor_id
+    - tutor_name
+    - tutor_profile_photo_url
+    - status
+    - created_at
+    - updated_at
 
 AssignmentSlot:
   type: object
@@ -92,10 +132,8 @@ NewAssignment:
       type: array
       items:
         type: string
-    levels:
-      type: array
-      items:
-        type: string
+    level:
+      type: string
     location: 
       type: string
   required:
@@ -104,7 +142,7 @@ NewAssignment:
     - weekly_frequency
     - available_slots
     - subjects
-    - levels
+    - level
     - location
 NewAssignmentSlot:
   type: object

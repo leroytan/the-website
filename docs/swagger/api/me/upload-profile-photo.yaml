@@ -1,0 +1,18 @@
+post:
+  tags:
+    - me
+  summary: uploads a profile photo. user authorization required
+  requestBody:
+    required: true
+    description: parameters profile photo is expected to have
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          properties:
+            file:
+              type: string
+              format: binary
+  responses:
+    '200':
+      description: confirmation of a successful upload
