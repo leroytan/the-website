@@ -5,11 +5,13 @@ function Checkbox({
   className,
   children,
   onChange,
+  readonly
 }: {
   defaultChecked: boolean;
   className?: string;
   children?: React.ReactNode;
   onChange?: () => void;
+  readonly?: boolean;
 }) {
   return (
     <motion.label
@@ -22,6 +24,7 @@ function Checkbox({
         defaultChecked={defaultChecked}
         className={`${className} accent-customYellow w-5 h-5 rounded-full`}
         onChange={onChange}
+        readOnly={readonly}
       />
       <span>{children}</span>
     </motion.label>

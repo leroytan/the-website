@@ -17,9 +17,7 @@ const ApplyAssignmentButton = ({ listing }: { listing: TuitionListing }) => {
         credentials: "include",
       });
       const res = await data.json();
-      if (!data.ok) {
-        throw new Error(`Failed to apply for the assignment: ${res.message}`);
-      }
+      if (!data.ok) throw new Error(`Failed to apply for the assignment: ${res.message}`);
     } catch (error: unknown) {
       if (error instanceof Error) {
         setIsApplied((x) => !x);
@@ -35,7 +33,7 @@ const ApplyAssignmentButton = ({ listing }: { listing: TuitionListing }) => {
       className={`${
         isApplied || isFilled
           ? "bg-gray-300 text-gray-500 mt-2 cursor-not-allowed "
-          : "bg-orange-400 text-white mt-2"
+          : "px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
       } rounded-md px-4 py-2`}
       onClick={() => {
         handleSubmit();

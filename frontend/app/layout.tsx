@@ -1,14 +1,27 @@
-import "@/app/globals.css"
+import ComponentLayout from "@/components/layout";
+import "@/app/globals.css";
+import { AuthProvider } from "@/context/authContext";
+import { cookies } from "next/headers";
+import { ErrorProvider } from "@/context/errorContext";
+import ErrorDialog from "@/components/errorDialog";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("access_token");
+  const isAuthenticated = !!accessToken;
   return (
     <html lang="en">
       <body>
-        {children}
+        <AuthProvider isAuthenticated={isAuthenticated}>
+          <ErrorProvider>
+            {children}
+            <ErrorDialog />
+          </ErrorProvider>
+        </AuthProvider>
       </body>
     </html>
   );

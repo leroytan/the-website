@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useAuth } from "./AuthContent";
+import { useAuth } from "../context/authContext";
 import { Button } from "./button";
 import { usePathname, useRouter } from "next/navigation";
 

@@ -5,6 +5,7 @@ import {
   BookOpen,
   DollarSign,
   GraduationCap,
+  Pencil,
   Quote,
   School,
   Star,
@@ -12,7 +13,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
-import { useAuth } from "@/components/AuthContent";
+import { useAuth } from "@/context/authContext";
+import Link from "next/link";
 
 const tutorProfile = {
   name: "Lexus Tan",
@@ -77,7 +79,19 @@ export default function TutorProfile() {
   return (
     <motion.div className="min-h-screen bg-customLightYellow px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
       {/* Profile Section */}
-      <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10 flex flex-col sm:flex-row justify-center gap-6">
+      <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10 flex flex-col sm:flex-row justify-center gap-6 relative">
+        <div className="absolute top-4 right-4">
+          <Link href="/profile/test/edit">
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="flex items-center text-[#fabb84] hover:text-[#fc6453]"
+      >
+        <Pencil size={20} className="mr-2" />
+        <span>Edit Profile</span>
+      </motion.div>
+    </Link>
+        </div>
         <div>
           <Image
             src={tutorProfile.profileImage}

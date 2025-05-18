@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import ReviewCarousel from '@/components/ReviewCarousel';
-import { useAuth } from '@/components/AuthContent';
+import { useAuth } from '@/context/authContext';
 
 
 export default function HomeContent() {

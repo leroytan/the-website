@@ -3,10 +3,11 @@ import { Button } from "./button";
 import DropDown from "./dropdown";
 import Image from "next/image";
 import { TuitionListing, TuitionListingFilters } from "./types";
-import Dialog from "./dialog";
+import { Dialog } from "./dialog";
 import Input from "./input";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function AddAssignmentOverlay({
   filters,
@@ -17,6 +18,7 @@ export default function AddAssignmentOverlay({
   addListingController: (listing: TuitionListing) => void;
   onClose: () => void;
 }) {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     level: "Select Level",
     subject: "Select Subject",
@@ -290,12 +292,12 @@ export default function AddAssignmentOverlay({
             ></Image>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button onClick={onClose} className="bg-customYellow text-white">
+            <Button onClick={() => router.back()} className="px-4 py-2 bg-gray-200 text-[#4a58b5] rounded-md hover:bg-gray-300 transition-colors duration-200">
               Cancel
             </Button>
             <Button
               onClick={() => handleSubmit()}
-              className="bg-customDarkBlue text-white"
+              className="px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
             >
               Submit
             </Button>
