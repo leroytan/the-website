@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth } from './AuthContent';
+import { useAuth } from '../context/authContext';
 
 type SidebarProps = {
   isOpen: boolean;

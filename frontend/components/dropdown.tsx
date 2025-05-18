@@ -1,4 +1,4 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 
 const DropDown = ({
   stringOnDisplay,
@@ -10,13 +10,27 @@ const DropDown = ({
   iterable: React.ReactNode[];
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const toggleDropdown = (e: React.FormEvent) => {
     e.preventDefault();
     setIsOpen((prev) => !prev);
   };
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
         className="w-full px-4 py-2 bg-gray-200 rounded-lg text-left font-medium 
@@ -38,7 +52,7 @@ const DropDown = ({
                 stateController(item);
                 setIsOpen(false);
               }}
-              className="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer transition-colors"
+              className="px-4 py-2 hover:bg-customYellow hover:text-white cursor-pointer transition-colors"
             >
               {item}
             </li>

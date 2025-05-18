@@ -17,3 +17,22 @@ body {
     --radius: 0.5rem;
   }
 }
+/* Custom ReactCrop styles */
+.ReactCrop__crop-selection {
+  border: 2px solid #fabb84 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ReactCrop__drag-handle {
+  background: #fabb84 !important;
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 9999px !important;    /* Fully rounded */
+  transition: background 0.2s;
+}
+
+.ReactCrop__drag-handle:hover {
+  background: #fc6453 !important;
+  border-color: #fabb84 !important;
+}

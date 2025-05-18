@@ -1,4 +1,4 @@
-function Dialog({
+export function Dialog({
   children,
 }: {
   children: React.ReactNode;
@@ -10,5 +10,3 @@ function Dialog({
     </div>
   );
 }
-
-export default Dialog;
