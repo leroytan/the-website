@@ -114,7 +114,7 @@ class AssignmentBaseView(BaseModel):
     available_slots: list[AssignmentSlot]
     special_requests: str
     subjects: list[str]
-    levels: list[str]
+    level: str
     status: str
     location: str
 
@@ -137,7 +137,7 @@ class NewAssignment(BaseModel):  # TODO: add location
     available_slots: list[NewAssignmentSlot]
     special_requests: str | None
     subjects: list[str]
-    levels: list[str]
+    level: str
     location: str
 
 class SearchQuery(BaseModel):

@@ -47,7 +47,7 @@ class AssignmentLogic:
             ],
             "special_requests": assignment.special_requests,
             "subjects": [subject.name for subject in assignment.subjects] if assignment.subjects else [],
-            "levels": [level.name for level in assignment.levels] if assignment.levels else [],
+            "level": assignment.level.name,
             "status": assignment.status,
             "location": assignment.location,
         }
@@ -106,9 +106,9 @@ class AssignmentLogic:
             if "subject" in parsed_filters:
                 filters.append(Assignment.subjects.any(Subject.id.in_(parsed_filters["subject"])))
 
-            # Filter by levels
+            # Filter by level
             if "level" in parsed_filters:
-                filters.append(Assignment.levels.any(Level.id.in_(parsed_filters["level"])))
+                filters.append(Assignment.level_id.in_(parsed_filters["level"]))
 
             statement = statement.filter(and_(*filters))
 
@@ -123,10 +123,13 @@ class AssignmentLogic:
     def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentOwnerView:
         with Session(StorageService.engine) as session:
 
+            level_id = session.query(Level).filter_by(name=new_assignment.level).one().id
+
             # Create a new assignment
             assignment = Assignment(
                 title=new_assignment.title,
                 owner_id=user_id,
+                level_id=level_id,
                 estimated_rate=new_assignment.estimated_rate,
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
@@ -151,8 +154,7 @@ class AssignmentLogic:
             session.add(assignment)
 
             assignment.subjects = session.query(Subject).filter(Subject.name.in_(new_assignment.subjects)).all()
-            assignment.levels = session.query(Level).filter(Level.name.in_(new_assignment.levels)).all()
-        
+
             # Create assignment slots
             for slot in new_assignment.available_slots:
                 assignment_slot = AssignmentSlot(
@@ -186,9 +188,12 @@ class AssignmentLogic:
             # Update the assignment
             assignment_dict = assignment_update.model_dump()
 
+            level_id = session.query(Level).filter_by(name=assignment_update.level).one().id
+
             assignment_dict.pop("available_slots", None)
             assignment_dict.pop("subjects", None)
-            assignment_dict.pop("levels", None)
+            assignment_dict.pop("level", None)
+            assignment_dict["level_id"] = level_id
 
             assignment = StorageService.update(session, {"id": id}, assignment_dict, Assignment)
             if not assignment:
@@ -203,7 +208,6 @@ class AssignmentLogic:
             session.add(assignment)
             # Update subjects and levels
             assignment.subjects = session.query(Subject).filter(Subject.name.in_(assignment_update.subjects)).all()
-            assignment.levels = session.query(Level).filter(Level.name.in_(assignment_update.levels)).all()
 
             # Clear slots
             StorageService.delete(session, {"assignment_id": assignment.id}, AssignmentSlot)

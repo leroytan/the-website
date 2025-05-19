@@ -72,6 +72,7 @@ class Assignment(Base, SerializerMixin):
     title = Column(String, nullable=False)
     owner_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
+    level_id = Column(Integer, ForeignKey('Level.id'), nullable=False)  # Foreign key to Level
     estimated_rate = Column(String, nullable=False)
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
@@ -82,7 +83,7 @@ class Assignment(Base, SerializerMixin):
     owner = relationship('User', foreign_keys=[owner_id])
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     subjects = relationship('Subject', secondary='AssignmentSubject', back_populates='assignments')
-    levels = relationship('Level', secondary='AssignmentLevel', back_populates='assignments')
+    level = relationship('Level', foreign_keys=[level_id], back_populates='assignments')
     assignment_requests = relationship('AssignmentRequest', back_populates='assignment')
     available_slots = relationship('AssignmentSlot', back_populates='assignment', primaryjoin="Assignment.id == AssignmentSlot.assignment_id")
 
@@ -194,7 +195,7 @@ class Level(Base):
     name = Column(String, unique=True, nullable=False)
 
     tutors = relationship('Tutor', secondary='TutorLevel', back_populates='levels')
-    assignments = relationship('Assignment', secondary='AssignmentLevel', back_populates='levels')
+    assignments = relationship('Assignment', back_populates='level')
 
     @hybrid_property
     def filterId(self):
@@ -208,13 +209,6 @@ class TutorLevel(Base):
 
     id = Column(Integer, primary_key=True)
     tutor_id = Column(Integer, ForeignKey('Tutor.id'))
-    level_id = Column(Integer, ForeignKey('Level.id'))
-
-class AssignmentLevel(Base):
-    __tablename__ = "AssignmentLevel"
-
-    id = Column(Integer, primary_key=True)
-    assignment_id = Column(Integer, ForeignKey('Assignment.id'))
     level_id = Column(Integer, ForeignKey('Level.id'))
 
 class ChatMessage(Base, SerializerMixin):
