@@ -2,8 +2,9 @@ import enum
 from collections.abc import Callable
 
 from api.logic.filter_logic import FilterLogic
-from api.router.models import AssignmentOwnerView, AssignmentPublicView
-from api.router.models import AssignmentRequest as AssignmentRequestView
+from api.logic.user_logic import UserLogic
+from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
+                               AssignmentRequestView)
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import NewAssignment, SearchQuery
 from api.storage.models import (Assignment, AssignmentRequest,
@@ -47,7 +48,7 @@ class AssignmentLogic:
             ],
             "special_requests": assignment.special_requests,
             "subjects": [subject.name for subject in assignment.subjects] if assignment.subjects else [],
-            "levels": [level.name for level in assignment.levels] if assignment.levels else [],
+            "level": assignment.level.name,
             "status": assignment.status,
             "location": assignment.location,
         }
@@ -60,6 +61,8 @@ class AssignmentLogic:
                     created_at=request.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                     updated_at=request.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
                     tutor_id=request.tutor_id,
+                    tutor_name=request.tutor.user.name,
+                    tutor_profile_photo_url=UserLogic.get_profile_photo_url(request.tutor_id),
                     status=request.status
                 )
                 for request in assignment.assignment_requests
@@ -70,6 +73,7 @@ class AssignmentLogic:
                 for request in assignment.assignment_requests:
                     if request.tutor_id == user_id:
                         base_data["applied"] = True
+                        base_data["request_status"] = request.status
                         break
             return AssignmentPublicView(**base_data)
         
@@ -106,9 +110,9 @@ class AssignmentLogic:
             if "subject" in parsed_filters:
                 filters.append(Assignment.subjects.any(Subject.id.in_(parsed_filters["subject"])))
 
-            # Filter by levels
+            # Filter by level
             if "level" in parsed_filters:
-                filters.append(Assignment.levels.any(Level.id.in_(parsed_filters["level"])))
+                filters.append(Assignment.level_id.in_(parsed_filters["level"]))
 
             statement = statement.filter(and_(*filters))
 
@@ -123,10 +127,13 @@ class AssignmentLogic:
     def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentOwnerView:
         with Session(StorageService.engine) as session:
 
+            level_id = session.query(Level).filter_by(name=new_assignment.level).one().id
+
             # Create a new assignment
             assignment = Assignment(
                 title=new_assignment.title,
                 owner_id=user_id,
+                level_id=level_id,
                 estimated_rate=new_assignment.estimated_rate,
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
@@ -151,8 +158,7 @@ class AssignmentLogic:
             session.add(assignment)
 
             assignment.subjects = session.query(Subject).filter(Subject.name.in_(new_assignment.subjects)).all()
-            assignment.levels = session.query(Level).filter(Level.name.in_(new_assignment.levels)).all()
-        
+
             # Create assignment slots
             for slot in new_assignment.available_slots:
                 assignment_slot = AssignmentSlot(
@@ -186,9 +192,12 @@ class AssignmentLogic:
             # Update the assignment
             assignment_dict = assignment_update.model_dump()
 
+            level_id = session.query(Level).filter_by(name=assignment_update.level).one().id
+
             assignment_dict.pop("available_slots", None)
             assignment_dict.pop("subjects", None)
-            assignment_dict.pop("levels", None)
+            assignment_dict.pop("level", None)
+            assignment_dict["level_id"] = level_id
 
             assignment = StorageService.update(session, {"id": id}, assignment_dict, Assignment)
             if not assignment:
@@ -203,7 +212,6 @@ class AssignmentLogic:
             session.add(assignment)
             # Update subjects and levels
             assignment.subjects = session.query(Subject).filter(Subject.name.in_(assignment_update.subjects)).all()
-            assignment.levels = session.query(Level).filter(Level.name.in_(assignment_update.levels)).all()
 
             # Clear slots
             StorageService.delete(session, {"assignment_id": assignment.id}, AssignmentSlot)
@@ -307,3 +315,28 @@ class AssignmentLogic:
                 raise ValueError(f"Invalid status: {status}")
 
             session.commit()
+
+    @staticmethod    
+    def get_created_assignments(user_id: int) -> list[AssignmentOwnerView]:
+        # Get all assignments created by the user
+        with Session(StorageService.engine) as session:
+            assignments = StorageService.find(session, {"owner_id": user_id}, Assignment, find_one=False)
+            if not assignments:
+                return []
+            
+            # Convert to AssignmentOwnerView
+            return [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER) for assignment in assignments]
+        
+    @staticmethod
+    def get_applied_assignments(user_id: int) -> list[AssignmentPublicView]:
+        # Get all assignments applied by the user, and the associated request status for each.
+        # An assignment is considered applied if the user is a tutor and has a request for that assignment.
+        with Session(StorageService.engine) as session:
+            assignments = session.query(Assignment).join(Assignment.assignment_requests).filter(
+                AssignmentRequest.tutor_id == user_id
+            ).all()
+            if not assignments:
+                return []
+            
+            # Convert to AssignmentPublicView
+            return [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC, user_id) for assignment in assignments]

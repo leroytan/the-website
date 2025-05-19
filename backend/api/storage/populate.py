@@ -1,4 +1,4 @@
-from api.storage.models import (Assignment, AssignmentLevel, AssignmentRequest,
+from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, AssignmentSubject, Level,
                                 SpecialSkill, Subject, Tutor, TutorLevel,
@@ -51,13 +51,19 @@ def insert_test_data(engine: object) -> bool:
     
     # Create test levels
     levels = [
-        Level(name="Elementary School"),
-        Level(name="Middle School"),
-        Level(name="High School"),
-        Level(name="College"),
-        Level(name="University"),
-        Level(name="Graduate"),
-        Level(name="Professional")
+        Level(name="Primary 1"),
+        Level(name="Primary 2"),
+        Level(name="Primary 3"),
+        Level(name="Primary 4"),
+        Level(name="Primary 5"),
+        Level(name="Primary 6"),
+        Level(name="Secondary 1"),
+        Level(name="Secondary 2"),
+        Level(name="Secondary 3"),
+        Level(name="Secondary 4"),
+        Level(name="Secondary 5"),
+        Level(name="Junior College 1"),
+        Level(name="Junior College 2"),
     ]
     session.add_all(levels)
     
@@ -229,35 +235,35 @@ def insert_test_data(engine: object) -> bool:
     
     # Assign levels to tutors
     tutor_levels = [
-        # Alice teaches High School, College, University
-        TutorLevel(tutor_id=tutors[0].id, level_id=levels[2].id),  # High School
-        TutorLevel(tutor_id=tutors[0].id, level_id=levels[3].id),  # College
-        TutorLevel(tutor_id=tutors[0].id, level_id=levels[4].id),  # University
+        # Alice teaches 
+        TutorLevel(tutor_id=tutors[0].id, level_id=levels[2].id),
+        TutorLevel(tutor_id=tutors[0].id, level_id=levels[3].id),
+        TutorLevel(tutor_id=tutors[0].id, level_id=levels[4].id),
         
-        # Bob teaches High School, College
-        TutorLevel(tutor_id=tutors[1].id, level_id=levels[2].id),  # High School
-        TutorLevel(tutor_id=tutors[1].id, level_id=levels[3].id),  # College
+        # Bob teaches 
+        TutorLevel(tutor_id=tutors[1].id, level_id=levels[2].id),
+        TutorLevel(tutor_id=tutors[1].id, level_id=levels[3].id),
         
-        # Carol teaches Middle School, High School, College
-        TutorLevel(tutor_id=tutors[2].id, level_id=levels[1].id),  # Middle School
-        TutorLevel(tutor_id=tutors[2].id, level_id=levels[2].id),  # High School
-        TutorLevel(tutor_id=tutors[2].id, level_id=levels[3].id),  # College
+        # Carol teaches 
+        TutorLevel(tutor_id=tutors[2].id, level_id=levels[1].id),
+        TutorLevel(tutor_id=tutors[2].id, level_id=levels[2].id),
+        TutorLevel(tutor_id=tutors[2].id, level_id=levels[3].id),
         
-        # David teaches High School, College, University, Graduate
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[2].id),  # High School
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[3].id),  # College
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[4].id),  # University
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[5].id),  # Graduate
+        # David teaches
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[2].id),
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[3].id),
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[4].id),
+        TutorLevel(tutor_id=tutors[3].id, level_id=levels[5].id),
         
-        # Eva teaches Middle School, High School, College
-        TutorLevel(tutor_id=tutors[4].id, level_id=levels[1].id),  # Middle School
-        TutorLevel(tutor_id=tutors[4].id, level_id=levels[2].id),  # High School
-        TutorLevel(tutor_id=tutors[4].id, level_id=levels[3].id),  # College
+        # Eva teaches 
+        TutorLevel(tutor_id=tutors[4].id, level_id=levels[1].id),
+        TutorLevel(tutor_id=tutors[4].id, level_id=levels[2].id),
+        TutorLevel(tutor_id=tutors[4].id, level_id=levels[3].id),
         
-        # Frank teaches Elementary, Middle School, High School
-        TutorLevel(tutor_id=tutors[5].id, level_id=levels[0].id),  # Elementary School
-        TutorLevel(tutor_id=tutors[5].id, level_id=levels[1].id),  # Middle School
-        TutorLevel(tutor_id=tutors[5].id, level_id=levels[2].id)   # High School
+        # Frank teaches
+        TutorLevel(tutor_id=tutors[5].id, level_id=levels[0].id),
+        TutorLevel(tutor_id=tutors[5].id, level_id=levels[1].id),
+        TutorLevel(tutor_id=tutors[5].id, level_id=levels[2].id) 
     ]
     session.add_all(tutor_levels)
     
@@ -296,6 +302,7 @@ def insert_test_data(engine: object) -> bool:
             title="Calculus Finals Prep",
             owner_id=users[0].id,  # John Doe requesting 
             tutor_id=None,  # No tutor assigned yet
+            level_id=levels[3].id,
             estimated_rate="$45/hour",
             weekly_frequency=2,
             special_requests="Need help preparing for calculus final exam",
@@ -306,6 +313,7 @@ def insert_test_data(engine: object) -> bool:
             title="Essay-Writing Clinic",
             owner_id=users[1].id,  # Jane Smith requesting
             tutor_id=tutors[2].id,     # Carol as tutor
+            level_id=levels[2].id,
             estimated_rate="$35/hour",
             weekly_frequency=1,
             special_requests="Essay writing assistance needed",
@@ -316,6 +324,7 @@ def insert_test_data(engine: object) -> bool:
             title="Programming Coaching (Python)",
             owner_id=users[0].id,  # John Doe requesting
             tutor_id=None,  # No tutor assigned yet
+            level_id=levels[3].id,
             estimated_rate="$50/hour",
             weekly_frequency=3,
             special_requests="Need help with Python programming project",
@@ -384,19 +393,6 @@ def insert_test_data(engine: object) -> bool:
         AssignmentSubject(assignment_id=assignments[2].id, subjectId=subjects[5].id)
     ]
     session.add_all(assignment_subjects)
-    
-    # Link levels to assignments
-    assignment_levels = [
-        # Assignment 1: College level math
-        AssignmentLevel(assignment_id=assignments[0].id, level_id=levels[3].id),
-        
-        # Assignment 2: High School English
-        AssignmentLevel(assignment_id=assignments[1].id, level_id=levels[2].id),
-        
-        # Assignment 3: College Computer Science
-        AssignmentLevel(assignment_id=assignments[2].id, level_id=levels[3].id)
-    ]
-    session.add_all(assignment_levels)
     
     # Create assignment requests
     assignment_requests = [

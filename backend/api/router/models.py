@@ -1,5 +1,6 @@
 from typing import Generic, TypeVar
 
+from api.storage.models import AssignmentRequestStatus
 from pydantic import BaseModel
 
 
@@ -96,11 +97,13 @@ class AssignmentSlot(BaseModel):
     start_time: str
     end_time: str
 
-class AssignmentRequest(BaseModel):
+class AssignmentRequestView(BaseModel):
     id: int
     created_at: str
     updated_at: str
     tutor_id: int
+    tutor_name: str
+    tutor_profile_photo_url: str | None
     status: str
 
 class AssignmentBaseView(BaseModel):
@@ -114,16 +117,17 @@ class AssignmentBaseView(BaseModel):
     available_slots: list[AssignmentSlot]
     special_requests: str
     subjects: list[str]
-    levels: list[str]
+    level: str
     status: str
     location: str
 
 class AssignmentPublicView(AssignmentBaseView):
     applied: bool = False  # Indicates if the user has applied for the assignment
+    request_status: str = AssignmentRequestStatus.NOT_SUBMITTED  # Status of the request if applied
 
 class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
-    requests: list[AssignmentRequest]
+    requests: list[AssignmentRequestView]
 
 class NewAssignmentSlot(BaseModel):
     day: str
@@ -137,7 +141,7 @@ class NewAssignment(BaseModel):  # TODO: add location
     available_slots: list[NewAssignmentSlot]
     special_requests: str | None
     subjects: list[str]
-    levels: list[str]
+    level: str
     location: str
 
 class SearchQuery(BaseModel):
@@ -154,3 +158,12 @@ class SearchResult(BaseModel, Generic[T]):
 class NewChatMessage(BaseModel):
     receiver_id: int
     content: str
+
+class UserView(BaseModel):
+    id: int
+    name: str
+    email: str
+    profile_photo_url: str | None
+    intends_to_be_tutor: bool
+    created_at: str
+    updated_at: str
