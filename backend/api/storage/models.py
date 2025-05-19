@@ -106,6 +106,7 @@ class AssignmentRequestStatus(enum.Enum):
     """
     Enum for assignment request status
     """
+    NOT_SUBMITTED = 'NOT_SUBMITTED'
     PENDING = 'PENDING'
     ACCEPTED = 'ACCEPTED'
     REJECTED = 'REJECTED'

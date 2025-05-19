@@ -2,8 +2,9 @@ import enum
 from collections.abc import Callable
 
 from api.logic.filter_logic import FilterLogic
-from api.router.models import AssignmentOwnerView, AssignmentPublicView
-from api.router.models import AssignmentRequest as AssignmentRequestView
+from api.logic.user_logic import UserLogic
+from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
+                               AssignmentRequestView)
 from api.router.models import AssignmentSlot as AssignmentSlotView
 from api.router.models import NewAssignment, SearchQuery
 from api.storage.models import (Assignment, AssignmentRequest,
@@ -60,6 +61,8 @@ class AssignmentLogic:
                     created_at=request.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                     updated_at=request.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
                     tutor_id=request.tutor_id,
+                    tutor_name=request.tutor.user.name,
+                    tutor_profile_photo_url=UserLogic.get_profile_photo_url(request.tutor_id),
                     status=request.status
                 )
                 for request in assignment.assignment_requests
@@ -70,6 +73,7 @@ class AssignmentLogic:
                 for request in assignment.assignment_requests:
                     if request.tutor_id == user_id:
                         base_data["applied"] = True
+                        base_data["request_status"] = request.status
                         break
             return AssignmentPublicView(**base_data)
         
@@ -311,3 +315,28 @@ class AssignmentLogic:
                 raise ValueError(f"Invalid status: {status}")
 
             session.commit()
+
+    @staticmethod    
+    def get_created_assignments(user_id: int) -> list[AssignmentOwnerView]:
+        # Get all assignments created by the user
+        with Session(StorageService.engine) as session:
+            assignments = StorageService.find(session, {"owner_id": user_id}, Assignment, find_one=False)
+            if not assignments:
+                return []
+            
+            # Convert to AssignmentOwnerView
+            return [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER) for assignment in assignments]
+        
+    @staticmethod
+    def get_applied_assignments(user_id: int) -> list[AssignmentPublicView]:
+        # Get all assignments applied by the user, and the associated request status for each.
+        # An assignment is considered applied if the user is a tutor and has a request for that assignment.
+        with Session(StorageService.engine) as session:
+            assignments = session.query(Assignment).join(Assignment.assignment_requests).filter(
+                AssignmentRequest.tutor_id == user_id
+            ).all()
+            if not assignments:
+                return []
+            
+            # Convert to AssignmentPublicView
+            return [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC, user_id) for assignment in assignments]
