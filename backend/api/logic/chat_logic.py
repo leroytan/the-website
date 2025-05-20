@@ -1,53 +1,50 @@
 import json
 
 from api.router.models import NewChatMessage
-from api.storage.models import ChatMessage, ChatRoom
+from api.storage.models import ChatMessage, PrivateChat
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 
 class ChatLogic:
 
     @staticmethod
-    def get_or_create_chatroom(session: Session, user1_id: int, user2_id: int) -> ChatRoom:
+    def get_or_create_private_chat(user1_id: int, user2_id: int) -> PrivateChat:
         """
-        Get an existing chatroom between two users or create a new one if it doesn't exist.
-        
-        Args:
-            session: SQLAlchemy session
-            user1_id: ID of the first user
-            user2_id: ID of the second user
-            
-        Returns:
-            ChatRoom: The existing or newly created chatroom
-        """
-        # Check for existing chatroom
-        # We need to check both possible user orderings
-        existing_chatroom = session.query(ChatRoom).filter(
-            or_(
-                and_(ChatRoom.user1_id == user1_id, ChatRoom.user2_id == user2_id),
-                and_(ChatRoom.user1_id == user2_id, ChatRoom.user2_id == user1_id)
-            )
-        ).first()
-        
-        # If a chatroom exists, return it
-        if existing_chatroom:
-            return existing_chatroom
-        
-        # Otherwise, create a new chatroom
-        new_chatroom = ChatRoom(
-            user1_id=user1_id,
-            user2_id=user2_id,
-        )
+        Get or create a chatroom between two users.
 
-        new_chatroom = StorageService.insert(session, new_chatroom)
-        
-        return new_chatroom
+        Args:
+            session (Session): The SQLAlchemy session.
+            user1_id (int): The ID of the first user.
+            user2_id (int): The ID of the second user.
+
+        Returns:
+            Chat: The chatroom object.
+        """
+        with Session(StorageService.engine) as session:
+            # Ensure that user1_id is less than user2_id to maintain consistency
+            if user1_id > user2_id:
+                user1_id, user2_id = user2_id, user1_id
+            # Check if the chatroom already exists
+            chat = session.query(PrivateChat).filter(
+                    and_(PrivateChat.user1_id == user2_id, PrivateChat.user2_id == user1_id)
+            ).first()
+
+            # If it doesn't exist, create it
+            if not chat:
+                chat = PrivateChat(user1_id=user1_id, user2_id=user2_id)
+                session.add(chat)
+                session.commit()
+
+            return {
+                "chat_id": chat.id,
+                "is_locked": chat.is_locked,
+            }
 
     @staticmethod
-    async def handle_message(active_connections: dict[str|int, WebSocket], new_chat_message: NewChatMessage, from_id: int) -> None:
+    async def handle_private_message(active_connections: dict[str|int, WebSocket], new_chat_message: NewChatMessage, sender_id: int) -> None:
         """
         Handles the incoming chat message, processes it, and returns a ChatMessage object.
 
@@ -60,30 +57,35 @@ class ChatLogic:
         """
         # Validate the incoming message
         with Session(StorageService.engine) as session:
-            receiver_id = new_chat_message.receiver_id
+            chat_id = new_chat_message.chat_id
 
-            # Create a chatroom between the two users if not exists
-            chatroom = ChatLogic.get_or_create_chatroom(session, from_id, receiver_id)
+            chat = session.query(PrivateChat).filter(PrivateChat.id == chat_id).first()
+            if chat.user1_id != sender_id and chat.user2_id != sender_id:
+                raise HTTPException(status_code=403, detail="You are not authorized to send messages in this chatroom.")
+            session.add(chat)
+
             # Check if the chatroom is locked
-            if chatroom.isLocked:
+            if chat.is_locked:
                 # Do some content filtering
                 pass
 
             # Create a ChatMessage object
             chat_message = ChatMessage(
                 content=new_chat_message.content,
-                sender_id=from_id,
-                receiver_id=receiver_id,
-                chatroom_id=chatroom.id
+                sender_id=sender_id,
+                chat_id=chat_id
             )
 
             # Add the message to the session
-            chat_message = StorageService.insert(session, chat_message)
+            session.add(chat_message)
+            session.commit()
+            session.refresh(chat_message)
             to_send = json.dumps(chat_message.to_dict(rules=(
                             "-sender",
-                            "-receiver",
-                            "-chatRoom",
+                            "-chat",
                         )))
+            
+            receiver_id = chat_message.receiver_id
             
             # Send the message to the receiver via WebSocket
             if receiver_id in active_connections:
@@ -95,7 +97,7 @@ class ChatLogic:
                     active_connections.pop(receiver_id, None)
 
     @staticmethod
-    def get_chat_history(chat_id: int, user_id: int, last_message_id: int, message_count: int) -> list[ChatMessage]:
+    def get_private_chat_history(chat_id: int, user_id: int, last_message_id: int, message_count: int) -> list[ChatMessage]:
         """
         Get chat history between two users.
 
@@ -109,7 +111,7 @@ class ChatLogic:
             list[ChatMessage]: List of chat messages.
         """
         with Session(StorageService.engine) as session:
-            chatroom = StorageService.find(session, {"id": chat_id}, ChatRoom, find_one=True)
+            chatroom = StorageService.find(session, {"id": chat_id}, PrivateChat, find_one=True)
             if chatroom.user1_id != user_id and chatroom.user2_id != user_id:
                 raise HTTPException(status_code=403, detail="You are not authorized to view this chatroom.")
             session.add(chatroom)
@@ -117,60 +119,31 @@ class ChatLogic:
             # Get the chat messages
             if last_message_id == -1: last_message_id = float('inf')
             chat_messages = session.query(ChatMessage).filter(
-                ChatMessage.chatroom_id == chatroom.id,
+                ChatMessage.chat_id == chat_id,
                 ChatMessage.id <= last_message_id
             ).order_by(ChatMessage.created_at.desc()).limit(message_count).all()
             return [
                 message.to_dict(rules=(
                     "-sender",
-                    "-receiver",
-                    "-chatRoom",
+                    "-chat",
                 )) for message in chat_messages
             ]
         
+   
     @staticmethod
-    def unlock_chat(chat_id: int, user_id: int) -> None:
+    async def unlock_chat(chat_id: int) -> None:
         """
-        Unlock chat with a user.
+        Unlock a chatroom.
 
         Args:
             chat_id (int): The ID of the chatroom to unlock.
-            user_id (int): The ID of the current user.
-
-        Returns:
-            None
         """
         with Session(StorageService.engine) as session:
-            chatroom = StorageService.find(session, {"id": chat_id}, ChatRoom, find_one=True)
-            if chatroom.user1_id != user_id and chatroom.user2_id != user_id:
-                raise HTTPException(status_code=403, detail="You are not authorized to unlock this chatroom.")
-            
-            # Unlock the chatroom
-            chatroom.isLocked = False
+            chat = session.query(PrivateChat).filter(PrivateChat.id == chat_id).first()
+            if not chat:
+                raise HTTPException(status_code=404, detail="Chatroom not found.")
+            session.add(chat)
+            chat.is_locked = False
             session.commit()
-
-    @staticmethod
-    def mark_messages_as_read(chat_id: int, message_ids: list[int], user_id: int) -> None:
-        """
-        Mark chat messages as read.
-
-        Args:
-            chat_id (int): The ID of the chatroom.
-            message_ids (list[int]): List of message IDs to mark as read.
-            user_id (int): The ID of the current user.
-
-        Returns:
-            None
-        """
-        with Session(StorageService.engine) as session:
-            chatroom = StorageService.find(session, {"id": chat_id}, ChatRoom, find_one=True)
-            if chatroom.user1_id != user_id and chatroom.user2_id != user_id:
-                raise HTTPException(status_code=403, detail="You are not authorized to mark messages as read.")
+            session.refresh(chat)
             
-            # Mark messages as read in one go
-            session.query(ChatMessage).filter(
-                ChatMessage.chatroom_id == chatroom.id,
-                ChatMessage.id.in_(message_ids)
-            ).update({"isRead": True})
-
-            session.commit()
