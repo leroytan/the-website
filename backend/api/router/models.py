@@ -156,7 +156,7 @@ class SearchResult(BaseModel, Generic[T]):
     filters: dict[str, list[dict[str, str]]]
 
 class NewChatMessage(BaseModel):
-    receiver_id: int
+    chat_id: int
     content: str
 
 class UserView(BaseModel):
