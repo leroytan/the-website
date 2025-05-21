@@ -1,12 +1,11 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        String, UniqueConstraint)
+from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
+                        ForeignKey, Integer, String, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base, declared_attr, relationship
 from sqlalchemy_serializer import SerializerMixin
 
 # Create a base class for declarative models
@@ -211,40 +210,44 @@ class TutorLevel(Base):
     id = Column(Integer, primary_key=True)
     tutor_id = Column(Integer, ForeignKey('Tutor.id'))
     level_id = Column(Integer, ForeignKey('Level.id'))
+    
 
-class ChatMessage(Base, SerializerMixin):
-    """
-    ChatMessage model
-    """
-    __tablename__ = 'ChatMessage'
+class PrivateChat(Base, SerializerMixin):
+    __tablename__ = 'PrivateChat'
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    sender_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    receiver_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    content = Column(String, nullable=False)
-    isRead = Column(Boolean, default=False)
-    chatroom_id = Column(Integer, ForeignKey('ChatRoom.id'))  # Foreign key to ChatRoom
-
-    # Relationships
-    sender = relationship('User', foreign_keys=[sender_id])
-    receiver = relationship('User', foreign_keys=[receiver_id])
-    chatRoom = relationship('ChatRoom', back_populates='messages')
-
-
-class ChatRoom(Base):
-    """
-    ChatRoom model
-    """
-    __tablename__ = 'ChatRoom'
-
-    # Columns
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user1_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    user2_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
-    isLocked = Column(Boolean, default=True)
+    user1_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
+    user2_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
+    is_locked = Column(Boolean, default=True)
 
     # Relationships
     user1 = relationship('User', foreign_keys=[user1_id])
     user2 = relationship('User', foreign_keys=[user2_id])
-    messages = relationship('ChatMessage', back_populates='chatRoom')
+
+    # Constraints
+    __table_args__ = (
+        UniqueConstraint('user1_id', 'user2_id', name='uix_user1_id_user2_id'),
+        CheckConstraint('user1_id < user2_id', name='check_user_order'),
+    )
+
+class ChatMessage(Base, SerializerMixin):
+    __tablename__ = 'ChatMessage'
+
+    # Columns
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    content = Column(String, nullable=False)
+    sender_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
+    chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)  # Foreign key to PrivateChat
+    
+    # Relationships
+    sender = relationship('User', foreign_keys=[sender_id])
+    chat = relationship('PrivateChat', foreign_keys=[chat_id])
+
+    @hybrid_property
+    def receiver_id(self):
+        return self.chat.user2_id if self.sender_id == self.chat.user1_id else self.chat.user1_id
+
+    @hybrid_property
+    def receiver(self):
+        return self.chat.user2 if self.sender_id == self.chat.user1_id else self.chat.user1
