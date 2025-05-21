@@ -1,0 +1,17 @@
+post:
+  tags:
+    - chat
+  summary: creates a chat. user authorization required
+  requestBody:
+    required: true
+    description: parameters chats are expected to have
+    content:
+      application/json:
+        type: object
+        properties:
+          other_id:
+            type: integer
+            description: The ID of the other user in the chat
+  responses:
+    '200':
+      description: confirmation of successful creation

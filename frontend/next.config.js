@@ -5,7 +5,9 @@ const nextConfig = {
       {
         source: "/api/:path*",
         destination:
-          process.env.NODE_ENV === "development"
+          process.env.NEXT_PUBLIC_VERCEL_ENV === "local"
+            ? `${process.env.NEXT_PUBLIC_API_BASE_URL_LOCAL}/:path*`
+            : process.env.NODE_ENV === "development"
             ? `${process.env.NEXT_PUBLIC_API_BASE_URL_DEVELOPMENT}/:path*`
             : process.env.NODE_ENV === "production"
             ? `${process.env.NEXT_PUBLIC_API_BASE_URL_PRODUCTION}/:path*`

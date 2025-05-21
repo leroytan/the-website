@@ -52,12 +52,10 @@ paths:
     $ref: './api/me/applied-assignments.yaml'
   /ws/chat:
     $ref: './ws/chat.yaml'
+  /api/chat/new:
+    $ref: ./api/chat/new.yaml
   /api/chat/{id}:
     $ref: ./api/chat/{id}.yaml
-  /api/chat/{id}/unlock:
-    $ref: ./api/chat/{id}/unlock.yaml
-  /api/chat/{id}/messages/read:
-    $ref: ./api/chat/{id}/messages/read.yaml
   /api/tutors:
     $ref: './api/tutors.yaml'
   /api/tutors/new:

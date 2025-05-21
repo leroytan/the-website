@@ -26,8 +26,8 @@ class UserLogic:
             email = user.email,
             profile_photo_url = photo_url,
             intends_to_be_tutor = user.intends_to_be_tutor,
-            created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            updated_at = user.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+            created_at = user.created_at.isoformat(),
+            updated_at = user.updated_at.isoformat(),
         )
     
     @staticmethod

@@ -1,30 +1,65 @@
 "use client";
+import AssignmentCard from "@/components/assignmentCard";
 import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
+import { BASE_URL } from "@/utils/constants";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import React, { ReactElement, useState } from "react";
-import Image from "next/image";
 import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AssignmentCard from "@/components/assignmentCard";
+import React, { ReactElement, useEffect, useRef, useState } from "react";
 
 const ChatApp = () => {
-  const chatData = {
+  type ChatPreview = {
+    id: number;
+    name: string;
+    message: string;
+    time: string;
+    notifications: number;
+  };
+
+  type Number2String = {
+    [key: number]: string;
+  };
+
+  type Message = {
+    id?: number;
+    sender: string;
+    message: string | ReactElement;
+    time: string;
+    sentByUser: boolean;
+  }
+
+  type ChatHistory = {
+    [key: number]: Message[];
+  }
+
+  interface ChatData {
+    lockedChats: ChatPreview[];
+    unlockedChats: ChatPreview[];
+    displayNames: Number2String;
+    chatHistory: ChatHistory;
+  }
+  
+  const chatData: ChatData = {
     lockedChats: [
       {
+        id: 1,
         name: "User 1",
         message: "Hello!",
         time: "Today, 9:52pm",
         notifications: 4,
       },
       {
+        id: -1,
         name: "User 2",
         message: "That is true...",
         time: "Yesterday, 12:31pm",
         notifications: 0,
       },
       {
+        id: -1,
         name: "User 3",
         message: "It’s not going to happen",
         time: "Wednesday, 9:12am",
@@ -33,50 +68,62 @@ const ChatApp = () => {
     ],
     unlockedChats: [
       {
+        id: 2,
         name: "Anil",
         message: "Yes Sure!",
         time: "Today, 9:52pm",
         notifications: 0,
       },
       {
+        id: 3,
         name: "Chuutiya",
         message: "That would be great. Thank you!",
         time: "Today, 12:11pm",
         notifications: 1,
       },
       {
+        id: -1,
         name: "Mary ma’am",
         message: "Thanks!",
         time: "Today, 2:40pm",
         notifications: 1,
       },
       {
+        id: -1,
         name: "Bill Gates",
         message: "Nevermind bro",
         time: "Yesterday, 12:31pm",
         notifications: 5,
       },
       {
+        id: -1,
         name: "Victoria H",
         message: "Okay, brother. let’s see...",
         time: "Wednesday, 11:12am",
         notifications: 0,
       },
       {
+        id: -1,
         name: "Victoria H",
         message: "Okay, brother. let’s see...",
         time: "Wednesday, 11:12am",
         notifications: 0,
       },
       {
+        id: -1,
         name: "Victoria H",
         message: "Okay, brother. let’s see...",
         time: "Wednesday, 11:12am",
         notifications: 0,
       },
     ],
+    displayNames: {
+      1: "User",
+      2: "Anil",
+      3: "Parent",
+    },
     chatHistory: {
-      "User 1": [
+      1: [
         {
           sender: "User",
           message: "Hello!",
@@ -84,7 +131,7 @@ const ChatApp = () => {
           sentByUser: true,
         },
       ],
-      Anil: [
+      2: [
         {
           sender: "Anil",
           message: "Hey there!",
@@ -110,7 +157,7 @@ const ChatApp = () => {
           sentByUser: true,
         },
       ],
-      Chuutiya: [
+      3: [
         {
           sender: "Parent",
           message: "Hello, I wanted to discuss my child's progress.",
@@ -144,36 +191,146 @@ const ChatApp = () => {
           sentByUser: false,
         },
       ],
+      0: []
     },
   };
   const router = useRouter();
-  const [selectedChat, setSelectedChat] = useState("Anil");
+  const [selectedChat, setSelectedChat] = useState(0);
   type ChatHistoryKeys = keyof typeof chatData.chatHistory;
-  const [chatMessages, setChatMessages] = useState<
-    {
-      sender: string;
-      message: string | ReactElement;
-      time: string;
-      sentByUser: boolean;
-    }[]
-  >(chatData.chatHistory[selectedChat as ChatHistoryKeys]);
+  const [chatMessages, setChatMessages] = useState<Message[]>(chatData.chatHistory[selectedChat as ChatHistoryKeys]);
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [showDropup, setShowDropup] = useState(false);
+  const [lockedChats, setLockedChats] = useState<ChatPreview[]>(chatData.lockedChats);
+  const [unlockedChats, setUnlockedChats] = useState<ChatPreview[]>(chatData.unlockedChats);
+  const [displayNames, setDisplayNames] = useState<Number2String>(chatData.displayNames);
+  const [chatHistory, setChatHistory] = useState<React.SetStateAction<ChatHistory>>(chatData.chatHistory);
+  const [chatName, setChatName] = useState<string>("");
+  const socketRef = useRef<WebSocket | null>(null);
 
-  const handleChatSelection = (chatName: React.SetStateAction<string>) => {
-    setSelectedChat(chatName);
-    setChatMessages(chatData.chatHistory[chatName as ChatHistoryKeys]);
+  // Changing state
+  const selectedChatRef = useRef(selectedChat);
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  const chatMessagesRef = useRef(chatMessages);
+  useEffect(() => {
+    chatMessagesRef.current = chatMessages;
+  }, [chatMessages]);
+
+  const chatHistoryRef = useRef(chatHistory);
+  useEffect(() => {
+    chatHistoryRef.current = chatHistory;
+  }, [chatHistory]);
+
+
+  // Persistent state
+  useEffect(() => {
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    // Make a get request to retrieve all chats
+    const fetchChats = async () => {
+      try {
+        const response = await fetch(`/api/chats`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch chats");
+        }
+        const data = await response.json();
+        setLockedChats(data.locked_chats);
+        setUnlockedChats(data.unlocked_chats);
+        const tmpNames: Number2String = {};
+        const setNames = (chats: ChatPreview[]) => chats.forEach((chat: ChatPreview) => {
+          tmpNames[chat.id] = chat.name;
+        });
+        setNames(data.locked_chats);
+        setNames(data.unlocked_chats);
+        setDisplayNames(tmpNames);
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+      }
+    }
+    fetchChats();
+
+    const toWebSocketURL = (url: string) => url.replace(/^http/, "ws").replace(/\/api/, "");
+    const wsURL = toWebSocketURL(BASE_URL);
+    const socket = new WebSocket(`${wsURL}/ws/chat`);
+    socketRef.current = socket;
+
+    socket.onopen = () => {
+      console.log('Connected to WebSocket');
+    };
+
+    socket.onmessage = (event) => {
+      const text = event.data;
+      const parsedData = JSON.parse(text);
+      setChatHistory((prevChatHistory: ChatHistory) => {
+        const selectedChat = selectedChatRef.current;
+        const updatedChatHistory = { ...prevChatHistory };
+        const updatedChatMessages = [...updatedChatHistory[selectedChat], ];
+        updatedChatMessages.push({
+          sender: parsedData.sender,
+          message: parsedData.content,
+          time: parsedData.updated_at,
+          sentByUser: false,
+        });
+        updatedChatHistory[selectedChat] = updatedChatMessages;
+        // Update the Screen
+        setChatMessages(updatedChatMessages);
+        // Store in javascript browser memory
+        return updatedChatHistory;
+      });
+    };
+
+    socket.onclose = () => console.log('WebSocket closed');
+
+    return () => socket.close();
+  }, []);
+
+  const handleChatSelection = async (chatId: number) => {
+    setSelectedChat(chatId);
+    setChatName(displayNames[chatId]);
     setShowChat(true);
     setNewMessage("");
+    const response = await fetch(`/api/chat/${chatId}`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch chat messages");
+    }
+    const data = await response.json();
+  
+    setChatHistory((prevChatHistory: ChatHistory) => {
+      const updatedChatHistory = { ...prevChatHistory };
+      updatedChatHistory[chatId] = data.messages;
+      setChatMessages(data.messages);
+      return updatedChatHistory;
+    });
   };
   const handleSendMessage = () => {
     if (newMessage.trim() !== "") {
-      setChatMessages([
-        ...chatMessages,
-        { sender: "User", message: newMessage, time: "Now", sentByUser: true },
-      ]);
-      setNewMessage("");
+    
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({chat_id: selectedChat, content: newMessage}));
+        setChatHistory((prevChatHistory: ChatHistory) => {
+          const updatedChatHistory = { ...prevChatHistory };
+          const updatedChatMessages = [
+            ...updatedChatHistory[selectedChat],
+            {
+              sender: "User",
+              message: newMessage,
+              time: new Date().toLocaleTimeString(),
+              sentByUser: true,
+            },
+          ];
+          updatedChatHistory[selectedChat] = updatedChatMessages;
+          setChatMessages(updatedChatMessages);
+          return updatedChatHistory;
+        });
+        setNewMessage("");
+      }
+      
     }
   };
   const handleSendAssignment = () => {
@@ -254,11 +411,11 @@ const ChatApp = () => {
                 Locked
               </div>
               <div className="space-y-2">
-                {chatData.lockedChats.map((chat, index) => (
+                {lockedChats.map((chat, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
-                    onClick={() => handleChatSelection(chat.name)}
+                    onClick={() => handleChatSelection(chat.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
@@ -285,11 +442,11 @@ const ChatApp = () => {
                 Unlocked
               </div>
               <div className="space-y-2">
-                {chatData.unlockedChats.map((chat, index) => (
+                {unlockedChats.map((chat, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
-                    onClick={() => handleChatSelection(chat.name)}
+                    onClick={() => handleChatSelection(chat.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
@@ -329,8 +486,8 @@ const ChatApp = () => {
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="ml-4">
-                <p className="text-lg font-semibold">{selectedChat}</p>
-                <p className="text-sm text-gray-500">Online</p>
+                <p className="text-lg font-semibold">{chatName}</p>
+                {/* <p className="text-sm text-gray-500">Online</p> */}
               </div>
             </div>
             <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
@@ -379,6 +536,11 @@ const ChatApp = () => {
                   className="flex-1 px-4 py-2 rounded-3xl border border-gray-300"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSendMessage();
+                    }
+                  }}
                 />
                 <button
                   onClick={handleSendMessage}

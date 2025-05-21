@@ -31,8 +31,8 @@ class AssignmentLogic:
         # Common conversion logic
         base_data = {
             "id": assignment.id,
-            "created_at": assignment.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "updated_at": assignment.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": assignment.created_at.isoformat(),
+            "updated_at": assignment.updated_at.isoformat(),
             "title": assignment.title,
             "owner_id": assignment.owner_id,
             "estimated_rate": assignment.estimated_rate,
@@ -58,8 +58,8 @@ class AssignmentLogic:
             base_data["requests"] = [
                 AssignmentRequestView(
                     id=request.id,
-                    created_at=request.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                    updated_at=request.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    created_at=request.created_at.isoformat(),
+                    updated_at=request.updated_at.isoformat(),
                     tutor_id=request.tutor_id,
                     tutor_name=request.tutor.user.name,
                     tutor_profile_photo_url=UserLogic.get_profile_photo_url(request.tutor_id),
