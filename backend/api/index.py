@@ -1,5 +1,5 @@
+from api.config import settings
 from api.router.routers import routers
-from api.storage.models import Subject
 from api.storage.storage_service import StorageService
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,9 +34,11 @@ async def ping_get():
 async def ping_post():
     return {"message": "pong"}
 
+origins = settings.allowed_origins.split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

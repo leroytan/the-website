@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     r2_secret_key: str
     r2_bucket_name: str
     r2_bucket_region: str = "auto"  # Default region for R2
+    allowed_origins: str = "*"
 
     # Dynamically determine which database URL to use
     @property
