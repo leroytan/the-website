@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BASE_URL } from "./utils/constants";
+import { cookies } from "next/headers";
 
 export async function middleware(request: NextRequest) {
   const accesstoken = request.cookies.get("access_token");
@@ -31,10 +32,11 @@ export async function middleware(request: NextRequest) {
       if (!refreshtoken) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
-
+      const cookieStore = await cookies();
       // Try refreshing access token
       const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
+        headers: { Cookie: cookieStore.toString() },
       });
 
       if (refreshResponse.ok) {

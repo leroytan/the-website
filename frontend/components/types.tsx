@@ -16,8 +16,18 @@ export interface TuitionListing {
   }[];
   special_requests: string;
   subjects: string[];
-  levels: string[];
+  level: string;
   status?: "OPEN" | "FILLED";
+  request_status?: string;
+  requests?: {
+    id: number;
+    tutor_id: number;
+    tutor_name: string;
+    tutor_profile_photo_url?: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+  }[];
 }
 export interface TuitionListingFilters {
   course: {

@@ -14,6 +14,7 @@ import {
   UserRoundSearch,
   Bell,
   Plus,
+  LayoutDashboard,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,7 +57,7 @@ const UserMenu = () => {
     };
   }, []);
   const path = [
-    {path: "/", name: "Home", icon: <HomeIcon size={24} />},
+    {path: "/dashboard", name: "Dashboard", icon: <LayoutDashboard size={24} />},
     {path: "/assignments", name: "Assignments", icon: <BriefcaseBusiness size={24} />},
     {path: "/tutors", name: "Tutors", icon: <UserRoundSearch size={24} />},
     {path: "/chat/tutee", name: "Messages", icon: <MessageCircle size={24} />},

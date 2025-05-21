@@ -85,9 +85,7 @@ const AssignmentListing = ({
       );
     const levelMatch =
       filters.levels.length === 0 ||
-      listing.levels.some((level) =>
-        filters.levels.some((filter) => filter.name === level)
-      );
+      filters.levels.some((filter) => filter.name === listing.level);
     return subjectMatch && levelMatch;
   });
   return (
