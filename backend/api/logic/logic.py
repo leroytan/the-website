@@ -3,9 +3,7 @@ from collections.abc import Callable
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
 from api.common.models import LoginRequest, SignupRequest
-from api.exceptions import UserAlreadyExistsError, UserNotFoundError
-from api.storage.models import (Base, Level, Subject, Tutor, TutorLevel,
-                                TutorSubject, User)
+from api.storage.models import User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from jose import JWTError
@@ -61,12 +59,6 @@ class Logic:
                 access_token=access_token,
                 refresh_token=refresh_token
             )
-        
-    @staticmethod
-    def handle_update_photo(user_id: int, photo_file: bytes) -> None:
-        # TODO: Implement S3 upload logic
-        pass
-
 
     @staticmethod
     def get_current_user(access_token: str) -> User:

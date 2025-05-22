@@ -1,7 +1,9 @@
 from api.config import settings
+from api.router.auth_utils import RouterAuthUtils
 from api.router.routers import routers
+from api.storage.models import User
 from api.storage.storage_service import StorageService
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -24,6 +26,10 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         status_code=exc.status_code,
         content={"message": exc.detail}
     )
+
+@app.head("/")
+async def root_head():
+    return {"message": "Your server is running."}
 
 @app.get('/api/ping')
 async def ping_get():
@@ -54,6 +60,15 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         data = await websocket.receive_text()
         print(f"Received message: {data}")
+        await websocket.send_text(f"Message text was: {data}")
+
+@app.websocket("/ws/protected")
+async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUtils.get_current_user_ws)):
+    user, websocket = pair
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        print(f"Received message from [id: {user.id}] {user.name}: {data}")
         await websocket.send_text(f"Message text was: {data}")
 
 origins = settings.allowed_origins.split(",")

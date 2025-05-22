@@ -1,9 +1,11 @@
-from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES,
-                             REFRESH_TOKEN_EXPIRE_MINUTES)
 from api.auth.models import TokenPair
+from api.config import settings
 from api.logic.logic import Logic
 from api.storage.models import User
 from fastapi import HTTPException, Request, Response, WebSocket
+
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_MINUTES = settings.refresh_token_expire_minutes
 
 
 class RouterAuthUtils:
@@ -85,12 +87,36 @@ class RouterAuthUtils:
             max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
         )
 
+    @staticmethod
+    def get_jwt(request: Request) -> str:
+        """
+        Generate a JWT token for the user.
+        This method creates a JWT token that can be used for authentication
+        in WebSocket connections.
+        Args:
+            request (Request): The request object containing the user's information.
+        Returns:
+            str: The generated JWT token.
+        """
+        return request.cookies.get("access_token")
 
     @staticmethod
     def get_current_user(request: Request) -> User:
         token = request.cookies.get("access_token")
         user = Logic.get_current_user(token)
         return user
+    
+    @staticmethod
+    def get_user_from_jwt(token: str) -> User:
+        """
+        Get the user from the JWT token.
+        This method extracts the user information from the JWT token.
+        Args:
+            token (str): The JWT token.
+        Returns:
+            User: The user object extracted from the token.
+        """
+        return Logic.get_current_user(token)
     
     @staticmethod
     def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:

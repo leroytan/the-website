@@ -6,6 +6,11 @@ load_dotenv(".env")
 
 # Define the settings model
 class Settings(BaseSettings):
+    jwt_algorithm: str = "HS256"
+    jwt_secret_key: str
+    refresh_token_secret_key: str
+    access_token_expire_minutes: int = 30  # Token expiry time
+    refresh_token_expire_minutes: int = 60 * 24 * 7  # 7 days
     database_config: str = "LOCAL"  # Default to using local DB
     database_url_local: str
     database_url_dev1: str

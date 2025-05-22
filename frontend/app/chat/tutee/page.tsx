@@ -224,38 +224,39 @@ const ChatApp = () => {
     chatHistoryRef.current = chatHistory;
   }, [chatHistory]);
 
-
-  // Persistent state
-  useEffect(() => {
-    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-    // Make a get request to retrieve all chats
-    const fetchChats = async () => {
-      try {
-        const response = await fetch(`/api/chats`, {
-          credentials: "include",
-        });
-        if (!response.ok) {
-          throw new Error("Failed to fetch chats");
-        }
-        const data = await response.json();
-        setLockedChats(data.locked_chats);
-        setUnlockedChats(data.unlocked_chats);
-        const tmpNames: Number2String = {};
-        const setNames = (chats: ChatPreview[]) => chats.forEach((chat: ChatPreview) => {
-          tmpNames[chat.id] = chat.name;
-        });
-        setNames(data.locked_chats);
-        setNames(data.unlocked_chats);
-        setDisplayNames(tmpNames);
-      } catch (error) {
-        console.error("Error fetching chats:", error);
+  const fetchChats = async () => {
+    try {
+      const response = await fetch(`/api/chats`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch chats");
       }
+      const data = await response.json();
+      setLockedChats(data.locked_chats);
+      setUnlockedChats(data.unlocked_chats);
+      const tmpNames: Number2String = {};
+      const setNames = (chats: ChatPreview[]) => chats.forEach((chat: ChatPreview) => {
+        tmpNames[chat.id] = chat.name;
+      });
+      setNames(data.locked_chats);
+      setNames(data.unlocked_chats);
+      setDisplayNames(tmpNames);
+    } catch (error) {
+      console.error("Error fetching chats:", error);
     }
-    fetchChats();
+  }
 
-    const toWebSocketURL = (url: string) => url.replace(/^http/, "ws").replace(/\/api/, "");
-    const wsURL = toWebSocketURL(BASE_URL);
-    const socket = new WebSocket(`${wsURL}/ws/chat`);
+  const initWebSocket = async () => {
+    const response = await fetch(`/api/chat/jwt`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch JWT");
+    }
+    const data = await response.json();
+    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
+    const socket = new WebSocket(`${wsURL}/ws/chat?access_token=${data.access_token}`);
     socketRef.current = socket;
 
     socket.onopen = () => {
@@ -284,8 +285,17 @@ const ChatApp = () => {
     };
 
     socket.onclose = () => console.log('WebSocket closed');
+  }
 
-    return () => socket.close();
+  // Persistent state
+  useEffect(() => {
+    fetchChats();
+    initWebSocket();
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+    };
   }, []);
 
   const handleChatSelection = async (chatId: number) => {
@@ -488,6 +498,28 @@ const ChatApp = () => {
               <div className="ml-4">
                 <p className="text-lg font-semibold">{chatName}</p>
                 {/* <p className="text-sm text-gray-500">Online</p> */}
+                <button
+                  onClick={async () => {
+                    const response = await fetch(`/api/chat/new`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        other_id: 10
+                      })
+                    });
+                    if (!response.ok) {
+                      throw new Error("Failed to create chat");
+                    } else {
+                      console.log("Chat created successfully");
+                    }
+                  }}
+                  className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
+                >
+                  Create Chat
+                </button>
               </div>
             </div>
             <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">

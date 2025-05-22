@@ -12,9 +12,24 @@ router = APIRouter()
 
 active_connections = {}
 
+# Route for getting jwt for websocket purposes
+@router.get("/api/chat/jwt")
+async def get_jwt(request: Request, _: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+    """
+    Get JWT for websocket authentication.
+
+    Args:
+        user (User): The current user.
+    Returns:
+        dict: A dictionary containing the JWT token.
+    """
+    return {
+        "access_token": RouterAuthUtils.get_jwt(request),
+    }
+
 @router.websocket("/ws/chat")
-async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUtils.get_current_user_ws)):
-    user, websocket = pair
+async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
+    user = RouterAuthUtils.get_user_from_jwt(access_token)
     await websocket.accept()
     active_connections[user.id] = websocket
     while True:
@@ -118,7 +133,6 @@ html = """
     </body>
 </html>
 """
-
 
 @router.get("/")
 async def get():
