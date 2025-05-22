@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, PrivateChat, User
@@ -9,6 +10,22 @@ from sqlalchemy.orm import Session, joinedload
 
 
 class ChatLogic:
+
+    @staticmethod
+    def get_convert_message(user_id: int) -> Callable[[ChatMessage], dict]:
+        def convert_message(message: ChatMessage) -> dict:
+            """
+            Convert a chat message to a dictionary format in the expected format for the frontend.
+            """
+            sent_by_user = message.sender_id == user_id
+            return {
+                "id": message.id,
+                "sender": message.sender.name,
+                "message": message.content,
+                "time": message.updated_at.isoformat(),
+                "sentByUser": sent_by_user,
+            }
+        return convert_message
 
     @staticmethod
     def get_or_create_private_chat(user1_id: int, user2_id: int) -> PrivateChat:
@@ -80,11 +97,8 @@ class ChatLogic:
             session.add(chat_message)
             session.commit()
             session.refresh(chat_message)
-            to_send = json.dumps(chat_message.to_dict(rules=(
-                            "-sender",
-                            "-chat",
-                        )))
-            
+            convert_message = ChatLogic.get_convert_message(-1)
+            to_send = json.dumps(convert_message(chat_message))
             receiver_id = chat_message.receiver_id
             
             # Send the message to the receiver via WebSocket
@@ -110,18 +124,7 @@ class ChatLogic:
         Returns:
             list[ChatMessage]: List of chat messages.
         """
-        async def convert_message(message: ChatMessage) -> dict:
-            """
-            Convert a chat message to a dictionary format in the expected format for the frontend.
-            """
-            sent_by_user = message.sender_id == user_id
-            return {
-                "id": message.id,
-                "sender": message.sender.name,
-                "message": message.content,
-                "time": message.created_at.isoformat(),
-                "sentByUser": sent_by_user,
-            }
+        convert_message = ChatLogic.get_convert_message(user_id)
 
         with Session(StorageService.engine) as session:
             chatroom = StorageService.find(session, {"id": chat_id}, PrivateChat, find_one=True)
@@ -136,7 +139,7 @@ class ChatLogic:
                 ChatMessage.id <= last_message_id
             ).order_by(ChatMessage.created_at.desc()).limit(message_count).all()
             return [
-                await convert_message(message) for message in chat_messages
+                convert_message(message) for message in chat_messages
             ][::-1]  # Reverse the order to show the oldest messages first
         
    

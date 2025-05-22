@@ -259,9 +259,7 @@ const ChatApp = () => {
     const socket = new WebSocket(`${wsURL}/ws/chat?access_token=${data.access_token}`);
     socketRef.current = socket;
 
-    socket.onopen = () => {
-      console.log('Connected to WebSocket');
-    };
+    socket.onopen = () => console.log('Connected to WebSocket');
 
     socket.onmessage = (event) => {
       const text = event.data;
@@ -271,10 +269,8 @@ const ChatApp = () => {
         const updatedChatHistory = { ...prevChatHistory };
         const updatedChatMessages = [...updatedChatHistory[selectedChat], ];
         updatedChatMessages.push({
-          sender: parsedData.sender,
-          message: parsedData.content,
-          time: parsedData.updated_at,
-          sentByUser: false,
+          ...parsedData,
+          time: to12HourTime(parsedData.time),
         });
         updatedChatHistory[selectedChat] = updatedChatMessages;
         // Update the Screen
@@ -298,6 +294,24 @@ const ChatApp = () => {
     };
   }, []);
 
+  function to12HourTime(input: string): string {
+    // Parse the input date string into a Date object
+    const date = new Date(input.replace(/\.(\d{3})\d+$/, '.$1'));
+    if (isNaN(date.getTime())) throw new Error("Invalid date");
+  
+    // Get the timezone offset (in minutes) and adjust the UTC time
+    const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
+    const localDate = new Date(date.getTime() - localOffset * 60000); // Adjust UTC by local timezone offset
+  
+    // Extract hours, minutes, seconds
+    const [h, m, s] = [localDate.getHours(), localDate.getMinutes(), localDate.getSeconds()];
+    const hour12 = h % 12 || 12;
+    const ampm = h < 12 ? 'AM' : 'PM';
+  
+    // Return the formatted time
+    return `${hour12}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} ${ampm}`;
+  }
+
   const handleChatSelection = async (chatId: number) => {
     setSelectedChat(chatId);
     setChatName(displayNames[chatId]);
@@ -310,14 +324,19 @@ const ChatApp = () => {
       throw new Error("Failed to fetch chat messages");
     }
     const data = await response.json();
-  
+
     setChatHistory((prevChatHistory: ChatHistory) => {
       const updatedChatHistory = { ...prevChatHistory };
-      updatedChatHistory[chatId] = data.messages;
-      setChatMessages(data.messages);
+      const messages = data.messages.map((message: Message) => ({
+        ...message,
+        time: to12HourTime(message.time),
+      }));
+      updatedChatHistory[chatId] = messages;
+      setChatMessages(messages);
       return updatedChatHistory;
     });
   };
+
   const handleSendMessage = () => {
     if (newMessage.trim() !== "") {
     

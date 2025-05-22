@@ -1,6 +1,7 @@
 "use client";
 import "@/app/globals.css";
 import DropDown from "@/components/dropdown";
+import { BASE_URL } from "@/utils/constants";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Inter } from "next/font/google";
@@ -8,7 +9,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import { BASE_URL } from "@/utils/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,11 +40,11 @@ export default function SignupPage() {
     const res = await fetch(`api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, userType }),
+      body: JSON.stringify({ name, email, password, intends_to_be_tutor: userType === "Tutor" }),
     });
 
     if (res.status === 400) {
-      setErrorMessage("User with the same email and role already exists.");
+      setErrorMessage("User with the same email already exists.");
       return;
     }
     if (res.ok) {
