@@ -1,14 +1,13 @@
 from api.config import settings
 from api.router.routers import routers
 from api.storage.storage_service import StorageService
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 StorageService.init_db()
 
-### Create FastAPI instance with custom docs and openapi url
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
 for router in routers:
@@ -34,8 +33,12 @@ async def ping_get():
 async def ping_post():
     return {"message": "pong"}
 
+@app.head('/api/ping')
+async def ping_head():
+    return {"message": "pong"}
+
 @app.websocket("/ws/ping")
-async def websocket_ping(websocket):
+async def websocket_ping(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
@@ -43,9 +46,18 @@ async def websocket_ping(websocket):
             await websocket.send_text("pong")
         else:
             await websocket.send_text("Invalid message. Send 'ping' to receive 'pong'.")
-            break
+
+# Simple echo websocket endpoint
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        print(f"Received message: {data}")
+        await websocket.send_text(f"Message text was: {data}")
 
 origins = settings.allowed_origins.split(",")
+print(f"Allowed origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
