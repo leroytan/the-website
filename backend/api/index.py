@@ -34,6 +34,17 @@ async def ping_get():
 async def ping_post():
     return {"message": "pong"}
 
+@app.websocket("/ws/ping")
+async def websocket_ping(websocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        if data == "ping":
+            await websocket.send_text("pong")
+        else:
+            await websocket.send_text("Invalid message. Send 'ping' to receive 'pong'.")
+            break
+
 origins = settings.allowed_origins.split(",")
 
 app.add_middleware(
