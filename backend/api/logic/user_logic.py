@@ -19,7 +19,6 @@ class UserLogic:
         """
         photo_url = UserLogic.get_profile_photo_url(user.id)
         
-
         return UserView(
             id = user.id,
             name = user.name,
@@ -64,20 +63,21 @@ class UserLogic:
             # Define the object name in the bucket
             object_key = f"profile_photos/{user_id}"
 
+            # Check if the object exists
+            s3_client.head_object(Bucket=settings.r2_bucket_name, Key=object_key)
+
             # Generate a pre-signed URL for the object
             url = s3_client.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': settings.r2_bucket_name, 'Key': object_key},
                 ExpiresIn=3600  # URL expiration time in seconds
             )
-
             return url
         except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == 'NoSuchKey':
-                print("The object does not exist.")
+            if error.response['Error']['Code'] == '404':
                 return ""
             else:
-                print("Error occurred: ", error)
+                raise error
         except botocore.exceptions.ParamValidationError as error:
             raise ValueError('The parameters you provided are incorrect: {}'.format(error))
 

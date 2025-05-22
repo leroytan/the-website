@@ -1,13 +1,7 @@
 get:
   tags:
-    - user
-  summary: retrieves user profile information
-  parameters:
-    - name: user-id
-      in: path
-      required: true
-      schema:
-        type: number
+    - me
+  summary: retrieves logged-in user profile information
   responses:
     '200':
       content:
@@ -33,6 +27,4 @@ get:
                     type: string
                     format: date-time
               tutor:
-                oneOf:
-                  - $ref: '../tutors/{id}.yaml/#/TutorProfile'
-                  - $ref: '../tutors.yaml/#/TutorPublicSummary'
+                $ref: './tutors/{id}.yaml/#/TutorProfile'

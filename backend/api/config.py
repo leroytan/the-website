@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     is_use_mock: bool = True
     db_populate_check: bool = False
     stripe_api_key: str
-    r2_bucket_endpoint: str
+    r2_endpoint: str
     r2_access_key_id: str
     r2_secret_key: str
     r2_bucket_name: str
