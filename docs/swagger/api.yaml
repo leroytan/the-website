@@ -50,14 +50,14 @@ paths:
     $ref: './api/me/created-assignments.yaml'
   /api/me/applied-assignments:  # for tutors to see assignments they are assigned to or pending
     $ref: './api/me/applied-assignments.yaml'
+  /api/me:  # for tutors to see assignments they are assigned to or pending
+    $ref: './api/me.yaml'
   /ws/chat:
     $ref: './ws/chat.yaml'
+  /api/chat/new:
+    $ref: ./api/chat/new.yaml
   /api/chat/{id}:
     $ref: ./api/chat/{id}.yaml
-  /api/chat/{id}/unlock:
-    $ref: ./api/chat/{id}/unlock.yaml
-  /api/chat/{id}/messages/read:
-    $ref: ./api/chat/{id}/messages/read.yaml
   /api/tutors:
     $ref: './api/tutors.yaml'
   /api/tutors/new:

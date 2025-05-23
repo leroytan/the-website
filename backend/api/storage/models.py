@@ -221,6 +221,10 @@ class PrivateChat(Base, SerializerMixin):
     user2_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
     is_locked = Column(Boolean, default=True)
 
+    # TODO: Implement alias names for locked chats
+    # user_1_alias = Column(String, nullable=True)
+    # user_2_alias = Column(String, nullable=True)
+
     # Relationships
     user1 = relationship('User', foreign_keys=[user1_id])
     user2 = relationship('User', foreign_keys=[user2_id])

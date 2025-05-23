@@ -12,9 +12,24 @@ router = APIRouter()
 
 active_connections = {}
 
+# Route for getting jwt for websocket purposes
+@router.get("/api/chat/jwt")
+async def get_jwt(request: Request, _: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+    """
+    Get JWT for websocket authentication.
+
+    Args:
+        user (User): The current user.
+    Returns:
+        dict: A dictionary containing the JWT token.
+    """
+    return {
+        "access_token": RouterAuthUtils.get_jwt(request),
+    }
+
 @router.websocket("/ws/chat")
-async def websocket_endpoint(pair: tuple[User, WebSocket] = Depends(RouterAuthUtils.get_current_user_ws)):
-    user, websocket = pair
+async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
+    user = RouterAuthUtils.get_user_from_jwt(access_token)
     await websocket.accept()
     active_connections[user.id] = websocket
     while True:
@@ -51,7 +66,7 @@ async def create_chat(request: Request, user: User = Depends(RouterAuthUtils.get
 
 
 @router.get("/api/chat/{id}")
-async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> list[dict]:
+async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> dict:
     """
     Get chat messages between two users.
 
@@ -63,14 +78,26 @@ async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_cu
     Returns:
         list[ChatMessage]: List of chat messages.
     """
-    messages = ChatLogic.get_private_chat_history(id, user.id, last_message_id, message_count)
+    messages = await ChatLogic.get_private_chat_history(id, user.id, last_message_id, message_count)
     message_count = len(messages)
-    last_unretrieved_message_id = messages[message_count - 1].id - 1 if message_count > 0 else -1
+    last_unretrieved_message_id = messages[message_count - 1]["id"] - 1 if message_count > 0 else -1
     return {
         "messages": messages,
         "message_count": message_count,
         "last_unretrieved_message_id": last_unretrieved_message_id,
     }
+
+@router.get("/api/chats")
+async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+    """
+    Get all chats for the current user.
+
+    Args:
+        user (User): The current user.
+    Returns:
+        dict: A dictionary containing the list of chats.
+    """
+    return await ChatLogic.get_private_chats(user.id)
 
 
 html = """
@@ -106,7 +133,6 @@ html = """
     </body>
 </html>
 """
-
 
 @router.get("/")
 async def get():

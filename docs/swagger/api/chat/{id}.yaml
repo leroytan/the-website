@@ -49,22 +49,16 @@ ChatMessage:
     id:
       type: integer
       description: Unique identifier for the message
-    senderId:
+    sender:
       type: string
-      description: The ID of the user who sent the message
-    receiverId:
-      type: string
-      description: The ID of the user who received the message
+      description: The sender of the message
     content:
       type: string
       description: The content of the message
-    timestamp:
+    time:
       type: string
       format: date-time
-      description: The timestamp of when the message was sent
-    isRead:
+      description: The time the message was sent
+    sentByUser:
       type: boolean
-      description: Indicates whether the message has been read
-    chatRoomId:
-      type: string
-      description: The ID of the chat room where the message was sent
+      description: Indicates if the message was sent by the user

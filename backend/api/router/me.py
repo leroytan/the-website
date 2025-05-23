@@ -1,7 +1,9 @@
 from api.logic.assignment_logic import AssignmentLogic
+from api.logic.tutor_logic import TutorLogic
 from api.logic.user_logic import UserLogic
 from api.router.auth_utils import RouterAuthUtils
-from api.router.models import AssignmentOwnerView, AssignmentPublicView
+from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
+                               UserView)
 from api.storage.models import User
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
@@ -26,3 +28,16 @@ async def get_created_assignments(user: User = Depends(RouterAuthUtils.get_curre
 @router.get("/api/me/applied-assignments")
 async def get_applied_assignments(user: User = Depends(RouterAuthUtils.get_current_user)) -> list[AssignmentPublicView]:
     return AssignmentLogic.get_applied_assignments(user.id)
+
+@router.get("/api/me")
+async def get_user_info(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+    try:
+        tutor = TutorLogic.find_profile_by_id(user.id, is_self=True)
+    except HTTPException as e:
+        if e.status_code != 404:
+            raise e
+        tutor = None
+    return {
+        "user": UserLogic.get_user_by_id(user.id),
+        "tutor": tutor,
+    }

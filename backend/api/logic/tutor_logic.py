@@ -1,4 +1,5 @@
 from api.logic.filter_logic import FilterLogic
+from api.logic.user_logic import UserLogic
 from api.router.models import (NewTutorProfile, SearchQuery, TutorProfile,
                                TutorPublicSummary)
 from api.storage.models import Level, SpecialSkill, Subject, Tutor, User
@@ -33,7 +34,7 @@ class TutorLogic:
         return TutorPublicSummary(
             id=tutor.id,
             name=tutor.user.name,
-            photo_url=tutor.photo_url,
+            photo_url=UserLogic.get_profile_photo_url(tutor.id),
             rate=tutor.rate,
             rating=tutor.rating,
             subjects_teachable=subject_names,
@@ -65,7 +66,7 @@ class TutorLogic:
             name=tutor.user.name,
             contact=tutor.user.email,
             email=tutor.user.email,
-            photo_url=tutor.photo_url,
+            photo_url=UserLogic.get_profile_photo_url(tutor.id),
             highest_education=tutor.highest_education,
             rate=tutor.rate,
             location=tutor.location,

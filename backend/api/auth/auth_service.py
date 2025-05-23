@@ -2,14 +2,16 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 from api.auth.auth_interface import AuthInterface
-from api.auth.config import (ACCESS_TOKEN_EXPIRE_MINUTES, JWT_ALGORITHM,
-                             JWT_SECRET_KEY, REFRESH_TOKEN_EXPIRE_MINUTES,
-                             REFRESH_TOKEN_SECRET_KEY)
 from api.auth.models import TokenData, TokenPair
 from api.common.utils import Utils
+from api.config import settings
 from jose import jwt
-from pydantic import ValidationError
 
+JWT_SECRET_KEY = settings.jwt_secret_key
+JWT_ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+REFRESH_TOKEN_SECRET_KEY = settings.refresh_token_secret_key
+REFRESH_TOKEN_EXPIRE_MINUTES = settings.refresh_token_expire_minutes
 
 class AuthService(AuthInterface):
     
