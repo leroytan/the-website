@@ -10,12 +10,14 @@ get:
       description: The chat id
       schema:
         type: string
-    - name: last_message_id
+    - name: created_before
       in: query
       required: false
-      description: The ID of the most recent message to be retrieved.
+      description: The timestamp in isoformat before which messages were created. Used for pagination.
       schema:
-        type: integer
+        type: string
+        format: date-time
+        default: null
     - name: message_count
       in: query
       required: false
@@ -35,9 +37,6 @@ get:
                 type: array
                 items:
                   $ref: '#/ChatMessage'
-              last_unretrieved_message_id:
-                type: string
-                description: The ID of the last unretrieved message
               message_count:
                 type: integer
                 description: The number of messages retrieved in the current page
@@ -55,10 +54,14 @@ ChatMessage:
     content:
       type: string
       description: The content of the message
-    time:
+    created_at:
       type: string
       format: date-time
-      description: The time the message was sent
+      description: The timestamp when the message was created
+    updated_at:
+      type: string
+      format: date-time
+      description: The timestamp when the message was last updated
     sentByUser:
       type: boolean
       description: Indicates if the message was sent by the user

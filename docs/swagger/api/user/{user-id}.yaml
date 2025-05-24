@@ -35,4 +35,4 @@ get:
               tutor:
                 oneOf:
                   - $ref: '../tutors/{id}.yaml/#/TutorProfile'
-                  - $ref: '../tutors.yaml/#/TutorPublicSummary'
+                  # - $ref: '../tutors.yaml/#/TutorPublicSummary'

@@ -1,5 +1,5 @@
+import datetime
 import enum
-from datetime import datetime
 
 from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
                         ForeignKey, Integer, String, UniqueConstraint)
@@ -13,8 +13,8 @@ Decl_Base = declarative_base()
 
 class Base(Decl_Base):
     __abstract__ = True
-    created_at = Column(DateTime, default=datetime.now)
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc), nullable=False)
 
 class User(Base, SerializerMixin):
     """Base User model"""

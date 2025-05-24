@@ -66,25 +66,12 @@ async def create_chat(request: Request, user: User = Depends(RouterAuthUtils.get
 
 
 @router.get("/api/chat/{id}")
-async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> dict:
-    """
-    Get chat messages between two users.
-
-    Args:
-        id (int): The ID of the user to get chat history with.
-        last_message_id (int): The ID of the last message received.
-        message_count (int): The number of messages to retrieve prior to (and including) the last message.
-        user (User): The current user.
-    Returns:
-        list[ChatMessage]: List of chat messages.
-    """
-    messages = await ChatLogic.get_private_chat_history(id, user.id, last_message_id, message_count)
+async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), created_before: str = None, message_count: int = 50) -> dict:
+    messages = await ChatLogic.get_private_chat_history(id, user.id, created_before, message_count)
     message_count = len(messages)
-    last_unretrieved_message_id = messages[message_count - 1]["id"] - 1 if message_count > 0 else -1
     return {
         "messages": messages,
-        "message_count": message_count,
-        "last_unretrieved_message_id": last_unretrieved_message_id,
+        "message_count": message_count
     }
 
 @router.get("/api/chats")

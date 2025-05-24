@@ -20,7 +20,9 @@ export function timeAgo(dateString: string | Date): string {
   const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
   const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
   const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-  if (diffInHours < 1) {
+  if (diffInMinutes == 0) {
+    return "now";
+  } else if (diffInHours < 1) {
     return `${diffInMinutes} minute${diffInMinutes === 1 ? "" : "s"} ago`;
   } else if (diffInHours < 2) {
     return `1 hour ago`;
@@ -31,4 +33,29 @@ export function timeAgo(dateString: string | Date): string {
   } else {
     return "more than 30 days ago";
   }
+}
+
+
+export function to12HourTime(input: string): string {
+  // Parse the input date string into a Date object
+  const date = new Date(input.replace(/\.(\d{3})\d+$/, ".$1"));
+  if (isNaN(date.getTime())) throw new Error("Invalid date");
+
+  // Get the timezone offset (in minutes) and adjust the UTC time
+  const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
+  const localDate = new Date(date.getTime() - localOffset * 60000); // Adjust UTC by local timezone offset
+
+  // Extract hours, minutes, seconds
+  const [h, m, s] = [
+    localDate.getHours(),
+    localDate.getMinutes(),
+    localDate.getSeconds(),
+  ];
+  const hour12 = h % 12 || 12;
+  const ampm = h < 12 ? "AM" : "PM";
+
+  // Return the formatted time
+  return `${hour12}:${m.toString().padStart(2, "0")}:${s
+    .toString()
+    .padStart(2, "0")} ${ampm}`;
 }

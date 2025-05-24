@@ -3,6 +3,7 @@ import AssignmentCard from "@/components/assignmentCard";
 import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
 import { BASE_URL } from "@/utils/constants";
+import { timeAgo, to12HourTime } from "@/utils/date";
 import { motion } from "framer-motion";
 import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
@@ -23,10 +24,18 @@ const ChatApp = () => {
     [key: number]: string;
   };
 
-  type Message = {
-    id?: number;
+  type BackendMessage = {
+    id: number;
     sender: string;
-    message: string | ReactElement;
+    content: string | ReactElement;
+    created_at: string; // ISO 8601 format
+    updated_at: string; // ISO 8601 format
+    sent_by_user: boolean; // true if sent by the user, false if sent by the other party
+  }
+
+  type Message = {
+    sender: string;
+    content: string | ReactElement;
     time: string;
     sentByUser: boolean;
   };
@@ -126,7 +135,7 @@ const ChatApp = () => {
       1: [
         {
           sender: "User",
-          message: "Hello!",
+          content: "Hello!",
           time: "Today, 9:52pm",
           sentByUser: true,
         },
@@ -134,25 +143,25 @@ const ChatApp = () => {
       2: [
         {
           sender: "Anil",
-          message: "Hey there!",
+          content: "Hey there!",
           time: "Today, 9:52pm",
           sentByUser: false,
         },
         {
           sender: "Anil",
-          message: "How are you?",
+          content: "How are you?",
           time: "Today, 9:53pm",
           sentByUser: false,
         },
         {
           sender: "User",
-          message: "Hello!",
+          content: "Hello!",
           time: "Today, 9:54pm",
           sentByUser: true,
         },
         {
           sender: "User",
-          message: "I am fine and how are you?",
+          content: "I am fine and how are you?",
           time: "Today, 9:55pm",
           sentByUser: true,
         },
@@ -160,33 +169,33 @@ const ChatApp = () => {
       3: [
         {
           sender: "Parent",
-          message: "Hello, I wanted to discuss my child's progress.",
+          content: "Hello, I wanted to discuss my child's progress.",
           time: "Today, 10:00am",
           sentByUser: false,
         },
         {
           sender: "Tutor",
-          message:
+          content:
             "Sure! Your child is doing well in mathematics but needs some improvement in writing skills.",
           time: "Today, 10:05am",
           sentByUser: true,
         },
         {
           sender: "Parent",
-          message: "That sounds good. What do you suggest for improvement?",
+          content: "That sounds good. What do you suggest for improvement?",
           time: "Today, 10:10am",
           sentByUser: false,
         },
         {
           sender: "Tutor",
-          message:
+          content:
             "Regular practice and reading more structured material can help. I can also provide extra worksheets.",
           time: "Today, 10:15am",
           sentByUser: true,
         },
         {
           sender: "Parent",
-          message: "That would be great. Thank you!",
+          content: "That would be great. Thank you!",
           time: "Today, 10:20am",
           sentByUser: false,
         },
@@ -243,8 +252,16 @@ const ChatApp = () => {
         throw new Error("Failed to fetch chats");
       }
       const data = await response.json();
-      setLockedChats(data.locked_chats);
-      setUnlockedChats(data.unlocked_chats);
+      const lockedChats = data.locked_chats.map((chat: ChatPreview) => {
+        chat.time = timeAgo(chat.time);
+        return chat;
+      });
+      const unlockedChats = data.unlocked_chats.map((chat: ChatPreview) => {
+        chat.time = timeAgo(chat.time);
+        return chat;
+      })
+      setUnlockedChats(unlockedChats);
+      setLockedChats(lockedChats);
       const tmpNames: Number2String = {};
       const setNames = (chats: ChatPreview[]) =>
         chats.forEach((chat: ChatPreview) => {
@@ -282,8 +299,10 @@ const ChatApp = () => {
         const updatedChatHistory = { ...prevChatHistory };
         const updatedChatMessages = [...updatedChatHistory[selectedChat]];
         updatedChatMessages.push({
-          ...parsedData,
-          time: to12HourTime(parsedData.time),
+          sender: parsedData.sender,
+          content: parsedData.content,
+          time: to12HourTime(parsedData.created_at),
+          sentByUser: parsedData.sent_by_user,
         });
         updatedChatHistory[selectedChat] = updatedChatMessages;
         // Update the Screen
@@ -307,30 +326,6 @@ const ChatApp = () => {
     };
   }, []);
 
-  function to12HourTime(input: string): string {
-    // Parse the input date string into a Date object
-    const date = new Date(input.replace(/\.(\d{3})\d+$/, ".$1"));
-    if (isNaN(date.getTime())) throw new Error("Invalid date");
-
-    // Get the timezone offset (in minutes) and adjust the UTC time
-    const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
-    const localDate = new Date(date.getTime() - localOffset * 60000); // Adjust UTC by local timezone offset
-
-    // Extract hours, minutes, seconds
-    const [h, m, s] = [
-      localDate.getHours(),
-      localDate.getMinutes(),
-      localDate.getSeconds(),
-    ];
-    const hour12 = h % 12 || 12;
-    const ampm = h < 12 ? "AM" : "PM";
-
-    // Return the formatted time
-    return `${hour12}:${m.toString().padStart(2, "0")}:${s
-      .toString()
-      .padStart(2, "0")} ${ampm}`;
-  }
-
   const handleChatSelection = async (chatId: number) => {
     setSelectedChat(chatId);
     setChatName(displayNames[chatId]);
@@ -346,10 +341,14 @@ const ChatApp = () => {
 
     setChatHistory((prevChatHistory: ChatHistory) => {
       const updatedChatHistory = { ...prevChatHistory };
-      const messages = data.messages.map((message: Message) => ({
-        ...message,
-        time: to12HourTime(message.time),
-      }));
+      const messages = data.messages.map((message: BackendMessage) => {
+        return {
+          sender: message.sender,
+          content: message.content,
+          time: to12HourTime(message.created_at),
+          sentByUser: message.sent_by_user,
+        };
+      });
       updatedChatHistory[chatId] = messages;
       setChatMessages(messages);
       return updatedChatHistory;
@@ -371,7 +370,7 @@ const ChatApp = () => {
             ...updatedChatHistory[selectedChat],
             {
               sender: "User",
-              message: newMessage,
+              content: newMessage,
               time: new Date().toLocaleTimeString(),
               sentByUser: true,
             },
@@ -400,7 +399,7 @@ const ChatApp = () => {
 
     setChatMessages([
       ...chatMessages,
-      { sender: "User", message: assignment, time: "Now", sentByUser: true },
+      { sender: "User", content: assignment, time: "Now", sentByUser: true },
     ]);
     setShowDropup(false);
   };
@@ -563,22 +562,22 @@ const ChatApp = () => {
             </div>
             <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
               <div className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]">
-                {chatMessages.map((chat, index) => (
+                {chatMessages.map((message, index) => (
                   <div
                     key={index}
-                    className={chat.sentByUser ? "self-end" : "self-start"}
+                    className={message.sentByUser ? "self-end" : "self-start"}
                   >
                     <div
                       className={`p-2 rounded-xl ${
-                        chat.sentByUser
+                        message.sentByUser
                           ? "bg-customDarkBlue text-white"
                           : "bg-gray-300"
                       }`}
                     >
-                      {chat.message}
+                      {message.content}
                     </div>
                     <p className="text-xs text-gray-400 mt-1 flex justify-end">
-                      {chat.time}
+                      {message.time}
                     </p>
                   </div>
                 ))}

@@ -1,0 +1,44 @@
+get:
+  tags:
+    - chat
+  summary: Retrieve a list of chats for the user, and their previews
+  description: |
+    This endpoint retrieves a list of chats for the authenticated user, including both locked and unlocked chats. Each chat preview includes the chat ID, name of the other party, last message, timestamp of the last message, number of unread messages, and whether the chat is locked.
+  responses:
+    '200':
+      description: A list of chats with their previews
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              locked_chats:
+                type: array
+                items:
+                  $ref: '#/ChatPreview'
+              unlocked_chats:
+                type: array
+                items:
+                  $ref: '#/ChatPreview'
+ChatPreview:
+  type: object
+  properties:
+    id:
+      type: string
+      description: Unique identifier for the chat
+    name:
+      type: string
+      description: Name of the other party
+    message:
+      type: string
+      description: The last message in the chat
+    time:
+      type: string
+      format: date-time
+      description: Timestamp of the last message in the chat
+    notifications:
+      type: integer
+      description: Number of unread messages in the chat
+    is_locked:
+      type: boolean
+      description: Indicates if the chat is locked

@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable
+from datetime import datetime
 
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, PrivateChat, User
@@ -21,9 +22,10 @@ class ChatLogic:
             return {
                 "id": message.id,
                 "sender": message.sender.name,
-                "message": message.content,
-                "time": message.updated_at.isoformat(),
-                "sentByUser": sent_by_user,
+                "content": message.content,
+                "created_at": message.created_at.isoformat(),
+                "updated_at": message.updated_at.isoformat(),
+                "sent_by_user": sent_by_user,
             }
         return convert_message
 
@@ -111,19 +113,7 @@ class ChatLogic:
                     active_connections.pop(receiver_id, None)
 
     @staticmethod
-    async def get_private_chat_history(chat_id: int, user_id: int, last_message_id: int, message_count: int) -> list[dict]:
-        """
-        Get chat history between two users.
-
-        Args:
-            chat_id (int): The ID of the user to get chat history with.
-            user_id (int): The ID of the current user.
-            last_message_id (int): The ID of the last message received.
-            message_count (int): The number of messages to retrieve prior to (and including) the last message.
-
-        Returns:
-            list[ChatMessage]: List of chat messages.
-        """
+    async def get_private_chat_history(chat_id: int, user_id: int, created_before: str, message_count: int) -> list[dict]:
         convert_message = ChatLogic.get_convert_message(user_id)
 
         with Session(StorageService.engine) as session:
@@ -132,12 +122,15 @@ class ChatLogic:
                 raise HTTPException(status_code=403, detail="You are not authorized to view this chatroom.")
             session.add(chatroom)
 
-            # Get the chat messages
-            if last_message_id == -1: last_message_id = float('inf')
-            chat_messages = session.query(ChatMessage).filter(
+            query = session.query(ChatMessage).filter(
                 ChatMessage.chat_id == chat_id,
-                ChatMessage.id <= last_message_id
-            ).order_by(ChatMessage.created_at.desc()).limit(message_count).all()
+            )
+
+            if created_before:
+                created_before_dt = datetime.fromisoformat(created_before)
+                query = query.filter(ChatMessage.created_at < created_before_dt)
+           
+            chat_messages = query.order_by(ChatMessage.created_at.desc()).limit(message_count).all()
             return [
                 convert_message(message) for message in chat_messages
             ][::-1]  # Reverse the order to show the oldest messages first
@@ -183,9 +176,9 @@ class ChatLogic:
                 else:
                     other_id = chat.user1_id if chat.user1_id != user_id else chat.user2_id
                     other_name = session.query(User).filter(User.id == other_id).first().name
-                messages = await ChatLogic.get_private_chat_history(chat_id, user_id, -1, 1)
-                last_message = messages[0]["message"] if messages else ""
-                last_message_time = messages[0]["time"] if messages else None
+                messages = await ChatLogic.get_private_chat_history(chat_id, user_id, None, 1)
+                last_message = messages[0]["content"] if messages else ""
+                last_message_time = messages[0]["created_at"] if messages else None
                 unread_count = 5  # Placeholder for unread messages count
 
                 # Frontend expects the following format
@@ -195,6 +188,7 @@ class ChatLogic:
                     "message": last_message,
                     "time": last_message_time,
                     "notifications": unread_count,
+                    "is_locked": locked,
                 }
 
             locked_chats = session.query(PrivateChat).filter(
