@@ -1,4 +1,3 @@
-import ComponentLayout from "@/components/layout";
 import "@/app/globals.css";
 import { AuthProvider } from "@/context/authContext";
 import { cookies } from "next/headers";

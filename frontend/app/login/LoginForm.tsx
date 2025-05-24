@@ -5,13 +5,14 @@ import { Eye, EyeOff } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
+import { BASE_URL } from "@/utils/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function LoginPage() {
+export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -34,17 +35,12 @@ export default function LoginPage() {
       body: JSON.stringify({ email, password, userType }),
     });
 
-    console.log("Login response:", res);
-
-    // if status code 401, show error message
-    if (res.status === 401) {
-      alert("Invalid email or password");
-      return;
+    if (res.ok) {
+      router.replace(redirectTo);
+      router.refresh();
+    } else {
+      alert("Login failed");
     }
-
-    // if successful, redirect to homepage
-    router.replace("/");
-    router.refresh();
   };
 
   return (

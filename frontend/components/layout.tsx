@@ -148,10 +148,27 @@ export const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
-
+type UserWithRole =
+  | {
+      id: number;
+      name: string;
+      email: string;
+      role: "tutor";
+      tutorProfile: object; // refine this based on your schema
+    }
+  | {
+      id: number;
+      name: string;
+      email: string;
+      role: "client";
+      tutorProfile: null;
+    }
+  | null;
 export default function ComponentLayout({
+  user,
   children,
 }: {
+  user: UserWithRole | null;
   children: React.ReactNode;
 }) {
   const { isAuthenticated } = useAuth();

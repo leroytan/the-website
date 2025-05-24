@@ -8,7 +8,7 @@ import Image from "next/image";
 import { ArrowLeftToLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AssignmentCard from "@/components/assignmentCard";
-type Chat= {
+type Chat = {
   name: string;
   message: string;
   time: string;
@@ -22,29 +22,25 @@ const ChatApp = () => {
         message: "Assignment Card",
         time: "Today, 9:52pm",
         notifications: 1,
-      }
+      },
     ],
-    unlockedChats: [
-      
-    ],
+    unlockedChats: [],
     chatHistory: {
       "User 1": [
         {
           sender: "User",
-          message: 
+          message: (
             <AssignmentCard
-              id={4}
-              time={"FRI 07:00 PM"}
-              title={"P5 Math"}
-              location={"662C Jurong West Street 64 643662"}
-              duration={"1.5h"}
-              price={"$35-45/h"}
-              averagePrice={35}
-              status={"apply"}
-              level={"Secondary"}
-              subject={"Mathematics"}
+              title={""}
+              location={""}
+              estimated_rate={""}
+              weekly_frequency={0}
+              available_slots={[]}
+              special_requests={""}
+              subjects={[]}
+              level={""}
             ></AssignmentCard>
-          ,
+          ),
           time: "Today, 9:52pm",
           sentByUser: false,
         },
@@ -194,7 +190,7 @@ const ChatApp = () => {
                 Unlocked
               </div>
               <div className="space-y-2">
-                {chatData.unlockedChats.map((chat : Chat, index) => (
+                {chatData.unlockedChats.map((chat: Chat, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"

@@ -46,7 +46,7 @@ function TutorProfileForm() {
 
     // Upload to your API
     try {
-      const response = await fetch("/api/user/upload-profile-photo", {
+      const response = await fetch("/api/me/upload-profile-photo/", {
         method: "POST",
         body: formData,
         credentials: "include",

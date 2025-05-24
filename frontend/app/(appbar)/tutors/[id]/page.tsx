@@ -30,7 +30,7 @@ const mockTutor = {
   roughLocation: 'Central Singapore',
 }
 
-export default function TutorProfilePage({ params }: { params: { id: string } }) {
+export default function TutorProfilePage() {
   const router = useRouter()
   const [showMessageForm, setShowMessageForm] = useState(false)
   const [message, setMessage] = useState('')

@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { Menu, X, User, ChevronDown, ChevronRight, Search, Star } from 'lucide-react'
 import { Inter } from 'next/font/google'
 import { motion, AnimatePresence } from 'framer-motion'
-import Header from '@/components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -114,9 +113,6 @@ export default function ModuleReviewPage() {
 
   return (
     <div className={`min-h-screen flex flex-col bg-[#fff2de] ${inter.className}`}>
-      <Header toggleSubpage={function (): void {
-              throw new Error('Function not implemented.')
-          } } />
       <main className="flex-grow pt-24 pb-12">
         <div className="container mx-auto px-4 flex flex-col h-full">
           <motion.h1

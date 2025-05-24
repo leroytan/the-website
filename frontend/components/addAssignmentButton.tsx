@@ -102,7 +102,7 @@ export default function AddAssignmentOverlay({
       }),
       special_requests: "",
       subjects: [formData.subject],
-      levels: [formData.level],
+      level: formData.level,
       location: formData.location
     };
     console.log(listingToAdd)

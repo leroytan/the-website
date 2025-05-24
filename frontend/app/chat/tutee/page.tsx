@@ -29,11 +29,11 @@ const ChatApp = () => {
     message: string | ReactElement;
     time: string;
     sentByUser: boolean;
-  }
+  };
 
   type ChatHistory = {
     [key: number]: Message[];
-  }
+  };
 
   interface ChatData {
     lockedChats: ChatPreview[];
@@ -41,7 +41,7 @@ const ChatApp = () => {
     displayNames: Number2String;
     chatHistory: ChatHistory;
   }
-  
+
   const chatData: ChatData = {
     lockedChats: [
       {
@@ -191,20 +191,30 @@ const ChatApp = () => {
           sentByUser: false,
         },
       ],
-      0: []
+      0: [],
     },
   };
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState(0);
   type ChatHistoryKeys = keyof typeof chatData.chatHistory;
-  const [chatMessages, setChatMessages] = useState<Message[]>(chatData.chatHistory[selectedChat as ChatHistoryKeys]);
+  const [chatMessages, setChatMessages] = useState<Message[]>(
+    chatData.chatHistory[selectedChat as ChatHistoryKeys]
+  );
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [showDropup, setShowDropup] = useState(false);
-  const [lockedChats, setLockedChats] = useState<ChatPreview[]>(chatData.lockedChats);
-  const [unlockedChats, setUnlockedChats] = useState<ChatPreview[]>(chatData.unlockedChats);
-  const [displayNames, setDisplayNames] = useState<Number2String>(chatData.displayNames);
-  const [chatHistory, setChatHistory] = useState<React.SetStateAction<ChatHistory>>(chatData.chatHistory);
+  const [lockedChats, setLockedChats] = useState<ChatPreview[]>(
+    chatData.lockedChats
+  );
+  const [unlockedChats, setUnlockedChats] = useState<ChatPreview[]>(
+    chatData.unlockedChats
+  );
+  const [displayNames, setDisplayNames] = useState<Number2String>(
+    chatData.displayNames
+  );
+  const [chatHistory, setChatHistory] = useState<
+    React.SetStateAction<ChatHistory>
+  >(chatData.chatHistory);
   const [chatName, setChatName] = useState<string>("");
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -236,16 +246,17 @@ const ChatApp = () => {
       setLockedChats(data.locked_chats);
       setUnlockedChats(data.unlocked_chats);
       const tmpNames: Number2String = {};
-      const setNames = (chats: ChatPreview[]) => chats.forEach((chat: ChatPreview) => {
-        tmpNames[chat.id] = chat.name;
-      });
+      const setNames = (chats: ChatPreview[]) =>
+        chats.forEach((chat: ChatPreview) => {
+          tmpNames[chat.id] = chat.name;
+        });
       setNames(data.locked_chats);
       setNames(data.unlocked_chats);
       setDisplayNames(tmpNames);
     } catch (error) {
       console.error("Error fetching chats:", error);
     }
-  }
+  };
 
   const initWebSocket = async () => {
     const response = await fetch(`/api/chat/jwt`, {
@@ -256,10 +267,12 @@ const ChatApp = () => {
     }
     const data = await response.json();
     const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
-    const socket = new WebSocket(`${wsURL}/ws/chat?access_token=${data.access_token}`);
+    const socket = new WebSocket(
+      `${wsURL}/ws/chat?access_token=${data.access_token}`
+    );
     socketRef.current = socket;
 
-    socket.onopen = () => console.log('Connected to WebSocket');
+    socket.onopen = () => console.log("Connected to WebSocket");
 
     socket.onmessage = (event) => {
       const text = event.data;
@@ -267,7 +280,7 @@ const ChatApp = () => {
       setChatHistory((prevChatHistory: ChatHistory) => {
         const selectedChat = selectedChatRef.current;
         const updatedChatHistory = { ...prevChatHistory };
-        const updatedChatMessages = [...updatedChatHistory[selectedChat], ];
+        const updatedChatMessages = [...updatedChatHistory[selectedChat]];
         updatedChatMessages.push({
           ...parsedData,
           time: to12HourTime(parsedData.time),
@@ -280,8 +293,8 @@ const ChatApp = () => {
       });
     };
 
-    socket.onclose = () => console.log('WebSocket closed');
-  }
+    socket.onclose = () => console.log("WebSocket closed");
+  };
 
   // Persistent state
   useEffect(() => {
@@ -296,20 +309,26 @@ const ChatApp = () => {
 
   function to12HourTime(input: string): string {
     // Parse the input date string into a Date object
-    const date = new Date(input.replace(/\.(\d{3})\d+$/, '.$1'));
+    const date = new Date(input.replace(/\.(\d{3})\d+$/, ".$1"));
     if (isNaN(date.getTime())) throw new Error("Invalid date");
-  
+
     // Get the timezone offset (in minutes) and adjust the UTC time
     const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
     const localDate = new Date(date.getTime() - localOffset * 60000); // Adjust UTC by local timezone offset
-  
+
     // Extract hours, minutes, seconds
-    const [h, m, s] = [localDate.getHours(), localDate.getMinutes(), localDate.getSeconds()];
+    const [h, m, s] = [
+      localDate.getHours(),
+      localDate.getMinutes(),
+      localDate.getSeconds(),
+    ];
     const hour12 = h % 12 || 12;
-    const ampm = h < 12 ? 'AM' : 'PM';
-  
+    const ampm = h < 12 ? "AM" : "PM";
+
     // Return the formatted time
-    return `${hour12}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} ${ampm}`;
+    return `${hour12}:${m.toString().padStart(2, "0")}:${s
+      .toString()
+      .padStart(2, "0")} ${ampm}`;
   }
 
   const handleChatSelection = async (chatId: number) => {
@@ -339,9 +358,13 @@ const ChatApp = () => {
 
   const handleSendMessage = () => {
     if (newMessage.trim() !== "") {
-    
-      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({chat_id: selectedChat, content: newMessage}));
+      if (
+        socketRef.current &&
+        socketRef.current.readyState === WebSocket.OPEN
+      ) {
+        socketRef.current.send(
+          JSON.stringify({ chat_id: selectedChat, content: newMessage })
+        );
         setChatHistory((prevChatHistory: ChatHistory) => {
           const updatedChatHistory = { ...prevChatHistory };
           const updatedChatMessages = [
@@ -359,22 +382,19 @@ const ChatApp = () => {
         });
         setNewMessage("");
       }
-      
     }
   };
   const handleSendAssignment = () => {
     const assignment = (
       <AssignmentCard
-        id={4}
-        time={"FRI 07:00 PM"}
-        title={"P5 Math"}
-        location={"662C Jurong West Street 64 643662"}
-        duration={"1.5h"}
-        price={"$35-45/h"}
-        averagePrice={35}
-        status={"disabled"}
-        level={"Secondary"}
-        subject={"Mathematics"}
+        title={""}
+        location={""}
+        estimated_rate={""}
+        weekly_frequency={0}
+        available_slots={[]}
+        special_requests={""}
+        subjects={[]}
+        level={""}
       ></AssignmentCard>
     );
 
@@ -520,14 +540,14 @@ const ChatApp = () => {
                 <button
                   onClick={async () => {
                     const response = await fetch(`/api/chat/new`, {
-                      method: 'POST',
+                      method: "POST",
                       headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "application/json",
                       },
                       credentials: "include",
                       body: JSON.stringify({
-                        other_id: 10
-                      })
+                        other_id: 10,
+                      }),
                     });
                     if (!response.ok) {
                       throw new Error("Failed to create chat");

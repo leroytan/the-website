@@ -106,6 +106,9 @@ const ImageCropper = ({ closeModal, updateAvatar }: ImageCropperProps) => {
               alt="Upload"
               style={{ maxHeight: "70vh" }}
               onLoad={onImageLoad}
+              fetchPriority="low"
+              loading="lazy"
+              decoding="async"
             />
           </ReactCrop>
           <Button
