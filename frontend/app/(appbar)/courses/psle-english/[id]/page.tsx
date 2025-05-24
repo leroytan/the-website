@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Inter } from 'next/font/google'
@@ -28,11 +28,12 @@ const courseModules: courseModule[] = [
   { id: 8, title: "Exam Strategies and Practice", completed: false, locked: true, videoUrl: "https://example.com/video8.mp4" },
 ]
 
-export default function ModuleVideoPage({ params }: { params: { id: string } }) {
+export default function ModuleVideoPage() {
   const router = useRouter()
+  const params = useParams()
   const [progress, setProgress] = useState(0)
   const [completed, setCompleted] = useState(false)
-  const moduleId = parseInt(params.id)
+  const moduleId = parseInt(params.id as string)
   const currentModule = courseModules.find(m => m.id === moduleId)
   const currentIndex = courseModules.findIndex(m => m.id === moduleId)
   const prevModule = currentIndex > 0 ? courseModules[currentIndex - 1] : null
@@ -112,4 +113,3 @@ export default function ModuleVideoPage({ params }: { params: { id: string } }) 
     </div>
   )
 }
-

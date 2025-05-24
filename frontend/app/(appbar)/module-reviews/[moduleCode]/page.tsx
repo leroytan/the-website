@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Star } from 'lucide-react'
 import { Inter } from 'next/font/google'
-import Header from '@/components/Header'
 import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -90,9 +89,6 @@ export default function ModuleReviewsPage() {
 
   return (
     <div className={`min-h-screen bg-[#fff2de] ${inter.className}`}>
-      <Header toggleSubpage={function (): void {
-              throw new Error('Function not implemented.')
-          } } />
       <main className="pt-24 pb-12">
         <div className="container mx-auto px-4">
           <Link href="/module-reviews" className="inline-flex items-center text-[#4a58b5] hover:text-[#fabb84] mb-4">

@@ -17,13 +17,15 @@ async def create_checkout_session(request: Request, user: User = Depends(RouterA
                 'price': data['price_id'],  # Price ID from the Stripe dashboard
                 'quantity': 1,
             }],
+            mode = data['mode'],
             success_url=f"{data['success_url']}?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=data['cancel_url'],
             metadata={
                 'app_email': user.email,  # Custom metadata to link Stripe data to your user
             }
         )
-        return {"session_id": checkout_session['id']}
+        return {"session_id": checkout_session['id'],
+                "url": checkout_session["url"]}
     except stripe.error.StripeError as e:
         # Handle Stripe-specific errors
         raise HTTPException(status_code=400, detail=str(e.user_message))

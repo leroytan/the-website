@@ -1,59 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BASE_URL } from "./utils/constants";
-import { cookies } from "next/headers";
 
 export async function middleware(request: NextRequest) {
-  const accesstoken = request.cookies.get("access_token");
-  const refreshtoken = request.cookies.get("refresh_token");
-  const isAuthenticated = !!accesstoken;
+  const accessToken = request.cookies.get("access_token")?.value;
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+  const isAuthenticated = !!accessToken;
 
-  const unauthenticatedRoutes = ["/login", "/signup"];
+  const unauthenticatedRoutes = ["/", "/login", "/signup"];
   const authenticatedRoutes = ["/dashboard", "/chat"];
 
-  const path = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
-  const isUnauthenticatedRoute = unauthenticatedRoutes.includes(path);
+  const isUnauthenticatedRoute = unauthenticatedRoutes.includes(pathname);
   const isAuthenticatedRoute = authenticatedRoutes.some((route) =>
-    path.startsWith(route)
+    pathname.startsWith(route)
   );
 
-  // Handle unauthenticated routes
-  if (isUnauthenticatedRoute) {
-    if (isAuthenticated) {
-      // If user is logged in, redirect away from login/signup pages
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-    return NextResponse.next();
+  // If user is logged in and tries to access login/signup
+  if (isUnauthenticatedRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Handle authenticated routes
-  if (isAuthenticatedRoute) {
-    if (!isAuthenticated) {
-      if (!refreshtoken) {
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-      const cookieStore = await cookies();
-      // Try refreshing access token
-      const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
-        method: "POST",
-        headers: { Cookie: cookieStore.toString() },
-      });
-
-      if (refreshResponse.ok) {
-        return NextResponse.next();
-      } else {
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
+  // If user is accessing protected route and is not authenticated
+  if (isAuthenticatedRoute && !isAuthenticated) {
+    if (!refreshToken) {
+      // Redirect to login with callback
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
     }
-    return NextResponse.next();
+
+    return NextResponse.redirect(
+      new URL(`/login?callbackUrl=${pathname}`, request.url)
+    );
   }
 
-  // For routes that are neither authenticated nor unauthenticated
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
