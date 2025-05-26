@@ -41,15 +41,11 @@ export function to12HourTime(input: string): string {
   const date = new Date(input.replace(/\.(\d{3})\d+$/, ".$1"));
   if (isNaN(date.getTime())) throw new Error("Invalid date");
 
-  // Get the timezone offset (in minutes) and adjust the UTC time
-  const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
-  const localDate = new Date(date.getTime() - localOffset * 60000); // Adjust UTC by local timezone offset
-
   // Extract hours, minutes, seconds
   const [h, m, s] = [
-    localDate.getHours(),
-    localDate.getMinutes(),
-    localDate.getSeconds(),
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds(),
   ];
   const hour12 = h % 12 || 12;
   const ampm = h < 12 ? "AM" : "PM";

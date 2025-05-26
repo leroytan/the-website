@@ -1,3 +1,5 @@
+import datetime
+
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, AssignmentSubject,
@@ -5,6 +7,12 @@ from api.storage.models import (Assignment, AssignmentRequest,
                                 Subject, Tutor, TutorLevel, TutorSpecialSkill,
                                 TutorSubject, User)
 
+
+def utc_now():
+    """
+    Returns the current UTC datetime.
+    """
+    return datetime.datetime.now(datetime.timezone.utc)
 
 def insert_test_data(engine: object) -> bool:
     """
@@ -398,19 +406,19 @@ def insert_test_data(engine: object) -> bool:
     # Create assignment requests
     assignment_requests = [
         AssignmentRequest(
-            created_at=datetime.datetime.now() - datetime.timedelta(days=1),
+            created_at=utc_now() - datetime.timedelta(days=1),
             tutor_id=tutors[1].id,  # Bob requesting assignment
             status=AssignmentRequestStatus.PENDING,
             assignment_id=assignments[0].id  # For the first assignment
         ),
         AssignmentRequest(
-            created_at=datetime.datetime.now() - datetime.timedelta(days=3),
+            created_at=utc_now() - datetime.timedelta(days=3),
             tutor_id=tutors[2].id,  # Carol requesting assignment
             status=AssignmentRequestStatus.ACCEPTED,
             assignment_id=assignments[1].id  # For the second assignment
         ),
         AssignmentRequest(
-            created_at=datetime.datetime.now() - datetime.timedelta(days=4),
+            created_at=utc_now() - datetime.timedelta(days=4),
             tutor_id=tutors[5].id,  # Frank requesting assignment
             status=AssignmentRequestStatus.REJECTED,
             assignment_id=assignments[0].id  # For the first assignment
@@ -448,133 +456,133 @@ def insert_test_data(engine: object) -> bool:
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Hi Jane, I need help with my calculus finals.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=2)
+            created_at=utc_now() - datetime.timedelta(hours=2)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Sure John, I can help you with that!",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=50)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Awesome! I'm struggling with integration by parts.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=40)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Let's go through an example. Do you have a problem in mind?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=30)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Yes! ∫x·e^x dx. I don't know where to start.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=25)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Perfect example. You'll want to set u = x and dv = e^x dx.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=20)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Ah, got it. So du = dx and v = e^x?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=15)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=15)
         ),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Exactly! Now use the formula: ∫u·dv = uv - ∫v·du.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=10)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=10)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Bob, are you available for a study session?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=2)
+            created_at=utc_now() - datetime.timedelta(hours=2)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Yes Alice, let's meet this weekend.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=50)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Saturday afternoon works for me. Maybe 2 PM?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=40)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Perfect. Should we meet at the library?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=35)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Yes, third floor study room. I’ll reserve it.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=30)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Great! Let’s cover chapters 5 to 7?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=25)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
         ),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Sounds good. I’ll bring my notes and problem sets.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=20)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="David, I have some questions about the assignment.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=2)
+            created_at=utc_now() - datetime.timedelta(hours=2)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Sure Carol, feel free to ask me anytime.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=50)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="I'm stuck on question 3. What's the best approach?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=40)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Start by identifying the variables. It's mostly substitution.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=35)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="Got it. And question 5? The logic section confused me.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=30)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Focus on truth tables. Want me to walk through one?",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=25)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
         ),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="Yes, please! That would help a lot.",
-            created_at=datetime.datetime.now() - datetime.timedelta(hours=1, minutes=20)
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
         ),
     ]
 

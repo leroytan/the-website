@@ -18,10 +18,10 @@ get:
         type: string
         format: date-time
         default: null
-    - name: message_count
+    - name: limit
       in: query
       required: false
-      description: The number of messages to retrieve per page
+      description: The maximum number of messages to retrieve per page
       schema:
         type: integer
         default: 50
@@ -40,6 +40,9 @@ get:
               message_count:
                 type: integer
                 description: The number of messages retrieved in the current page
+              has_more:
+                type: boolean
+                description: Indicates if there are more messages available beyond the current page
     '401':
       description: Invalid credentials
 ChatMessage:
@@ -48,6 +51,9 @@ ChatMessage:
     id:
       type: integer
       description: Unique identifier for the message
+    chat_id:
+      type: string
+      description: The ID of the chat to which the message belongs
     sender:
       type: string
       description: The sender of the message

@@ -5,7 +5,8 @@ from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
                         ForeignKey, Integer, String, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import declarative_base, declared_attr, relationship
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.sql import func
 from sqlalchemy_serializer import SerializerMixin
 
 # Create a base class for declarative models
@@ -13,8 +14,8 @@ Decl_Base = declarative_base()
 
 class Base(Decl_Base):
     __abstract__ = True
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class User(Base, SerializerMixin):
     """Base User model"""

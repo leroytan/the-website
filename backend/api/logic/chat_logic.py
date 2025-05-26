@@ -5,7 +5,7 @@ from datetime import datetime
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, PrivateChat, User
 from api.storage.storage_service import StorageService
-from fastapi import HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, WebSocket
 from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 
@@ -21,6 +21,7 @@ class ChatLogic:
             sent_by_user = message.sender_id == user_id
             return {
                 "id": message.id,
+                "chat_id": message.chat_id,
                 "sender": message.sender.name,
                 "content": message.content,
                 "created_at": message.created_at.isoformat(),
@@ -99,8 +100,6 @@ class ChatLogic:
             session.add(chat_message)
             session.commit()
             session.refresh(chat_message)
-            convert_message = ChatLogic.get_convert_message(-1)
-            to_send = json.dumps(convert_message(chat_message))
             receiver_id = chat_message.receiver_id
             
             # Send the message to the receiver via WebSocket
@@ -108,12 +107,21 @@ class ChatLogic:
                 # Send the message to the receiver's WebSocket
                 # Ensure that the receiver is connected
                 try:
+                    to_send = json.dumps(ChatLogic.get_convert_message(-1)(chat_message))
                     await active_connections[receiver_id].send_text(to_send)
-                except WebSocketDisconnect:
+                except RuntimeError:
                     active_connections.pop(receiver_id, None)
 
+            if sender_id in active_connections:
+                # Send the message to the sender's WebSocket
+                try:
+                    to_send = json.dumps(ChatLogic.get_convert_message(sender_id)(chat_message))
+                    await active_connections[sender_id].send_text(to_send)
+                except RuntimeError:
+                    active_connections.pop(sender_id, None)
+
     @staticmethod
-    async def get_private_chat_history(chat_id: int, user_id: int, created_before: str, message_count: int) -> list[dict]:
+    async def get_private_chat_history(chat_id: int, user_id: int, created_before: str, limit: int) -> dict:
         convert_message = ChatLogic.get_convert_message(user_id)
 
         with Session(StorageService.engine) as session:
@@ -130,10 +138,16 @@ class ChatLogic:
                 created_before_dt = datetime.fromisoformat(created_before)
                 query = query.filter(ChatMessage.created_at < created_before_dt)
            
-            chat_messages = query.order_by(ChatMessage.created_at.desc()).limit(message_count).all()
-            return [
-                convert_message(message) for message in chat_messages
-            ][::-1]  # Reverse the order to show the oldest messages first
+            chat_messages = query.order_by(ChatMessage.created_at.desc()).limit(limit + 1).all()
+            has_more = len(chat_messages) > limit
+
+            return {
+                "messages": [
+                    convert_message(message) for message in chat_messages[:limit]
+                ][::-1],  # Reverse the order to show the oldest messages first
+                "message_count": len(chat_messages),
+                "has_more": has_more,
+            }
         
    
     @staticmethod
@@ -166,29 +180,31 @@ class ChatLogic:
         """     
     
         with Session(StorageService.engine) as session:
-            async def get_chat_preview(chat: PrivateChat, locked: bool = True) -> dict:
+            async def get_chat_preview(chat: PrivateChat) -> dict:
                 """
                 Get a preview of the chat.
                 """
                 chat_id = chat.id
-                if locked:  # TODO: Implement alias names for locked chats
+                if chat.is_locked:  # TODO: Implement alias names for locked chats
                     other_name = "Anonymous User"
                 else:
                     other_id = chat.user1_id if chat.user1_id != user_id else chat.user2_id
                     other_name = session.query(User).filter(User.id == other_id).first().name
-                messages = await ChatLogic.get_private_chat_history(chat_id, user_id, None, 1)
+                res = await ChatLogic.get_private_chat_history(chat_id, user_id, None, 1)
+                messages = res["messages"]
                 last_message = messages[0]["content"] if messages else ""
                 last_message_time = messages[0]["created_at"] if messages else None
-                unread_count = 5  # Placeholder for unread messages count
+                unread_count = 1  # Placeholder for unread messages count
 
                 # Frontend expects the following format
                 return {
                     "id": chat_id,
                     "name": other_name,
-                    "message": last_message,
-                    "time": last_message_time,
-                    "notifications": unread_count,
-                    "is_locked": locked,
+                    "last_message": last_message,
+                    "last_update": last_message_time,
+                    "unread_count": unread_count,
+                    "is_locked": chat.is_locked,
+                    "has_messages": bool(messages),
                 }
 
             locked_chats = session.query(PrivateChat).filter(
@@ -208,11 +224,8 @@ class ChatLogic:
             ).all()
             
             return {
-                "locked_chats": [
-                    await get_chat_preview(chat, True) for chat in locked_chats
-                ],
-                "unlocked_chats": [
-                    await get_chat_preview(chat, False) for chat in unlocked_chats
+                "chats": [
+                    await get_chat_preview(chat) for chat in locked_chats + unlocked_chats
                 ]
             }
         

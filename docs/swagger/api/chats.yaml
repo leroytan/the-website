@@ -12,11 +12,7 @@ get:
           schema:
             type: object
             properties:
-              locked_chats:
-                type: array
-                items:
-                  $ref: '#/ChatPreview'
-              unlocked_chats:
+              chats:
                 type: array
                 items:
                   $ref: '#/ChatPreview'
