@@ -3,7 +3,7 @@ from collections.abc import Callable
 from datetime import datetime
 
 from api.router.models import NewChatMessage
-from api.storage.models import ChatMessage, PrivateChat, User
+from api.storage.models import ChatMessage, ChatReadStatus, PrivateChat, User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException, WebSocket
 from sqlalchemy import and_
@@ -101,6 +101,15 @@ class ChatLogic:
             session.commit()
             session.refresh(chat_message)
             receiver_id = chat_message.receiver_id
+
+            # Update the read status for the receiver
+            read_status = session.query(ChatReadStatus).filter_by(chat_id=chat_id, user_id=receiver_id).first()
+            if not read_status:
+                read_status = ChatReadStatus(chat_id=chat_id, user_id=receiver_id, is_read=False)
+                session.add(read_status)
+            else:
+                read_status.is_read = False
+            session.commit()
             
             # Send the message to the receiver via WebSocket
             if receiver_id in active_connections:
@@ -194,7 +203,14 @@ class ChatLogic:
                 messages = res["messages"]
                 last_message = messages[0]["content"] if messages else ""
                 last_message_time = messages[0]["created_at"] if messages else None
-                unread_count = 1  # Placeholder for unread messages count
+                read_status = session.query(ChatReadStatus).filter(
+                    ChatReadStatus.chat_id == chat_id,
+                    ChatReadStatus.user_id == user_id,
+                ).first()
+                if not read_status:
+                    has_unread = False
+                else:
+                    has_unread = not read_status.is_read
 
                 # Frontend expects the following format
                 return {
@@ -202,7 +218,7 @@ class ChatLogic:
                     "name": other_name,
                     "last_message": last_message,
                     "last_update": last_message_time,
-                    "unread_count": unread_count,
+                    "has_unread": has_unread,
                     "is_locked": chat.is_locked,
                     "has_messages": bool(messages),
                 }
@@ -229,4 +245,28 @@ class ChatLogic:
                 ]
             }
         
-        
+    @staticmethod
+    async def mark_chat_as_read(chat_id: int, user_id: int) -> None:
+        """
+        Mark a chat as read for the current user.
+
+        Args:
+            chat_id (int): The ID of the chat to mark as read.
+            user_id (int): The ID of the user marking the chat as read.
+        """
+        with Session(StorageService.engine) as session:
+            chat = session.query(PrivateChat).filter(PrivateChat.id == chat_id).first()
+            if not chat:
+                raise HTTPException(status_code=404, detail="Chatroom not found.")
+            if chat.user1_id != user_id and chat.user2_id != user_id:
+                raise HTTPException(status_code=403, detail="You are not authorized to mark this chat as read.")
+            session.add(chat)
+            
+            status = session.query(ChatReadStatus).filter_by(chat_id=chat_id, user_id=user_id).first()
+            if not status:
+                status = ChatReadStatus(chat_id=chat_id, user_id=user_id, is_read=True)
+                session.add(status)
+            else:
+                status.is_read = True
+
+            session.commit()

@@ -229,6 +229,8 @@ class PrivateChat(Base, SerializerMixin):
     # Relationships
     user1 = relationship('User', foreign_keys=[user1_id])
     user2 = relationship('User', foreign_keys=[user2_id])
+    messages = relationship('ChatMessage', back_populates='chat', cascade='all, delete-orphan')
+    
 
     # Constraints
     __table_args__ = (
@@ -247,7 +249,7 @@ class ChatMessage(Base, SerializerMixin):
     
     # Relationships
     sender = relationship('User', foreign_keys=[sender_id])
-    chat = relationship('PrivateChat', foreign_keys=[chat_id])
+    chat = relationship('PrivateChat', foreign_keys=[chat_id], back_populates='messages')
 
     @hybrid_property
     def receiver_id(self):
@@ -256,3 +258,18 @@ class ChatMessage(Base, SerializerMixin):
     @hybrid_property
     def receiver(self):
         return self.chat.user2 if self.sender_id == self.chat.user1_id else self.chat.user1
+
+class ChatReadStatus(Base):
+    __tablename__ = 'ChatReadStatus'
+
+    id = Column(Integer, primary_key=True)
+    chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('User.id'), nullable=False)
+    is_read = Column(Boolean, default=False)
+
+    __table_args__ = (
+        UniqueConstraint('chat_id', 'user_id', name='uix_chat_user_read'),
+    )
+
+    chat = relationship('PrivateChat', backref='read_statuses')
+    user = relationship('User')

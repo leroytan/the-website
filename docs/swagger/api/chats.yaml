@@ -25,16 +25,19 @@ ChatPreview:
     name:
       type: string
       description: Name of the other party
-    message:
+    last_message:
       type: string
       description: The last message in the chat
-    time:
+    last_update:
       type: string
       format: date-time
       description: Timestamp of the last message in the chat
-    notifications:
-      type: integer
-      description: Number of unread messages in the chat
+    has_unread:
+      type: boolean
+      description: Indicates if there are unread messages in the chat
     is_locked:
       type: boolean
       description: Indicates if the chat is locked
+    has_messages:
+      type: boolean
+      description: Indicates if the chat has any messages

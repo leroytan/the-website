@@ -75,6 +75,21 @@ async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_cu
     res = await ChatLogic.get_private_chat_history(id, user.id, created_before, limit)
     return res
 
+# route for updating state of chat as read
+@router.post("/api/chat/{id}/read")
+async def mark_chat_as_read(id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+    """
+    Mark a chat as read for the current user.
+
+    Args:
+        id (int): The ID of the chat to mark as read.
+        user (User): The current user.
+    Returns:
+        dict: A dictionary indicating success or failure.
+    """
+    await ChatLogic.mark_chat_as_read(id, user.id)
+    return {"status": "success", "message": "Chat marked as read."}
+
 @router.get("/api/chats")
 async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     """

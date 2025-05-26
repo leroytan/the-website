@@ -19,7 +19,8 @@ const ChatApp = () => {
     private title: string;
     private messages: Message[];
     private initialPreview: ChatPreview;
-    private hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
+    public hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
+    public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no unread messages
 
     static fromPreviewDTO(dto: ChatPreviewBackendDTO): ChatThread {
       const messages: Message[] = []; // Initialize with an empty array
@@ -28,7 +29,7 @@ const ChatApp = () => {
         name: dto.name,
         lastMessage: dto.last_message,
         displayTime: timeAgo(dto.last_update),
-        unreadCount: dto.unread_count,
+        hasUnread: dto.has_unread,
         isLocked: dto.is_locked,
         hasMessages: dto.has_messages,
         lastUpdate: new Date(dto.last_update),
@@ -68,12 +69,13 @@ const ChatApp = () => {
         name: title,
         lastMessage: "No messages yet",
         displayTime: "",
-        unreadCount: 0,
+        hasUnread: false,
         isLocked: isLocked,
         hasMessages: false,
         lastUpdate: new Date(),
       };
       this.hasMoreMessages = this.initialPreview.hasMessages;
+      this.hasUnreadMessages = this.initialPreview.hasUnread;
     }
 
     getDisplayMessages(): MessageDisplay[] {
@@ -109,18 +111,13 @@ const ChatApp = () => {
       })).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
 
-    addRecentMessages(messages: MessageBackendDTO[]): void {
-      const newMessages = this.convertSortMessages(messages);
-      this.messages.push(...newMessages);
+    addRecentMessage(message: MessageBackendDTO): void {
+      this.messages.push(...this.convertSortMessages([message]));
     }
 
     addHistoricalMessages(messages: MessageBackendDTO[]): void {
       const newMessages = this.convertSortMessages(messages);
       this.messages.unshift(...newMessages);
-    }
-
-    getUnreadCount(): number {
-      return 1;  // Placeholder for notification count logic
     }
 
     getPreview(): ChatPreview {
@@ -133,19 +130,11 @@ const ChatApp = () => {
         name: this.title,
         lastMessage: latestMessage.content,
         displayTime: timeAgo(latestMessage.createdAt),
-        unreadCount: this.getUnreadCount(),
+        hasUnread: this.hasUnreadMessages,
         isLocked: this.isLocked,
         hasMessages: this.messages.length > 0,
         lastUpdate: new Date(latestMessage.createdAt),
       };
-    }
-
-    setHasMoreMessages(hasMore: boolean): void {
-      this.hasMoreMessages = hasMore;
-    }
-
-    hasMoreMessagesToLoad(): boolean {
-      return this.hasMoreMessages;
     }
 
     clone(): ChatThread {
@@ -182,7 +171,7 @@ const ChatApp = () => {
     name: string;                  // Display name (user or group)
     last_message: string;          // Plain text version of the latest message
     last_update: string;           // ISO 8601 string for sorting and display
-    unread_count: number;          // For notification badge
+    has_unread: boolean;          // For notification badge
     is_locked: boolean;           // Optional security/status flag
     has_messages: boolean;         // If chat is empty, hide or style differently
   };
@@ -192,7 +181,7 @@ const ChatApp = () => {
     name: string;
     lastMessage: string | ReactElement; // The latest message content, can be a string or React element
     displayTime: string;
-    unreadCount: number;
+    hasUnread: boolean;
     isLocked?: boolean; // true if the chat is locked, false if unlocked
     hasMessages: boolean; // true if the chat has messages, false if no messages
     lastUpdate: Date; // Date object for sorting and display
@@ -341,43 +330,48 @@ const ChatApp = () => {
     }
   };
 
-  // Define and invoke an async function inside
-  const fetchMessages = async () => {
+  const fetchHistoricalMessages = async () => {
     const container = scrollRef.current;
     if (!container) return;
-
+  
+    const existingThread = chatData[selectedChat] || new ChatThread(selectedChat, false);
+    if (!existingThread.hasMoreMessages) {
+      return;
+    }
+  
     const previousScrollHeight = container.scrollHeight;
-
+  
     try {
-      const chatThread = chatData[selectedChat] || new ChatThread(selectedChat, false);
-      if (!chatThread.hasMoreMessagesToLoad()) {
-        return;
-      }
-      const createdBefore = chatThread.getEarliestMessageCreated();
-      const params = new URLSearchParams({ limit: "50" });
+      const createdBefore = existingThread.getEarliestMessageCreated();
+      const params = new URLSearchParams({ limit: "10" });
       if (createdBefore) {
         params.append("created_before", createdBefore);
       }
-
+  
       const response = await fetch(`/api/chat/${selectedChat}?${params}`, {
         method: "GET",
         credentials: "include",
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch chat messages");
       }
-
+  
       const data = await response.json();
-      chatThread.addHistoricalMessages(data.messages);
-      chatThread.setHasMoreMessages(data.has_more);
-
-      setChatData((prevChatData) => ({
-        ...prevChatData,
-        [selectedChat]: chatThread,
-      }));
-
-      // Wait for DOM update — 2 RAFs ensures layout has finished
+  
+      // Apply update inside setChatData
+      setChatData((prevChatData) => {
+        const updatedThread = prevChatData[selectedChat]?.clone() || new ChatThread(selectedChat, false);
+        updatedThread.addHistoricalMessages(data.messages);
+        updatedThread.hasMoreMessages = data.has_more;
+  
+        return {
+          ...prevChatData,
+          [selectedChat]: updatedThread,
+        };
+      });
+  
+      // Restore scroll position
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           const newScrollHeight = container.scrollHeight;
@@ -398,14 +392,14 @@ const ChatApp = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChat]);
+  }, [selectedChat, chatMessages]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       if (scrollRef.current?.scrollTop === 0) {
-        fetchMessages(); // call the async function
+        fetchHistoricalMessages(); // call the async function
       }
     };
   
@@ -415,7 +409,7 @@ const ChatApp = () => {
     return () => {
       scrollContainer?.removeEventListener("scroll", handleScroll);
     };
-  }, [fetchMessages, chatMessages, selectedChat]);
+  }, [fetchHistoricalMessages]);
   
 
   const initWebSocket = async () => {
@@ -438,8 +432,9 @@ const ChatApp = () => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
       setChatData((prevChatData: ChatData) => {
         const chatId = parsedData.chat_id;
-        const chatThread = prevChatData[chatId].clone() || ChatThread.fromMessageDTO(parsedData);
-        chatThread.addRecentMessages([parsedData]);
+        const chatThread = prevChatData[chatId]?.clone() || ChatThread.fromMessageDTO(parsedData);
+        chatThread.addRecentMessage(parsedData);
+        chatThread.hasUnreadMessages = !parsedData.sent_by_user;
         return {
           ...prevChatData,
           [chatId]: chatThread,
@@ -465,13 +460,28 @@ const ChatApp = () => {
     return () => socketRef.current?.close();
   }, []);
 
-  const handleChatSelection = (chatId: number) => {
+  const handleChatSelection = async (chatId: number) => {
     setSelectedChat(chatId);
     setShowChat(true);
     setNewMessage("");
     if (chatMessages.length < 10) {
-      fetchMessages();
+      fetchHistoricalMessages();
     }
+    const response = await fetch(`/api/chat/${chatId}/read`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      console.error("Failed to mark chat as read");
+    }
+    setChatData((prevChatData) => {
+      const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
+      updatedThread.hasUnreadMessages = false; // Mark as read
+      return {
+        ...prevChatData,
+        [chatId]: updatedThread,
+      };
+    });
   };
 
   const handleSendMessage = () => {
@@ -558,24 +568,24 @@ const ChatApp = () => {
                 Locked
               </div>
               <div className="space-y-2">
-                {lockedChats.map((chat, index) => (
+                {lockedChats.map((preview, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
-                    onClick={() => handleChatSelection(chat.id)}
+                    onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
                       <div>
-                        <p className="font-medium">{chat.name}</p>
-                        <p className="text-sm text-gray-500">{chat.lastMessage}</p>
+                        <p className="font-medium">{preview.name}</p>
+                        <p className="text-sm text-gray-500">{preview.lastMessage}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">{chat.displayTime}</p>
-                      {chat.unreadCount > 0 && (
+                      <p className="text-xs text-gray-400">{preview.displayTime}</p>
+                      {preview.hasUnread && (
                         <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
-                          {chat.unreadCount}
+                          {/* {preview.unreadCount} */}
                         </span>
                       )}
                     </div>
@@ -589,24 +599,24 @@ const ChatApp = () => {
                 Unlocked
               </div>
               <div className="space-y-2">
-                {unlockedChats.map((chat, index) => (
+                {unlockedChats.map((preview, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
-                    onClick={() => handleChatSelection(chat.id)}
+                    onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
                       <div>
-                        <p className="font-medium">{chat.name}</p>
-                        <p className="text-sm text-gray-500">{chat.lastMessage}</p>
+                        <p className="font-medium">{preview.name}</p>
+                        <p className="text-sm text-gray-500">{preview.lastMessage}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">{chat.displayTime}</p>
-                      {chat.unreadCount > 0 && (
+                      <p className="text-xs text-gray-400">{preview.displayTime}</p>
+                      {preview.hasUnread && (
                         <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
-                          {chat.unreadCount}
+                          {/* {chat.unreadCount} */}
                         </span>
                       )}
                     </div>
