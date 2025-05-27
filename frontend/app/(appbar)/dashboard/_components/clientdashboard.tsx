@@ -167,7 +167,24 @@ export default function ClientDashboard({
           requests={selectedRequests}
           onClose={() => setModalOpen(false)}
           onAccept={handleAccept}
-          onChat={(id) => console.log("Chat", id)}
+          onChat={async (id) => {
+            const response = await fetch(`/api/chat/get-or-create`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ other_user_id: id }),
+              credentials: "include",
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(`Failed to create chat: ${error.message}`);
+            }
+
+            const chatPreview = await response.json();
+            router.push(`/chat/tutee?chatId=${chatPreview.id}`);
+          }}
           onProfile={(id) => console.log("Profile", id)}
         />
       )}
