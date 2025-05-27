@@ -152,12 +152,16 @@ class SearchQuery(BaseModel):
     query: str | None
     filters: list[str] | None
     sorts: list[str] | None
+    page_size: int | None  # Let the API handle default
+    page_number: int = 1
 
 T = TypeVar("T")
 
 class SearchResult(BaseModel, Generic[T]):
     results: list[T]
     filters: dict[str, list[dict[str, str]]]
+    num_pages: int = 1
+    ids: list[int] | None = None  # Optional list of IDs for the results
 
 class NewChatMessage(BaseModel):
     chat_id: int

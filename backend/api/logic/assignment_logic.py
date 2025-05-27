@@ -1,4 +1,5 @@
 import enum
+import math
 from collections.abc import Callable
 
 from api.logic.filter_logic import FilterLogic
@@ -23,6 +24,8 @@ class ViewType(enum.Enum):
     PUBLIC = "public"
 
 class AssignmentLogic:
+
+    PAGE_SIZE = 10  # Default page size for pagination
 
     @staticmethod
     def convert_assignment_to_view(session: Session, assignment: Assignment, view_type: ViewType = ViewType.PUBLIC, user_id: int = None) -> AssignmentOwnerView | AssignmentPublicView:
@@ -82,13 +85,13 @@ class AssignmentLogic:
                 for request in assignment.assignment_requests:
                     if request.tutor_id == user_id:
                         base_data["applied"] = True
-                        base_data["request_status"] = request.status
+                        base_data["request_status"] = str(request.status)
                         break
             return AssignmentPublicView(**base_data)
         
 
     @staticmethod
-    def search_assignments(search_query: SearchQuery, user_id: int = None) -> list[AssignmentPublicView]:
+    def search_assignments(search_query: SearchQuery, user_id: int = None) -> dict:
 
         with Session(StorageService.engine) as session:
             filters = []
@@ -124,13 +127,22 @@ class AssignmentLogic:
                 filters.append(Assignment.level_id.in_(parsed_filters["level"]))
 
             statement = statement.filter(and_(*filters))
+            statement = statement.order_by(Assignment.created_at.desc(), Assignment.id.asc())
 
-            assignments = StorageService.find(session, statement, Assignment)
+            # Apply pagination
+            page_size = search_query.page_size or AssignmentLogic.PAGE_SIZE
+            offset = (search_query.page_number - 1) * page_size
+            num_pages = math.ceil(statement.count() / page_size)
+            statement = statement.offset(offset).limit(page_size)
+            assignments = statement.all()
 
-            # Convert the list of Tutor objects to TutorPublicSummary objects            
-            summaries = [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC, user_id) for assignment in assignments]
+            # Convert the list of Tutor objects to AssignmentPublicView objects            
+            results = [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC, user_id) for assignment in assignments]
 
-            return summaries
+            return {
+                "results": results,
+                "num_pages": num_pages,
+            }
         
     @staticmethod
     def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentOwnerView:

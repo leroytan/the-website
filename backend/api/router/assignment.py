@@ -9,12 +9,11 @@ from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                SearchQuery, SearchResult)
 from api.storage.models import Assignment, User
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 
 @router.get("/api/assignments")
-async def search_assignments(request: Request, query: str = "", filters: str = "", sorts: str = "") -> SearchResult[AssignmentPublicView]:
+async def search_assignments(request: Request, query: str = "", filters: str = "", sorts: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[AssignmentPublicView]:
     if settings.is_use_mock:
         return mock.get_assignments()
     
@@ -27,6 +26,8 @@ async def search_assignments(request: Request, query: str = "", filters: str = "
         query=query,
         filters=filter_ids,
         sorts=sort_ids,
+        page_size=page_size,
+        page_number=page_number
     )
 
     user = None
@@ -36,12 +37,13 @@ async def search_assignments(request: Request, query: str = "", filters: str = "
         if e.status_code != 401:
             raise e
 
-    results = AssignmentLogic.search_assignments(search_query, user.id if user else None)
+    res = AssignmentLogic.search_assignments(search_query, user.id if user else None)
     filters = FilterLogic.get_filters(Assignment)
 
     return SearchResult[AssignmentPublicView](
-        results=results,
+        results=res["results"],
         filters=filters,
+        num_pages=res["num_pages"],
     )
 
 

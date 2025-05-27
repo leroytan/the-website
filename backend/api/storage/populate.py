@@ -6,6 +6,7 @@ from api.storage.models import (Assignment, AssignmentRequest,
                                 ChatMessage, Level, PrivateChat, SpecialSkill,
                                 Subject, Tutor, TutorLevel, TutorSpecialSkill,
                                 TutorSubject, User)
+from sqlalchemy.orm import Session
 
 
 def utc_now():
@@ -14,6 +15,89 @@ def utc_now():
     """
     return datetime.datetime.now(datetime.timezone.utc)
 
+import random
+
+
+def generate_bulk_assignments(session: Session, users: list[User], tutors: list[Tutor], subjects: list[Subject], levels: list[Level], count=50, seed=42):
+    """
+    Generate a batch of assignments with reproducible data using a random seed.
+    
+    Args:
+        session: SQLAlchemy session
+        users: List of User objects (assumed at least 2 to pick from)
+        tutors: List of Tutor objects
+        subjects: List of Subject objects
+        levels: List of Level objects
+        count: Number of assignments to generate
+        seed: Random seed for reproducibility
+    """
+    random.seed(seed)
+
+    status_choices = [AssignmentStatus.OPEN, AssignmentStatus.FILLED]
+    locations = [
+        "Orchard", "Woodlands", "Clementi", "Pasir Ris", "Ang Mo Kio",
+        "Hougang", "Tampines", "Yishun", "Bukit Timah", "Sengkang"
+    ]
+    time_slots = [("Monday", "16:00", "18:00"), ("Wednesday", "18:00", "20:00"), ("Saturday", "10:00", "12:00"),
+                  ("Thursday", "14:00", "16:00"), ("Sunday", "11:00", "13:00")]
+    
+    special_requests = [
+        "Need help with exam preparation", "Looking for long-term tutoring",
+        "Flexible schedule preferred", "Special needs assistance required",
+        "Advanced topics in subject", "Homework help needed",
+        "Looking for group tutoring sessions", "Need help with project work",
+        "Prefer online sessions", "Looking for weekend availability",
+        "Need assistance with test-taking strategies", "Looking for a tutor with experience in special education",
+    ]
+
+    slots = []
+    assignment_subjects = []
+
+    for i in range(count):
+        requester = random.choice(users)
+        assigned_tutor = random.choice(tutors + [None])
+        level = random.choice(levels)
+        subject = random.choice(subjects)
+        title = f"{subject.name} Tutoring Session #{i+1}"
+        rate = f"${random.choice([30, 35, 40, 45, 50])}/hour"
+        status = random.choice(status_choices)
+        assigned_tutor = random.choice(tutors) if status == AssignmentStatus.FILLED else None
+
+        assignment = Assignment(
+            title=title,
+            owner_id=requester.id,
+            tutor_id=assigned_tutor.id if assigned_tutor else None,
+            level_id=level.id,
+            estimated_rate=rate,
+            weekly_frequency=random.choice([1, 2, 3]),
+            special_requests=random.choice(special_requests),
+            status=status,
+            location=random.choice(locations) + ", Singapore"
+        )
+        session.add(assignment)
+        session.flush()  # Ensure assignment.id is available
+
+        # Add 1–2 random time slots
+        for day, start, end in random.sample(time_slots, k=random.choice([1, 2])):
+            slots.append(AssignmentSlot(
+                assignment_id=assignment.id,
+                day=day,
+                start_time=start,
+                end_time=end
+            ))
+
+        # Link at least one subject
+        assignment_subjects.append(AssignmentSubject(
+            assignment_id=assignment.id,
+            subjectId=subject.id
+        ))
+
+    session.add_all(slots)
+    session.add_all(assignment_subjects)
+    session.commit()
+    print(f"✅ {count} seeded assignments added with seed={seed}.")
+
+
 def insert_test_data(engine: object) -> bool:
     """
     Populate the database with test data for development and testing purposes.
@@ -21,9 +105,6 @@ def insert_test_data(engine: object) -> bool:
     Args:
         session: SQLAlchemy engine object
     """
-    import datetime
-
-    from sqlalchemy.orm import Session
 
     session = Session(engine)
 
@@ -587,6 +668,8 @@ def insert_test_data(engine: object) -> bool:
     ]
 
     session.add_all(chat_messages)
+
+    generate_bulk_assignments(session, users, tutors, subjects, levels, count=50, seed=42)
     
     # Final commit
     session.commit()
