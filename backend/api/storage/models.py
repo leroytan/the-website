@@ -96,8 +96,10 @@ class AssignmentSlot(Base):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
+    assignment_id = Column(Integer, ForeignKey('Assignment.id'), nullable=True)  # Foreign key to Assignment
     assignment = relationship('Assignment', back_populates='available_slots')
+    assignment_request_id = Column(Integer, ForeignKey('AssignmentRequest.id'), nullable=True)  # Foreign key to Assignment
+    assignment_request = relationship('AssignmentRequest', back_populates='available_slots')
     day = Column(String, nullable=False)
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)
@@ -126,6 +128,7 @@ class AssignmentRequest(Base):
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     assignment = relationship('Assignment', foreign_keys=[assignment_id], back_populates='assignment_requests')
+    available_slots = relationship('AssignmentSlot', back_populates='assignment_request', primaryjoin="AssignmentRequest.id == AssignmentSlot.assignment_request_id")
 
     # Constraints
     # Composite unique constraint on column1 and column2

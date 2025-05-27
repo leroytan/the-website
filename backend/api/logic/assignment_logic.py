@@ -4,9 +4,9 @@ from collections.abc import Callable
 from api.logic.filter_logic import FilterLogic
 from api.logic.user_logic import UserLogic
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
-                               AssignmentRequestView)
-from api.router.models import AssignmentSlot as AssignmentSlotView
-from api.router.models import NewAssignment, SearchQuery
+                               AssignmentRequestView, AssignmentSlotView,
+                               NewAssignment, NewAssignmentRequest,
+                               SearchQuery)
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, Level, Subject, Tutor, User)
@@ -63,6 +63,15 @@ class AssignmentLogic:
                     tutor_id=request.tutor_id,
                     tutor_name=request.tutor.user.name,
                     tutor_profile_photo_url=UserLogic.get_profile_photo_url(request.tutor_id),
+                    available_slots=[
+                        AssignmentSlotView(
+                            id=slot.id,
+                            day=slot.day,
+                            start_time=slot.start_time,
+                            end_time=slot.end_time,
+                        )
+                        for slot in request.available_slots
+                    ],
                     status=request.status
                 )
                 for request in assignment.assignment_requests
@@ -231,7 +240,7 @@ class AssignmentLogic:
             return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
         
     @staticmethod
-    def request_assignment(assignment_id: str | int, tutor_id: str | int) -> None:
+    def request_assignment(assignment_id: str | int, new_assignment_request: NewAssignmentRequest, tutor_id: str | int) -> None:
         with Session(StorageService.engine) as session:
             # Find the assignment
             assignment = StorageService.find(session, {"id": assignment_id}, Assignment, find_one=True)
@@ -255,10 +264,24 @@ class AssignmentLogic:
             
             # Create a request
             try:
-                StorageService.insert(session, AssignmentRequest(
+                assignment_req = AssignmentRequest(
                     assignment_id=assignment.id,
-                    tutor_id=tutor_id
-                ))
+                    tutor_id=tutor_id,
+                )
+
+                session.add(assignment_req)
+                session.flush()  # Ensure the assignment_req has an ID before adding slots
+
+                # Create assignment slots
+                for slot in new_assignment_request.available_slots:
+                    assignment_slot = AssignmentSlot(
+                        day=slot.day,
+                        start_time=slot.start_time,
+                        end_time=slot.end_time,
+                        assignment_request_id=assignment_req.id
+                    )
+                    session.add(assignment_slot)
+                session.commit()
             except IntegrityError as e:
                 if isinstance(e.orig, ForeignKeyViolation):
                     raise HTTPException(

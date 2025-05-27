@@ -91,7 +91,7 @@ class Module(BaseModel):
     name: str
     reviews: list[Review]
 
-class AssignmentSlot(BaseModel):
+class AssignmentSlotView(BaseModel):
     id: int
     day: str
     start_time: str
@@ -104,7 +104,11 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    available_slots: list[AssignmentSlotView]
     status: str
+
+class NewAssignmentRequest(BaseModel):
+    available_slots: list[AssignmentSlotView]  # List of slot IDs
 
 class AssignmentBaseView(BaseModel):
     id: int
@@ -114,7 +118,7 @@ class AssignmentBaseView(BaseModel):
     owner_id: int
     estimated_rate: str
     weekly_frequency: int
-    available_slots: list[AssignmentSlot]
+    available_slots: list[AssignmentSlotView]
     special_requests: str
     subjects: list[str]
     level: str

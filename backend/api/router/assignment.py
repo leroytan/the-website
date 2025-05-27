@@ -5,7 +5,8 @@ from api.logic.filter_logic import FilterLogic
 from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
-                               NewAssignment, SearchQuery, SearchResult)
+                               NewAssignment, NewAssignmentRequest,
+                               SearchQuery, SearchResult)
 from api.storage.models import Assignment, User
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -75,11 +76,11 @@ async def update_assignment(id: int, assignment: NewAssignment, user: User = Dep
     return AssignmentLogic.update_assignment_by_id(id, assignment, assert_user_authorized)
 
 @router.post("/api/assignments/{id}/request")
-async def request_assignment(id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
+async def request_assignment(id: int, assignment_request: NewAssignmentRequest, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
     if settings.is_use_mock:
         return Response(200)
-    
-    AssignmentLogic.request_assignment(id, user.id)
+
+    AssignmentLogic.request_assignment(id, assignment_request, user.id)
     return {"message": "Assignment requested successfully."}
 
 @router.put("/api/assignment-requests/{id}/change-status")

@@ -1,6 +1,6 @@
-import { cookies } from "next/headers";
 import ComponentLayout from "@/components/layout";
 import { BASE_URL } from "@/utils/constants";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function RootLayout({
 
   if (accessToken) {
     try {
-      const res = await fetch(`${BASE_URL}/api/me`, {
+      const res = await fetch(`${BASE_URL}/me`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
