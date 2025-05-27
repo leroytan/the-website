@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     is_use_mock: bool = True
     db_populate_check: bool = False
     stripe_api_key: str
+    stripe_product_name: str
+    stripe_webhook_secret: str
     r2_endpoint: str
     r2_access_key_id: str
     r2_secret_key: str
