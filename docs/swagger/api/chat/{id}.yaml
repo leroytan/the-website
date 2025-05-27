@@ -10,16 +10,18 @@ get:
       description: The chat id
       schema:
         type: string
-    - name: last_message_id
+    - name: created_before
       in: query
       required: false
-      description: The ID of the most recent message to be retrieved.
+      description: The timestamp in isoformat before which messages were created. Used for pagination.
       schema:
-        type: integer
-    - name: message_count
+        type: string
+        format: date-time
+        default: null
+    - name: limit
       in: query
       required: false
-      description: The number of messages to retrieve per page
+      description: The maximum number of messages to retrieve per page
       schema:
         type: integer
         default: 50
@@ -35,12 +37,12 @@ get:
                 type: array
                 items:
                   $ref: '#/ChatMessage'
-              last_unretrieved_message_id:
-                type: string
-                description: The ID of the last unretrieved message
               message_count:
                 type: integer
                 description: The number of messages retrieved in the current page
+              has_more:
+                type: boolean
+                description: Indicates if there are more messages available beyond the current page
     '401':
       description: Invalid credentials
 ChatMessage:
@@ -49,16 +51,23 @@ ChatMessage:
     id:
       type: integer
       description: Unique identifier for the message
+    chat_id:
+      type: string
+      description: The ID of the chat to which the message belongs
     sender:
       type: string
       description: The sender of the message
     content:
       type: string
       description: The content of the message
-    time:
+    created_at:
       type: string
       format: date-time
-      description: The time the message was sent
+      description: The timestamp when the message was created
+    updated_at:
+      type: string
+      format: date-time
+      description: The timestamp when the message was last updated
     sentByUser:
       type: boolean
       description: Indicates if the message was sent by the user

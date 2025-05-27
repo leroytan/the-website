@@ -3,236 +3,312 @@ import AssignmentCard from "@/components/assignmentCard";
 import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
 import { BASE_URL } from "@/utils/constants";
+import { timeAgo, to12HourTime } from "@/utils/date";
 import { motion } from "framer-motion";
 import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 const ChatApp = () => {
+
+  class ChatThread {
+    private id: number;
+    private isLocked: boolean; // true if the chat is locked, false if unlocked
+    private title: string;
+    private messages: Message[];
+    private initialPreview: ChatPreview;
+    public hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
+    public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no unread messages
+
+    static fromPreviewDTO(dto: ChatPreviewBackendDTO): ChatThread {
+      const messages: Message[] = []; // Initialize with an empty array
+      const preview = dto.has_messages ? {
+        id: dto.id,
+        name: dto.name,
+        lastMessage: dto.last_message,
+        displayTime: timeAgo(dto.last_update),
+        hasUnread: dto.has_unread,
+        isLocked: dto.is_locked,
+        hasMessages: dto.has_messages,
+        lastUpdate: new Date(dto.last_update),
+      } : null;
+      return new ChatThread(
+        dto.id,
+        dto.is_locked,
+        dto.name,
+        messages,
+        preview,
+      );
+    }
+
+    static fromMessageDTO(dto: MessageBackendDTO): ChatThread {
+      const messages: Message[] = [{
+        id: dto.id,
+        sender: dto.sender,
+        content: dto.content,
+        createdAt: dto.created_at,
+        updatedAt: dto.updated_at,
+        sentByUser: dto.sent_by_user,
+      }];
+      // Ideally, these fields should be emitted by the backend when creating a new chat
+      // For now, we assume the chat is locked and the sender is the first message's sender
+      const isLocked = true; // new chats are locked by default
+      const sender = dto.sender; // the sender of the first message
+      return new ChatThread(dto.chat_id, isLocked, sender, messages);
+    }
+
+    constructor(id: number, isLocked: boolean, title: string = "Select a chat", messages: Message[] = [], initialPreview: ChatPreview | null = null) {
+      this.id = id;
+      this.isLocked = isLocked;
+      this.title = title;
+      this.messages = messages;
+      this.initialPreview = initialPreview || {
+        id: id,
+        name: title,
+        lastMessage: "No messages yet",
+        displayTime: "",
+        hasUnread: false,
+        isLocked: isLocked,
+        hasMessages: false,
+        lastUpdate: new Date(),
+      };
+      this.hasMoreMessages = this.initialPreview.hasMessages;
+      this.hasUnreadMessages = this.initialPreview.hasUnread;
+    }
+
+    getDisplayMessages(): MessageDisplay[] {
+      return this.messages.map((message) => ({
+        sender: message.sender,
+        content: message.content,
+        time: to12HourTime(message.createdAt),
+        sentByUser: message.sentByUser,
+      }));
+    }
+
+    getTitle(): string {
+      return this.title;
+    }
+
+    getLatestMessage(): Message | null {
+      return this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
+    }
+
+    getEarliestMessageCreated(): string | null {
+      const earliestMessage = this.messages.length > 0 ? this.messages[0] : null;
+      return earliestMessage ? earliestMessage.createdAt : null;
+    }
+
+    private convertSortMessages(messages: MessageBackendDTO[]): Message[] {
+      return messages.map((msg) => ({
+        id: msg.id,
+        sender: msg.sender,
+        content: msg.content,
+        createdAt: msg.created_at,
+        updatedAt: msg.updated_at,
+        sentByUser: msg.sent_by_user,
+      })).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+
+    addRecentMessage(message: MessageBackendDTO): void {
+      this.messages.push(...this.convertSortMessages([message]));
+    }
+
+    addHistoricalMessages(messages: MessageBackendDTO[]): void {
+      const newMessages = this.convertSortMessages(messages);
+      this.messages.unshift(...newMessages);
+    }
+
+    getPreview(): ChatPreview {
+      const latestMessage = this.getLatestMessage();
+      if (latestMessage === null) {
+        return this.initialPreview;
+      }
+      return {
+        id: this.id,
+        name: this.title,
+        lastMessage: latestMessage.content,
+        displayTime: timeAgo(latestMessage.createdAt),
+        hasUnread: this.hasUnreadMessages,
+        isLocked: this.isLocked,
+        hasMessages: this.messages.length > 0,
+        lastUpdate: new Date(latestMessage.createdAt),
+      };
+    }
+
+    clone(): ChatThread {
+      const copiedMessages = this.messages.map((msg) => ({
+        id: msg.id,
+        sender: msg.sender,
+        content: msg.content,
+        createdAt: msg.createdAt,
+        updatedAt: msg.updatedAt,
+        sentByUser: msg.sentByUser,
+      }));
+      const copiedPreview = this.initialPreview
+        ? { ...this.initialPreview }
+        : null;
+    
+      const newThread = new ChatThread(
+        this.id,
+        this.isLocked,
+        this.title,
+        copiedMessages,
+        copiedPreview
+      );
+    
+      return newThread;
+    }
+  }
+
+  interface ChatData {
+    [key: number]: ChatThread;
+  }
+  
+  type ChatPreviewBackendDTO = {
+    id: number;                    // Needed for navigation or fetching full chat
+    name: string;                  // Display name (user or group)
+    last_message: string;          // Plain text version of the latest message
+    last_update: string;           // ISO 8601 string for sorting and display
+    has_unread: boolean;          // For notification badge
+    is_locked: boolean;           // Optional security/status flag
+    has_messages: boolean;         // If chat is empty, hide or style differently
+  };
+
   type ChatPreview = {
     id: number;
     name: string;
-    message: string;
-    time: string;
-    notifications: number;
+    lastMessage: string | ReactElement; // The latest message content, can be a string or React element
+    displayTime: string;
+    hasUnread: boolean;
+    isLocked?: boolean; // true if the chat is locked, false if unlocked
+    hasMessages: boolean; // true if the chat has messages, false if no messages
+    lastUpdate: Date; // Date object for sorting and display
   };
 
-  type Number2String = {
-    [key: number]: string;
-  };
+  type MessageBackendDTO = {
+    id: number;
+    chat_id: number;
+    sender: string;
+    content: string;
+    created_at: string; // ISO 8601 format
+    updated_at: string; // ISO 8601 format
+    sent_by_user: boolean; // true if sent by the user, false if sent by the other party
+  }
 
   type Message = {
-    id?: number;
+    id: number;
     sender: string;
-    message: string | ReactElement;
+    content: string | ReactElement;
+    createdAt: string; // ISO 8601 format
+    updatedAt: string; // ISO 8601 format
+    sentByUser: boolean; // true if sent by the user, false if sent by the other party
+  }
+
+  type MessageDisplay = {
+    sender: string;
+    content: string | ReactElement;
     time: string;
     sentByUser: boolean;
   };
 
-  type ChatHistory = {
-    [key: number]: Message[];
-  };
-
-  interface ChatData {
-    lockedChats: ChatPreview[];
-    unlockedChats: ChatPreview[];
-    displayNames: Number2String;
-    chatHistory: ChatHistory;
-  }
-
-  const chatData: ChatData = {
-    lockedChats: [
-      {
-        id: 1,
-        name: "User 1",
-        message: "Hello!",
-        time: "Today, 9:52pm",
-        notifications: 4,
-      },
-      {
-        id: -1,
-        name: "User 2",
-        message: "That is true...",
-        time: "Yesterday, 12:31pm",
-        notifications: 0,
-      },
-      {
-        id: -1,
-        name: "User 3",
-        message: "It’s not going to happen",
-        time: "Wednesday, 9:12am",
-        notifications: 0,
-      },
-    ],
-    unlockedChats: [
-      {
-        id: 2,
-        name: "Anil",
-        message: "Yes Sure!",
-        time: "Today, 9:52pm",
-        notifications: 0,
-      },
-      {
-        id: 3,
-        name: "Chuutiya",
-        message: "That would be great. Thank you!",
-        time: "Today, 12:11pm",
-        notifications: 1,
-      },
-      {
-        id: -1,
-        name: "Mary ma’am",
-        message: "Thanks!",
-        time: "Today, 2:40pm",
-        notifications: 1,
-      },
-      {
-        id: -1,
-        name: "Bill Gates",
-        message: "Nevermind bro",
-        time: "Yesterday, 12:31pm",
-        notifications: 5,
-      },
-      {
-        id: -1,
-        name: "Victoria H",
-        message: "Okay, brother. let’s see...",
-        time: "Wednesday, 11:12am",
-        notifications: 0,
-      },
-      {
-        id: -1,
-        name: "Victoria H",
-        message: "Okay, brother. let’s see...",
-        time: "Wednesday, 11:12am",
-        notifications: 0,
-      },
-      {
-        id: -1,
-        name: "Victoria H",
-        message: "Okay, brother. let’s see...",
-        time: "Wednesday, 11:12am",
-        notifications: 0,
-      },
-    ],
-    displayNames: {
-      1: "User",
-      2: "Anil",
-      3: "Parent",
+  const messageDTOsForAlice: MessageBackendDTO[] = [
+    {
+      id: 1,
+      chat_id: 1,
+      sender: "Alice",
+      content: "Hey! Are you free later?",
+      created_at: new Date(Date.now() - 3600000).toISOString(), // 1h ago
+      updated_at: new Date(Date.now() - 3600000).toISOString(),
+      sent_by_user: false,
     },
-    chatHistory: {
-      1: [
-        {
-          sender: "User",
-          message: "Hello!",
-          time: "Today, 9:52pm",
-          sentByUser: true,
-        },
-      ],
-      2: [
-        {
-          sender: "Anil",
-          message: "Hey there!",
-          time: "Today, 9:52pm",
-          sentByUser: false,
-        },
-        {
-          sender: "Anil",
-          message: "How are you?",
-          time: "Today, 9:53pm",
-          sentByUser: false,
-        },
-        {
-          sender: "User",
-          message: "Hello!",
-          time: "Today, 9:54pm",
-          sentByUser: true,
-        },
-        {
-          sender: "User",
-          message: "I am fine and how are you?",
-          time: "Today, 9:55pm",
-          sentByUser: true,
-        },
-      ],
-      3: [
-        {
-          sender: "Parent",
-          message: "Hello, I wanted to discuss my child's progress.",
-          time: "Today, 10:00am",
-          sentByUser: false,
-        },
-        {
-          sender: "Tutor",
-          message:
-            "Sure! Your child is doing well in mathematics but needs some improvement in writing skills.",
-          time: "Today, 10:05am",
-          sentByUser: true,
-        },
-        {
-          sender: "Parent",
-          message: "That sounds good. What do you suggest for improvement?",
-          time: "Today, 10:10am",
-          sentByUser: false,
-        },
-        {
-          sender: "Tutor",
-          message:
-            "Regular practice and reading more structured material can help. I can also provide extra worksheets.",
-          time: "Today, 10:15am",
-          sentByUser: true,
-        },
-        {
-          sender: "Parent",
-          message: "That would be great. Thank you!",
-          time: "Today, 10:20am",
-          sentByUser: false,
-        },
-      ],
-      0: [],
+    {
+      id: 2,
+      chat_id: 1,
+      sender: "You",
+      content: "Yeah, after 5 works!",
+      created_at: new Date(Date.now() - 3500000).toISOString(),
+      updated_at: new Date(Date.now() - 3500000).toISOString(),
+      sent_by_user: true,
     },
+    {
+      id: 3,
+      chat_id: 1,
+      sender: "Alice",
+      content: "Perfect, see you then.",
+      created_at: new Date(Date.now() - 3400000).toISOString(),
+      updated_at: new Date(Date.now() - 3400000).toISOString(),
+      sent_by_user: false,
+    },
+  ];
+  
+  const messageDTOsForBob: MessageBackendDTO[] = [
+    {
+      id: 4,
+      chat_id: 2,
+      sender: "You",
+      content: "Hey Bob, sent the docs over.",
+      created_at: new Date(Date.now() - 7200000).toISOString(), // 2h ago
+      updated_at: new Date(Date.now() - 7200000).toISOString(),
+      sent_by_user: true,
+    },
+    {
+      id: 5,
+      chat_id: 2,
+      sender: "Bob",
+      content: "Awesome, reviewing now.",
+      created_at: new Date(Date.now() - 7100000).toISOString(),
+      updated_at: new Date(Date.now() - 7100000).toISOString(),
+      sent_by_user: false,
+    },
+  ];
+  
+  const messageDTOsForCharlie: MessageBackendDTO[] = [
+    {
+      id: 6,
+      chat_id: 3,
+      sender: "Charlie",
+      content: "Lunch today?",
+      created_at: new Date(Date.now() - 10800000).toISOString(), // 3h ago
+      updated_at: new Date(Date.now() - 10800000).toISOString(),
+      sent_by_user: false,
+    }
+  ];
+  
+  const initialChatData: ChatData = {
+    1: (() => {
+      const thread = new ChatThread(1, false, "Alice");
+      thread.addHistoricalMessages(messageDTOsForAlice);
+      return thread;
+    })(),
+    2: (() => {
+      const thread = new ChatThread(2, false, "Bob");
+      thread.addHistoricalMessages(messageDTOsForBob);
+      return thread;
+    })(),
+    3: (() => {
+      const thread = new ChatThread(3, true, "Charlie");
+      thread.addHistoricalMessages(messageDTOsForCharlie);
+      return thread;
+    })(),
   };
+  
   const router = useRouter();
-  const [selectedChat, setSelectedChat] = useState(0);
-  type ChatHistoryKeys = keyof typeof chatData.chatHistory;
-  const [chatMessages, setChatMessages] = useState<Message[]>(
-    chatData.chatHistory[selectedChat as ChatHistoryKeys]
-  );
+  const [selectedChat, setSelectedChat] = useState(1);
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [showDropup, setShowDropup] = useState(false);
-  const [lockedChats, setLockedChats] = useState<ChatPreview[]>(
-    chatData.lockedChats
-  );
-  const [unlockedChats, setUnlockedChats] = useState<ChatPreview[]>(
-    chatData.unlockedChats
-  );
-  const [displayNames, setDisplayNames] = useState<Number2String>(
-    chatData.displayNames
-  );
-  const [chatHistory, setChatHistory] = useState<
-    React.SetStateAction<ChatHistory>
-  >(chatData.chatHistory);
-  const [chatName, setChatName] = useState<string>("");
+
+  const [chatData, setChatData] = useState<ChatData>(initialChatData);
+
+  const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
+  const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
+  const lockedChats = chatPreviews.filter((chat) => chat.isLocked);
+  const unlockedChats = chatPreviews.filter((chat) => !chat.isLocked);
+  const chatName = chatData[selectedChat]?.getTitle() || "Select a chat";
+  
   const socketRef = useRef<WebSocket | null>(null);
-
-  // Changing state
-  const selectedChatRef = useRef(selectedChat);
-  useEffect(() => {
-    selectedChatRef.current = selectedChat;
-  }, [selectedChat]);
-
-  const chatMessagesRef = useRef(chatMessages);
-  useEffect(() => {
-    chatMessagesRef.current = chatMessages;
-  }, [chatMessages]);
-
-  const chatHistoryRef = useRef(chatHistory);
-  useEffect(() => {
-    chatHistoryRef.current = chatHistory;
-  }, [chatHistory]);
 
   const fetchChats = async () => {
     try {
@@ -243,20 +319,98 @@ const ChatApp = () => {
         throw new Error("Failed to fetch chats");
       }
       const data = await response.json();
-      setLockedChats(data.locked_chats);
-      setUnlockedChats(data.unlocked_chats);
-      const tmpNames: Number2String = {};
-      const setNames = (chats: ChatPreview[]) =>
-        chats.forEach((chat: ChatPreview) => {
-          tmpNames[chat.id] = chat.name;
-        });
-      setNames(data.locked_chats);
-      setNames(data.unlocked_chats);
-      setDisplayNames(tmpNames);
+      const tmpChatData: ChatData = {};
+      data.chats.map((chat: ChatPreviewBackendDTO) => {
+        const chatThread = ChatThread.fromPreviewDTO(chat);
+        tmpChatData[chat.id] = chatThread;
+      });
+      setChatData(tmpChatData);
     } catch (error) {
       console.error("Error fetching chats:", error);
     }
   };
+
+  const fetchHistoricalMessages = async () => {
+    const container = scrollRef.current;
+    if (!container) return;
+  
+    const existingThread = chatData[selectedChat] || new ChatThread(selectedChat, false);
+    if (!existingThread.hasMoreMessages) {
+      return;
+    }
+  
+    const previousScrollHeight = container.scrollHeight;
+  
+    try {
+      const createdBefore = existingThread.getEarliestMessageCreated();
+      const params = new URLSearchParams({ limit: "10" });
+      if (createdBefore) {
+        params.append("created_before", createdBefore);
+      }
+  
+      const response = await fetch(`/api/chat/${selectedChat}?${params}`, {
+        method: "GET",
+        credentials: "include",
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch chat messages");
+      }
+  
+      const data = await response.json();
+  
+      // Apply update inside setChatData
+      setChatData((prevChatData) => {
+        const updatedThread = prevChatData[selectedChat]?.clone() || new ChatThread(selectedChat, false);
+        updatedThread.addHistoricalMessages(data.messages);
+        updatedThread.hasMoreMessages = data.has_more;
+  
+        return {
+          ...prevChatData,
+          [selectedChat]: updatedThread,
+        };
+      });
+  
+      // Restore scroll position
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const newScrollHeight = container.scrollHeight;
+          const scrollDifference = newScrollHeight - previousScrollHeight;
+          container.scrollTop = scrollDifference;
+        });
+      });
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+    }
+  };
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedChat, chatMessages]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollRef.current?.scrollTop === 0) {
+        fetchHistoricalMessages(); // call the async function
+      }
+    };
+  
+    const scrollContainer = scrollRef.current;
+    scrollContainer?.addEventListener("scroll", handleScroll);
+  
+    return () => {
+      scrollContainer?.removeEventListener("scroll", handleScroll);
+    };
+  }, [fetchHistoricalMessages]);
+  
 
   const initWebSocket = async () => {
     const response = await fetch(`/api/chat/jwt`, {
@@ -275,84 +429,58 @@ const ChatApp = () => {
     socket.onopen = () => console.log("Connected to WebSocket");
 
     socket.onmessage = (event) => {
-      const text = event.data;
-      const parsedData = JSON.parse(text);
-      setChatHistory((prevChatHistory: ChatHistory) => {
-        const selectedChat = selectedChatRef.current;
-        const updatedChatHistory = { ...prevChatHistory };
-        const updatedChatMessages = [...updatedChatHistory[selectedChat]];
-        updatedChatMessages.push({
-          ...parsedData,
-          time: to12HourTime(parsedData.time),
-        });
-        updatedChatHistory[selectedChat] = updatedChatMessages;
-        // Update the Screen
-        setChatMessages(updatedChatMessages);
-        // Store in javascript browser memory
-        return updatedChatHistory;
+      const parsedData: MessageBackendDTO = JSON.parse(event.data);
+      setChatData((prevChatData: ChatData) => {
+        const chatId = parsedData.chat_id;
+        const chatThread = prevChatData[chatId]?.clone() || ChatThread.fromMessageDTO(parsedData);
+        chatThread.addRecentMessage(parsedData);
+        chatThread.hasUnreadMessages = !parsedData.sent_by_user;
+        return {
+          ...prevChatData,
+          [chatId]: chatThread,
+        };
       });
     };
 
-    socket.onclose = () => console.log("WebSocket closed");
+    socket.onclose = () => {
+      socketRef.current = null;
+      console.log("WebSocket closed");
+    }
   };
+
+  const hasInitializedSocket = useRef(false);
 
   // Persistent state
   useEffect(() => {
-    fetchChats();
-    initWebSocket();
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-    };
+    if (!hasInitializedSocket.current) {
+      fetchChats();
+      initWebSocket();
+      hasInitializedSocket.current = true;
+    }
+    return () => socketRef.current?.close();
   }, []);
-
-  function to12HourTime(input: string): string {
-    // Parse the input date string into a Date object
-    const date = new Date(input.replace(/\.(\d{3})\d+$/, ".$1"));
-    if (isNaN(date.getTime())) throw new Error("Invalid date");
-
-    // Get the timezone offset (in minutes) and adjust the UTC time
-    const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
-    const localDate = new Date(date.getTime() - localOffset * 60000); // Adjust UTC by local timezone offset
-
-    // Extract hours, minutes, seconds
-    const [h, m, s] = [
-      localDate.getHours(),
-      localDate.getMinutes(),
-      localDate.getSeconds(),
-    ];
-    const hour12 = h % 12 || 12;
-    const ampm = h < 12 ? "AM" : "PM";
-
-    // Return the formatted time
-    return `${hour12}:${m.toString().padStart(2, "0")}:${s
-      .toString()
-      .padStart(2, "0")} ${ampm}`;
-  }
 
   const handleChatSelection = async (chatId: number) => {
     setSelectedChat(chatId);
-    setChatName(displayNames[chatId]);
     setShowChat(true);
     setNewMessage("");
-    const response = await fetch(`/api/chat/${chatId}`, {
+    if (chatMessages.length < 10) {
+      fetchHistoricalMessages();
+    }
+    const response = await fetch(`/api/chat/${chatId}/read`, {
+      method: "POST",
       credentials: "include",
     });
     if (!response.ok) {
-      throw new Error("Failed to fetch chat messages");
+      console.error("Failed to mark chat as read");
     }
-    const data = await response.json();
-
-    setChatHistory((prevChatHistory: ChatHistory) => {
-      const updatedChatHistory = { ...prevChatHistory };
-      const messages = data.messages.map((message: Message) => ({
-        ...message,
-        time: to12HourTime(message.time),
-      }));
-      updatedChatHistory[chatId] = messages;
-      setChatMessages(messages);
-      return updatedChatHistory;
+    setChatData((prevChatData) => {
+      const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
+      updatedThread.hasUnreadMessages = false; // Mark as read
+      return {
+        ...prevChatData,
+        [chatId]: updatedThread,
+      };
     });
   };
 
@@ -365,25 +493,11 @@ const ChatApp = () => {
         socketRef.current.send(
           JSON.stringify({ chat_id: selectedChat, content: newMessage })
         );
-        setChatHistory((prevChatHistory: ChatHistory) => {
-          const updatedChatHistory = { ...prevChatHistory };
-          const updatedChatMessages = [
-            ...updatedChatHistory[selectedChat],
-            {
-              sender: "User",
-              message: newMessage,
-              time: new Date().toLocaleTimeString(),
-              sentByUser: true,
-            },
-          ];
-          updatedChatHistory[selectedChat] = updatedChatMessages;
-          setChatMessages(updatedChatMessages);
-          return updatedChatHistory;
-        });
         setNewMessage("");
       }
     }
   };
+
   const handleSendAssignment = () => {
     const assignment = (
       <AssignmentCard
@@ -397,11 +511,6 @@ const ChatApp = () => {
         level={""}
       ></AssignmentCard>
     );
-
-    setChatMessages([
-      ...chatMessages,
-      { sender: "User", message: assignment, time: "Now", sentByUser: true },
-    ]);
     setShowDropup(false);
   };
   return (
@@ -409,9 +518,8 @@ const ChatApp = () => {
       <div className="flex flex-1 overflow-hidden bg-customLightYellow">
         {/* Sidebar - Shown on mobile */}
         <aside
-          className={`w-full md:w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm ${
-            showChat ? "hidden md:block" : "block"
-          }`}
+          className={`w-full md:w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
+            }`}
         >
           <div
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -460,24 +568,24 @@ const ChatApp = () => {
                 Locked
               </div>
               <div className="space-y-2">
-                {lockedChats.map((chat, index) => (
+                {lockedChats.map((preview, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
-                    onClick={() => handleChatSelection(chat.id)}
+                    onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
                       <div>
-                        <p className="font-medium">{chat.name}</p>
-                        <p className="text-sm text-gray-500">{chat.message}</p>
+                        <p className="font-medium">{preview.name}</p>
+                        <p className="text-sm text-gray-500">{preview.lastMessage}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">{chat.time}</p>
-                      {chat.notifications > 0 && (
+                      <p className="text-xs text-gray-400">{preview.displayTime}</p>
+                      {preview.hasUnread && (
                         <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
-                          {chat.notifications}
+                          {/* {preview.unreadCount} */}
                         </span>
                       )}
                     </div>
@@ -491,24 +599,24 @@ const ChatApp = () => {
                 Unlocked
               </div>
               <div className="space-y-2">
-                {unlockedChats.map((chat, index) => (
+                {unlockedChats.map((preview, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-2 border-b"
-                    onClick={() => handleChatSelection(chat.id)}
+                    onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
                       <div>
-                        <p className="font-medium">{chat.name}</p>
-                        <p className="text-sm text-gray-500">{chat.message}</p>
+                        <p className="font-medium">{preview.name}</p>
+                        <p className="text-sm text-gray-500">{preview.lastMessage}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400">{chat.time}</p>
-                      {chat.notifications > 0 && (
+                      <p className="text-xs text-gray-400">{preview.displayTime}</p>
+                      {preview.hasUnread && (
                         <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
-                          {chat.notifications}
+                          {/* {chat.unreadCount} */}
                         </span>
                       )}
                     </div>
@@ -521,9 +629,8 @@ const ChatApp = () => {
 
         {/* Chat Area */}
         <main
-          className={`flex-1 p-4 min-w-[320px] ${
-            showChat ? "block" : "hidden md:block"
-          }`}
+          className={`flex-1 p-4 min-w-[320px] ${showChat ? "block" : "hidden md:block"
+            }`}
         >
           <button
             className="mb-4 p-2 text-sm bg-gray-200 rounded-md md:hidden"
@@ -539,21 +646,34 @@ const ChatApp = () => {
                 {/* <p className="text-sm text-gray-500">Online</p> */}
                 <button
                   onClick={async () => {
-                    const response = await fetch(`/api/chat/new`, {
+                    if (newMessage.trim() === "" || isNaN(+newMessage)) {
+                      console.error("New message has to be a valid user ID");
+                      return;
+                    }
+                    const response = await fetch(`/api/chat/get-or-create`, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
                       },
                       credentials: "include",
                       body: JSON.stringify({
-                        other_id: 10,
+                        other_user_id: newMessage,
                       }),
                     });
                     if (!response.ok) {
                       throw new Error("Failed to create chat");
                     } else {
                       console.log("Chat created successfully");
+                      setNewMessage("");
                     }
+                    const chatPreview: ChatPreviewBackendDTO = await response.json();
+                    setChatData((prevChatData) => {
+                      const newChat = ChatThread.fromPreviewDTO(chatPreview);
+                      return {
+                        ...prevChatData,
+                        [chatPreview.id]: newChat,
+                      };
+                    });
                   }}
                   className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
                 >
@@ -562,26 +682,26 @@ const ChatApp = () => {
               </div>
             </div>
             <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
-              <div className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]">
-                {chatMessages.map((chat, index) => (
+              <div ref={scrollRef} className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]">
+                {chatMessages.map((message, index) => (
                   <div
                     key={index}
-                    className={chat.sentByUser ? "self-end" : "self-start"}
+                    className={message.sentByUser ? "self-end" : "self-start"}
                   >
                     <div
-                      className={`p-2 rounded-xl ${
-                        chat.sentByUser
+                      className={`p-2 rounded-xl ${message.sentByUser
                           ? "bg-customDarkBlue text-white"
                           : "bg-gray-300"
-                      }`}
+                        }`}
                     >
-                      {chat.message}
+                      {message.content}
                     </div>
                     <p className="text-xs text-gray-400 mt-1 flex justify-end">
-                      {chat.time}
+                      {message.time}
                     </p>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="flex items-center gap-2 mt-auto">

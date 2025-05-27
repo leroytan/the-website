@@ -1,6 +1,6 @@
-import { cookies } from "next/headers";
 import ComponentLayout from "@/components/layout";
 import { BASE_URL } from "@/utils/constants";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 

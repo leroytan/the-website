@@ -2,9 +2,9 @@ import json
 
 from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
-from api.router.models import NewChatMessage
+from api.router.models import ChatCreationInfo, NewChatMessage
 from api.storage.models import User
-from fastapi import Depends, Request, WebSocket
+from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRouter
 
@@ -32,21 +32,26 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
     user = RouterAuthUtils.get_user_from_jwt(access_token)
     await websocket.accept()
     active_connections[user.id] = websocket
-    while True:
-        data = await websocket.receive_text()
-        data_dict = json.loads(data)
-        chat_id = data_dict["chat_id"]
-        content = data_dict["content"]
-        
-        message = NewChatMessage(
-            content=content,
-            chat_id=chat_id,
-        )
+    try:
+        while True:
+            data = await websocket.receive_text()
+            data_dict = json.loads(data)
+            chat_id = data_dict["chat_id"]
+            content = data_dict["content"]
+            
+            message = NewChatMessage(
+                content=content,
+                chat_id=chat_id,
+            )
 
-        await ChatLogic.handle_private_message(active_connections, message, user.id)
+            await ChatLogic.handle_private_message(active_connections, message, user.id)
+    except WebSocketDisconnect:
+        if user.id in active_connections:
+            del active_connections[user.id]
+        print(f"WebSocket connection closed for user {user.id}")
 
-@router.post("/api/chat/new")
-async def create_chat(request: Request, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+@router.post("/api/chat/get-or-create")
+async def get_or_create_chat(chat_info: ChatCreationInfo, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     """
     Create a new chat between two users.
 
@@ -56,36 +61,27 @@ async def create_chat(request: Request, user: User = Depends(RouterAuthUtils.get
     Returns:
         dict: A dictionary containing the chat ID and other relevant information.
     """
-    data = await request.json()
-    # TODO: can potentially use obfuscated user ID
-    # to prevent user from having to know the ID of the other user
-    other_id = data.get("other_id")
-    chat = ChatLogic.get_or_create_private_chat(user.id, other_id)
-
-    return chat
+    return ChatLogic.get_or_create_private_chat(user.id, chat_info.other_user_id)
 
 
 @router.get("/api/chat/{id}")
-async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), last_message_id: int = -1, message_count: int = 50) -> dict:
+async def get_chat_messages(id: int, user: User = Depends(RouterAuthUtils.get_current_user), created_before: str = None, limit: int = 50) -> dict:
+    return ChatLogic.get_private_chat_history(id, user.id, created_before, limit)
+
+# route for updating state of chat as read
+@router.post("/api/chat/{id}/read")
+async def mark_chat_as_read(id: int, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     """
-    Get chat messages between two users.
+    Mark a chat as read for the current user.
 
     Args:
-        id (int): The ID of the user to get chat history with.
-        last_message_id (int): The ID of the last message received.
-        message_count (int): The number of messages to retrieve prior to (and including) the last message.
+        id (int): The ID of the chat to mark as read.
         user (User): The current user.
     Returns:
-        list[ChatMessage]: List of chat messages.
+        dict: A dictionary indicating success or failure.
     """
-    messages = await ChatLogic.get_private_chat_history(id, user.id, last_message_id, message_count)
-    message_count = len(messages)
-    last_unretrieved_message_id = messages[message_count - 1]["id"] - 1 if message_count > 0 else -1
-    return {
-        "messages": messages,
-        "message_count": message_count,
-        "last_unretrieved_message_id": last_unretrieved_message_id,
-    }
+    ChatLogic.mark_chat_as_read(id, user.id)
+    return {"status": "success", "message": "Chat marked as read."}
 
 @router.get("/api/chats")
 async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
@@ -97,7 +93,7 @@ async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> d
     Returns:
         dict: A dictionary containing the list of chats.
     """
-    return await ChatLogic.get_private_chats(user.id)
+    return ChatLogic.get_private_chats(user.id)
 
 
 html = """

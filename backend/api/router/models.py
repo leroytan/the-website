@@ -91,7 +91,7 @@ class Module(BaseModel):
     name: str
     reviews: list[Review]
 
-class AssignmentSlot(BaseModel):
+class AssignmentSlotView(BaseModel):
     id: int
     day: str
     start_time: str
@@ -104,7 +104,11 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    available_slots: list[AssignmentSlotView]
     status: str
+
+class NewAssignmentRequest(BaseModel):
+    available_slots: list[AssignmentSlotView]  # List of slot IDs
 
 class AssignmentBaseView(BaseModel):
     id: int
@@ -114,7 +118,7 @@ class AssignmentBaseView(BaseModel):
     owner_id: int
     estimated_rate: str
     weekly_frequency: int
-    available_slots: list[AssignmentSlot]
+    available_slots: list[AssignmentSlotView]
     special_requests: str
     subjects: list[str]
     level: str
@@ -148,12 +152,16 @@ class SearchQuery(BaseModel):
     query: str | None
     filters: list[str] | None
     sorts: list[str] | None
+    page_size: int | None  # Let the API handle default
+    page_number: int = 1
 
 T = TypeVar("T")
 
 class SearchResult(BaseModel, Generic[T]):
     results: list[T]
     filters: dict[str, list[dict[str, str]]]
+    num_pages: int = 1
+    ids: list[int] | None = None  # Optional list of IDs for the results
 
 class NewChatMessage(BaseModel):
     chat_id: int
@@ -167,3 +175,6 @@ class UserView(BaseModel):
     intends_to_be_tutor: bool
     created_at: str
     updated_at: str
+
+class ChatCreationInfo(BaseModel):
+    other_user_id: int

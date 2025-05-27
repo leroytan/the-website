@@ -83,6 +83,10 @@ AssignmentRequestView:
       type: string
     status:
       type: string
+    available_slots:
+      type: array
+      items:
+        $ref: '#/AssignmentSlot'
     created_at:
       type: string
     updated_at:
@@ -94,6 +98,7 @@ AssignmentRequestView:
     - status
     - created_at
     - updated_at
+    - available_slots
 
 AssignmentSlot:
   type: object

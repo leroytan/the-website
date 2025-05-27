@@ -1,11 +1,12 @@
+import datetime
 import enum
-from datetime import datetime
 
 from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
                         ForeignKey, Integer, String, UniqueConstraint)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import declarative_base, declared_attr, relationship
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.sql import func
 from sqlalchemy_serializer import SerializerMixin
 
 # Create a base class for declarative models
@@ -13,8 +14,8 @@ Decl_Base = declarative_base()
 
 class Base(Decl_Base):
     __abstract__ = True
-    created_at = Column(DateTime, default=datetime.now)
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class User(Base, SerializerMixin):
     """Base User model"""
@@ -95,8 +96,10 @@ class AssignmentSlot(Base):
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
-    assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
+    assignment_id = Column(Integer, ForeignKey('Assignment.id'), nullable=True)  # Foreign key to Assignment
     assignment = relationship('Assignment', back_populates='available_slots')
+    assignment_request_id = Column(Integer, ForeignKey('AssignmentRequest.id'), nullable=True)  # Foreign key to Assignment
+    assignment_request = relationship('AssignmentRequest', back_populates='available_slots')
     day = Column(String, nullable=False)
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)
@@ -125,6 +128,7 @@ class AssignmentRequest(Base):
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     assignment = relationship('Assignment', foreign_keys=[assignment_id], back_populates='assignment_requests')
+    available_slots = relationship('AssignmentSlot', back_populates='assignment_request', primaryjoin="AssignmentRequest.id == AssignmentSlot.assignment_request_id")
 
     # Constraints
     # Composite unique constraint on column1 and column2
@@ -228,6 +232,8 @@ class PrivateChat(Base, SerializerMixin):
     # Relationships
     user1 = relationship('User', foreign_keys=[user1_id])
     user2 = relationship('User', foreign_keys=[user2_id])
+    messages = relationship('ChatMessage', back_populates='chat', cascade='all, delete-orphan')
+    
 
     # Constraints
     __table_args__ = (
@@ -246,7 +252,7 @@ class ChatMessage(Base, SerializerMixin):
     
     # Relationships
     sender = relationship('User', foreign_keys=[sender_id])
-    chat = relationship('PrivateChat', foreign_keys=[chat_id])
+    chat = relationship('PrivateChat', foreign_keys=[chat_id], back_populates='messages')
 
     @hybrid_property
     def receiver_id(self):
@@ -255,3 +261,18 @@ class ChatMessage(Base, SerializerMixin):
     @hybrid_property
     def receiver(self):
         return self.chat.user2 if self.sender_id == self.chat.user1_id else self.chat.user1
+
+class ChatReadStatus(Base):
+    __tablename__ = 'ChatReadStatus'
+
+    id = Column(Integer, primary_key=True)
+    chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('User.id'), nullable=False)
+    is_read = Column(Boolean, default=False)
+
+    __table_args__ = (
+        UniqueConstraint('chat_id', 'user_id', name='uix_chat_user_read'),
+    )
+
+    chat = relationship('PrivateChat', backref='read_statuses')
+    user = relationship('User')

@@ -1,8 +1,101 @@
+import datetime
+
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
-                                AssignmentStatus, AssignmentSubject, Level,
-                                SpecialSkill, Subject, Tutor, TutorLevel,
-                                TutorSpecialSkill, TutorSubject, User)
+                                AssignmentStatus, AssignmentSubject,
+                                ChatMessage, Level, PrivateChat, SpecialSkill,
+                                Subject, Tutor, TutorLevel, TutorSpecialSkill,
+                                TutorSubject, User)
+from sqlalchemy.orm import Session
+
+
+def utc_now():
+    """
+    Returns the current UTC datetime.
+    """
+    return datetime.datetime.now(datetime.timezone.utc)
+
+import random
+
+
+def generate_bulk_assignments(session: Session, users: list[User], tutors: list[Tutor], subjects: list[Subject], levels: list[Level], count=50, seed=42):
+    """
+    Generate a batch of assignments with reproducible data using a random seed.
+    
+    Args:
+        session: SQLAlchemy session
+        users: List of User objects (assumed at least 2 to pick from)
+        tutors: List of Tutor objects
+        subjects: List of Subject objects
+        levels: List of Level objects
+        count: Number of assignments to generate
+        seed: Random seed for reproducibility
+    """
+    random.seed(seed)
+
+    status_choices = [AssignmentStatus.OPEN, AssignmentStatus.FILLED]
+    locations = [
+        "Orchard", "Woodlands", "Clementi", "Pasir Ris", "Ang Mo Kio",
+        "Hougang", "Tampines", "Yishun", "Bukit Timah", "Sengkang"
+    ]
+    time_slots = [("Monday", "16:00", "18:00"), ("Wednesday", "18:00", "20:00"), ("Saturday", "10:00", "12:00"),
+                  ("Thursday", "14:00", "16:00"), ("Sunday", "11:00", "13:00")]
+    
+    special_requests = [
+        "Need help with exam preparation", "Looking for long-term tutoring",
+        "Flexible schedule preferred", "Special needs assistance required",
+        "Advanced topics in subject", "Homework help needed",
+        "Looking for group tutoring sessions", "Need help with project work",
+        "Prefer online sessions", "Looking for weekend availability",
+        "Need assistance with test-taking strategies", "Looking for a tutor with experience in special education",
+    ]
+
+    slots = []
+    assignment_subjects = []
+
+    for i in range(count):
+        requester = random.choice(users)
+        assigned_tutor = random.choice(tutors + [None])
+        level = random.choice(levels)
+        subject = random.choice(subjects)
+        title = f"{subject.name} Tutoring Session #{i+1}"
+        rate = f"${random.choice([30, 35, 40, 45, 50])}/hour"
+        status = random.choice(status_choices)
+        assigned_tutor = random.choice(tutors) if status == AssignmentStatus.FILLED else None
+
+        assignment = Assignment(
+            title=title,
+            owner_id=requester.id,
+            tutor_id=assigned_tutor.id if assigned_tutor else None,
+            level_id=level.id,
+            estimated_rate=rate,
+            weekly_frequency=random.choice([1, 2, 3]),
+            special_requests=random.choice(special_requests),
+            status=status,
+            location=random.choice(locations) + ", Singapore"
+        )
+        session.add(assignment)
+        session.flush()  # Ensure assignment.id is available
+
+        # Add 1–2 random time slots
+        for day, start, end in random.sample(time_slots, k=random.choice([1, 2])):
+            slots.append(AssignmentSlot(
+                assignment_id=assignment.id,
+                day=day,
+                start_time=start,
+                end_time=end
+            ))
+
+        # Link at least one subject
+        assignment_subjects.append(AssignmentSubject(
+            assignment_id=assignment.id,
+            subjectId=subject.id
+        ))
+
+    session.add_all(slots)
+    session.add_all(assignment_subjects)
+    session.commit()
+    print(f"✅ {count} seeded assignments added with seed={seed}.")
 
 
 def insert_test_data(engine: object) -> bool:
@@ -12,9 +105,6 @@ def insert_test_data(engine: object) -> bool:
     Args:
         session: SQLAlchemy engine object
     """
-    import datetime
-
-    from sqlalchemy.orm import Session
 
     session = Session(engine)
 
@@ -86,43 +176,43 @@ def insert_test_data(engine: object) -> bool:
     users = [
         User(
             name="John Doe",
-            email="john.doe@example.com",
-            password_hash="someHash"
+            email="john@example.com",
+            password_hash="$2b$12$mZzAAXmyGtilH5mlwosyNuz5v56iacPnXAfo0v6XPhNLCgzAQBsTC"
         ),
         User(
             name="Jane Smith",
-            email="jane.smith@example.com",
-            password_hash="someHash"
+            email="jane@example.com",
+            password_hash="$2b$12$evEA25gWMQM.wXxgc0BNmua4AMzXY5HeJHZv1ARI7PqAxBNKoOIrW"
         ),
         User(
             name="Alice Johnson",
-            email="alice.johnson@example.com",
-            password_hash="someHash"
+            email="alice@example.com",
+            password_hash="$2b$12$TaklfiCGynwG22JiBxL3v.xJrZ4Xj3P3jWV.O9gjf3DYxNmqJ18xe"
         ),
         User(
             name="Bob Williams",
-            email="bob.williams@example.com",
-            password_hash="someHash"
+            email="bob@example.com",
+            password_hash="$2b$12$eycYqtvIeFMU2UcHokCVQuzKvQVoIN32gSnU2wWlzI6.RRCVPWLpK"
         ),
         User(
             name="Carol Brown",
-            email="carol.brown@example.com",
-            password_hash="someHash"
+            email="carol@example.com",
+            password_hash="$2b$12$Hx2sLVhoiwYrqBC4fTkrC.HHsI3YS73QEvyUDNzYak4yoKWeSIgCi"
         ),
         User(
             name="David Miller",
-            email="david.miller@example.com",
-            password_hash="someHash"
+            email="david@example.com",
+            password_hash="$2b$12$r6ENReONet3RHULZrCGiqOhdESByFdHLrDAdsCU97mILx4wpFjSVa"
         ),
         User(
             name="Eva Garcia",
-            email="eva.garcia@example.com",
-            password_hash="someHash"
+            email="eva@example.com",
+            password_hash="$2b$12$f/2ZDD/EeIMKn6OXo.a2GeWsNWVcI/KZLmsIoeMUCEKhaU.14DXBW"
         ),
         User(
             name="Frank Rodriguez",
-            email="frank.rodriguez@example.com",
-            password_hash="someHash"
+            email="frank@example.com",
+            password_hash="$2b$12$ojmyO9IQEu4EDmpRuOykEuRl6Lu3pN9dkuMyUn6NDNNWTCfP37HE6"
         )
     ]
     session.add_all(users)
@@ -333,7 +423,7 @@ def insert_test_data(engine: object) -> bool:
         )
     ]
     session.add_all(assignments)
-    session.commit()
+    session.flush()
     
     # Create assignment slots
     assignment_slots = [
@@ -397,25 +487,189 @@ def insert_test_data(engine: object) -> bool:
     # Create assignment requests
     assignment_requests = [
         AssignmentRequest(
-            created_at=datetime.datetime.now() - datetime.timedelta(days=1),
+            created_at=utc_now() - datetime.timedelta(days=1),
             tutor_id=tutors[1].id,  # Bob requesting assignment
             status=AssignmentRequestStatus.PENDING,
-            assignment=assignments[0]  # For the first assignment
+            assignment_id=assignments[0].id  # For the first assignment
         ),
         AssignmentRequest(
-            created_at=datetime.datetime.now() - datetime.timedelta(days=3),
+            created_at=utc_now() - datetime.timedelta(days=3),
             tutor_id=tutors[2].id,  # Carol requesting assignment
             status=AssignmentRequestStatus.ACCEPTED,
-            assignment=assignments[1]  # For the second assignment
+            assignment_id=assignments[1].id  # For the second assignment
         ),
         AssignmentRequest(
-            created_at=datetime.datetime.now() - datetime.timedelta(days=4),
+            created_at=utc_now() - datetime.timedelta(days=4),
             tutor_id=tutors[5].id,  # Frank requesting assignment
             status=AssignmentRequestStatus.REJECTED,
-            assignment=assignments[0]  # For the first assignment
+            assignment_id=assignments[0].id  # For the first assignment
         )
     ]
     session.add_all(assignment_requests)
+
+    # Create private chatrooms
+    private_chats = [
+        PrivateChat(
+            user1_id=users[0].id,  # John
+            user2_id=users[1].id,  # Jane
+            is_locked=False
+        ),
+        PrivateChat(
+            user1_id=users[2].id,  # Alice
+            user2_id=users[3].id,  # Bob
+            is_locked=True  # Locked chat
+        ),
+        PrivateChat(
+            user1_id=users[4].id,  # Carol
+            user2_id=users[5].id,  # David
+            is_locked=False
+        )
+    ]
+
+    session.add_all(private_chats)
+    session.commit()
+    for chat in private_chats:
+        session.refresh(chat)
+
+    # Create chat messages
+    chat_messages = [
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[0].id,
+            content="Hi Jane, I need help with my calculus finals.",
+            created_at=utc_now() - datetime.timedelta(hours=2)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[1].id,
+            content="Sure John, I can help you with that!",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[0].id,
+            content="Awesome! I'm struggling with integration by parts.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[1].id,
+            content="Let's go through an example. Do you have a problem in mind?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[0].id,
+            content="Yes! ∫x·e^x dx. I don't know where to start.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[1].id,
+            content="Perfect example. You'll want to set u = x and dv = e^x dx.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[0].id,
+            content="Ah, got it. So du = dx and v = e^x?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=15)
+        ),
+        ChatMessage(
+            chat_id=private_chats[0].id,
+            sender_id=users[1].id,
+            content="Exactly! Now use the formula: ∫u·dv = uv - ∫v·du.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=10)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[2].id,
+            content="Bob, are you available for a study session?",
+            created_at=utc_now() - datetime.timedelta(hours=2)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[3].id,
+            content="Yes Alice, let's meet this weekend.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[2].id,
+            content="Saturday afternoon works for me. Maybe 2 PM?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[3].id,
+            content="Perfect. Should we meet at the library?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[2].id,
+            content="Yes, third floor study room. I’ll reserve it.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[3].id,
+            content="Great! Let’s cover chapters 5 to 7?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
+        ),
+        ChatMessage(
+            chat_id=private_chats[1].id,
+            sender_id=users[2].id,
+            content="Sounds good. I’ll bring my notes and problem sets.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[4].id,
+            content="David, I have some questions about the assignment.",
+            created_at=utc_now() - datetime.timedelta(hours=2)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[5].id,
+            content="Sure Carol, feel free to ask me anytime.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[4].id,
+            content="I'm stuck on question 3. What's the best approach?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[5].id,
+            content="Start by identifying the variables. It's mostly substitution.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[4].id,
+            content="Got it. And question 5? The logic section confused me.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[5].id,
+            content="Focus on truth tables. Want me to walk through one?",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
+        ),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[4].id,
+            content="Yes, please! That would help a lot.",
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
+        ),
+    ]
+
+    session.add_all(chat_messages)
+
+    generate_bulk_assignments(session, users, tutors, subjects, levels, count=50, seed=42)
     
     # Final commit
     session.commit()
