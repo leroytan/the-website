@@ -1,15 +1,21 @@
 "use client";
-import { useState } from "react";
-import { Button } from "./button";
-import { TuitionListing } from "./types";
+import { useEffect, useState } from "react";
+import { Button } from "../../../../components/button";
 
-const ApplyAssignmentButton = ({ listing }: { listing: TuitionListing }) => {
-  const [isApplied, setIsApplied] = useState<boolean>(listing.applied!);
-  const isFilled = listing.status === "FILLED"
+const ApplyAssignmentButton = ({ assignmentId, AppliedStatus, status }: { assignmentId: number, AppliedStatus: boolean, status: "OPEN" | "FILLED" }) => {
+  const [isApplied, setIsApplied] = useState<boolean>(AppliedStatus);
+  const [isFilled, setIsFilled] = useState<boolean>(status === "FILLED");
+  useEffect(() => {
+    setIsApplied(AppliedStatus);
+  }, [AppliedStatus]);
+
+  useEffect(() => {
+    setIsFilled(status === "FILLED");
+  }, [status]);
   async function handleSubmit() {
     !isApplied && setIsApplied((x) => !x);
     try {
-      const data = await fetch(`/api/assignments/${listing.id}/request`, {
+      const data = await fetch(`/api/assignments/${assignmentId}/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,7 +45,7 @@ const ApplyAssignmentButton = ({ listing }: { listing: TuitionListing }) => {
         handleSubmit();
       }}
     >
-      {isFilled === true ? "Filled" : isApplied === true ? "Applied" : "Apply"}
+      {isFilled ? "Filled" : isApplied ? "Applied" : "Apply"}
     </Button>
   );
 };

@@ -53,15 +53,15 @@ class FilterLogic:
         """
         if TableClass == Tutor:
             return {
-                "subject": FilterLogic.get_filter(Subject),
-                "level": FilterLogic.get_filter(Level),
-                "location": [],
+                "subjects": FilterLogic.get_filter(Subject),
+                "levels": FilterLogic.get_filter(Level),
+                "locations": [],
             }
         elif TableClass == Assignment:
             return {
-                "subject": FilterLogic.get_filter(Subject),
-                "level": FilterLogic.get_filter(Level),
-                "course": [],
+                "subjects": FilterLogic.get_filter(Subject),
+                "levels": FilterLogic.get_filter(Level),
+                "courses": [],
             }
         
         return {}

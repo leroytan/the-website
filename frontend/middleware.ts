@@ -23,14 +23,14 @@ export async function middleware(request: NextRequest) {
   // If user is accessing protected route and is not authenticated
   if (isAuthenticatedRoute && !isAuthenticated) {
     if (!refreshToken) {
-      // Redirect to login with callback
+      // Redirect to login with redirectTo
       const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
+      loginUrl.searchParams.set("redirectTo", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.redirect(
-      new URL(`/login?callbackUrl=${pathname}`, request.url)
+      new URL(`/login?redirectTo=${pathname}`, request.url)
     );
   }
 
