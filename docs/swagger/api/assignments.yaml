@@ -21,6 +21,20 @@ get:
         type: string
       required: false
       description: ordering of assignments
+    - in: query
+      name: page_number
+      schema:
+        type: integer
+        default: 1
+      required: false
+      description: page number for pagination
+    - in: query
+      name: page_size
+      schema:
+        type: integer
+        default: 10
+      required: false
+      description: number of assignments per page
   responses:
     '200':
       description: Successful retrieval of assignments and filter options
@@ -29,10 +43,10 @@ get:
           schema:
             type: object
             properties:
-              assignments:
+              results:
                 type: array
                 items:
-                  $ref: './assignments/assignment.yaml/#/Assignment'
+                  $ref: './assignments/assignment.yaml/#/AppliedAssignment'
               filters:
                 type: object
                 properties:
@@ -42,3 +56,6 @@ get:
                     $ref: './filter.yaml/#/FilterList'
                   level:
                     $ref: './filter.yaml/#/FilterList'
+              num_pages:
+                type: integer
+                description: Total number of pages available
