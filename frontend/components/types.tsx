@@ -9,7 +9,7 @@ export interface TuitionListing {
   estimated_rate: string;
   weekly_frequency: number;
   available_slots: {
-    id?: number;
+    id: number;
     day: string;
     start_time: string;
     end_time: string;
@@ -30,15 +30,15 @@ export interface TuitionListing {
   }[];
 }
 export interface TuitionListingFilters {
-  course: {
+  courses: {
     text: string;
     id: string;
   }[];
-  subject: {
+  subjects: {
     name: string;
     id: string;
   }[];
-  level: {
+  levels: {
     name: string;
     id: string;
   }[];

@@ -1,5 +1,5 @@
 import { Calendar, Hourglass, MapPin, MapPinHouse } from "lucide-react";
-import ApplyAssignmentButton from "./applyAssignmentButton";
+import ApplyAssignmentButton from "../app/(appbar)/assignments/_components/applyAssignmentButton";
 import { TuitionListing } from "./types";
 
 const AssignmentCard = (listing: TuitionListing) => {

@@ -17,7 +17,7 @@ export default async function RootLayout({
     try {
       const res = await fetch(`${BASE_URL}/me`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Cookie: accessToken ? `access_token=${accessToken}` : "",
         },
         cache: "no-store",
       });

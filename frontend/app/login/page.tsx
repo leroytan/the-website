@@ -1,43 +1,47 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import LoginForm from "./LoginForm";
-import { BASE_URL } from "@/utils/constants";
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{redirectTo: string | undefined}>;
-}) {
-  const params = await searchParams;
-  const redirectTo = params.redirectTo || "/dashboard";
-  const cookieStore = await cookies();
+export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/";
+  const [showLogin, setShowLogin] = useState(false);
+  const [checking, setChecking] = useState(true);
 
-  const accessToken = cookieStore.get("access_token")?.value;
-  const refreshToken = cookieStore.get("refresh_token")?.value;
+  useEffect(() => {
+    const tryRefresh = async () => {
+      try {
+        const res = await fetch("/api/auth/refresh", {
+          method: "POST",
+          credentials: "include", // 🔥 crucial for cookie-based tokens
+        });
 
-  // 1. Try checking if access_token exists
-  if (accessToken) {
-    redirect(redirectTo);
-  }
+        if (res.ok) {
+          router.replace(redirectTo); // silently redirect, no flash
+          router.refresh(); // refresh the page to get updated data
+        } else {
+          setShowLogin(true); // show form only if refresh fails
+        }
+      } catch (err) {
+        console.error("Refresh failed:", err);
+        setShowLogin(true);
+      } finally {
+        setChecking(false);
+      }
+    };
 
-  // 2. If no access, but refresh exists: try refreshing
-  if (refreshToken) {
-    const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        Cookie: `refresh_token=${refreshToken}`,
-      },
-    });
+    tryRefresh();
+  }, [redirectTo, router]);
 
-    if (refreshRes.ok) {
-      redirect(redirectTo);
-    }
-  }
-
-  // 3. If refresh fails, render login form
-  return (
-    <div>
-      <LoginForm redirectTo={redirectTo} />
+  if (checking) {
+    return (
+    <div className="flex justify-center items-center h-screen">
+      <div className="spinner" /> {/* your custom loader */}
     </div>
-  );
+    );
+  }
+  return <>{showLogin && <LoginForm redirectTo={redirectTo} />}</>;
 }
