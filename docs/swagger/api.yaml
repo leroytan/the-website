@@ -54,8 +54,8 @@ paths:
     $ref: './api/chats.yaml'
   /ws/chat:
     $ref: './ws/chat.yaml'
-  /api/chat/new:
-    $ref: ./api/chat/new.yaml
+  /api/chat/get-or-create:
+    $ref: ./api/chat/get-or-create.yaml
   /api/chat/{id}:
     $ref: ./api/chat/{id}.yaml
   /api/tutors:

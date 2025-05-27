@@ -171,3 +171,6 @@ class UserView(BaseModel):
     intends_to_be_tutor: bool
     created_at: str
     updated_at: str
+
+class ChatCreationInfo(BaseModel):
+    other_user_id: int

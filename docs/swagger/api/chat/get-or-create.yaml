@@ -1,0 +1,32 @@
+post:
+  tags:
+    - chat
+  summary: Get or create a chat with another user
+  description: |
+    This endpoint retrieves an existing chat with another user if it exists, or creates a new chat if it does not.
+    The chat is identified by the other user's ID.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            other_user_id:
+              type: integer
+              description: The ID of the other user to chat with
+          required:
+            - other_user_id
+  responses:
+    '200':
+      description: confirmation of successful creation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              chat_id:
+                type: integer
+                description: The ID of the created chat
+            required: 
+              - chat_id

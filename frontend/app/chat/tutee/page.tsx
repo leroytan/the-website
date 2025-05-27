@@ -302,7 +302,7 @@ const ChatApp = () => {
 
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
 
-  const chatMessages = chatData[selectedChat]?.getDisplayMessages();
+  const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
   const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
   const lockedChats = chatPreviews.filter((chat) => chat.isLocked);
   const unlockedChats = chatPreviews.filter((chat) => !chat.isLocked);
@@ -646,21 +646,34 @@ const ChatApp = () => {
                 {/* <p className="text-sm text-gray-500">Online</p> */}
                 <button
                   onClick={async () => {
-                    const response = await fetch(`/api/chat/new`, {
+                    if (newMessage.trim() === "" || isNaN(+newMessage)) {
+                      console.error("New message has to be a valid user ID");
+                      return;
+                    }
+                    const response = await fetch(`/api/chat/get-or-create`, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
                       },
                       credentials: "include",
                       body: JSON.stringify({
-                        other_id: 10,
+                        other_user_id: newMessage,
                       }),
                     });
                     if (!response.ok) {
                       throw new Error("Failed to create chat");
                     } else {
                       console.log("Chat created successfully");
+                      setNewMessage("");
                     }
+                    const chatPreview: ChatPreviewBackendDTO = await response.json();
+                    setChatData((prevChatData) => {
+                      const newChat = ChatThread.fromPreviewDTO(chatPreview);
+                      return {
+                        ...prevChatData,
+                        [chatPreview.id]: newChat,
+                      };
+                    });
                   }}
                   className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
                 >
