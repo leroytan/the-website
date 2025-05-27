@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useAuth } from "../context/authContext";
 import { Button } from "./button";
 import { usePathname, useRouter } from "next/navigation";
+import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssignmentButton";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -126,13 +127,7 @@ const UserMenu = () => {
             )}
           </AnimatePresence>
         </div>
-        <Button
-          onClick={() => {router.push("/assignments?add=true")}}
-          className="flex flex-row items-center bg-customOrange rounded-sm p-2 text-white text-sm"
-        >
-          <Plus />
-          Assignment
-        </Button>
+        <AddAssignmentButton/>
       </div>
     </>
   );
@@ -182,7 +177,7 @@ export default function ComponentLayout({
     <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <header
         id="appbar"
-        className="bg-white shadow-md sticky top-0 left-0 right-0 z-10 h-14"
+        className="bg-white shadow-sm sticky top-0 left-0 right-0 z-10 h-14"
       >
         <div className="flex flex-row items-center justify-between px-4 h-full">
           <div className="md:hidden">
