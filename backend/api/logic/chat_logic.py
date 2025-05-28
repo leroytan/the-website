@@ -2,6 +2,7 @@ import json
 from collections.abc import Callable
 from datetime import datetime
 
+from api.logic.logic import Logic
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, ChatReadStatus, PrivateChat, User
 from api.storage.storage_service import StorageService
@@ -118,9 +119,10 @@ class ChatLogic:
             chat_id = new_chat_message.chat_id
 
             chat = session.query(PrivateChat).filter(PrivateChat.id == chat_id).first()
-            if chat.user1_id != sender_id and chat.user2_id != sender_id:
+            if not chat:
+                raise HTTPException(status_code=404, detail="Chatroom not found.")
+            elif chat.user1_id != sender_id and chat.user2_id != sender_id:
                 raise HTTPException(status_code=403, detail="You are not authorized to send messages in this chatroom.")
-            session.add(chat)
 
             # Check if the chatroom is locked
             if chat.is_locked:
@@ -173,9 +175,10 @@ class ChatLogic:
 
         with Session(StorageService.engine) as session:
             chatroom = StorageService.find(session, {"id": chat_id}, PrivateChat, find_one=True)
-            if chatroom.user1_id != user_id and chatroom.user2_id != user_id:
+            if not chatroom:
+                raise HTTPException(status_code=404, detail="Chatroom not found.")
+            elif chatroom.user1_id != user_id and chatroom.user2_id != user_id:
                 raise HTTPException(status_code=403, detail="You are not authorized to view this chatroom.")
-            session.add(chatroom)
 
             query = session.query(ChatMessage).filter(
                 ChatMessage.chat_id == chat_id,
@@ -196,10 +199,9 @@ class ChatLogic:
                 "message_count": len(chat_messages),
                 "has_more": has_more,
             }
-        
    
     @staticmethod
-    def unlock_chat(chat_id: int) -> None:
+    def unlock_chat(chat_id: int, user_id: int) -> None:
         """
         Unlock a chatroom.
 
@@ -210,10 +212,10 @@ class ChatLogic:
             chat = session.query(PrivateChat).filter(PrivateChat.id == chat_id).first()
             if not chat:
                 raise HTTPException(status_code=404, detail="Chatroom not found.")
-            session.add(chat)
+            elif chat.user1_id != user_id and chat.user2_id != user_id:
+                raise HTTPException(status_code=403, detail="You are not authorized to unlock this chatroom.")
             chat.is_locked = False
             session.commit()
-            session.refresh(chat)
             
     @staticmethod
     def get_private_chats(user_id: int) -> dict:
@@ -228,17 +230,8 @@ class ChatLogic:
         """     
     
         with Session(StorageService.engine) as session:
-            locked_chats = session.query(PrivateChat).filter(
+            chats = session.query(PrivateChat).filter(
                 (PrivateChat.user1_id == user_id) | (PrivateChat.user2_id == user_id),
-                PrivateChat.is_locked == True
-            ).options(
-                joinedload(PrivateChat.user1),
-                joinedload(PrivateChat.user2)
-            ).all()
-
-            unlocked_chats = session.query(PrivateChat).filter(
-                (PrivateChat.user1_id == user_id) | (PrivateChat.user2_id == user_id),
-                PrivateChat.is_locked == False
             ).options(
                 joinedload(PrivateChat.user1),
                 joinedload(PrivateChat.user2)
@@ -246,7 +239,7 @@ class ChatLogic:
             
             return {
                 "chats": [
-                    ChatLogic.get_chat_preview(session, user_id, chat) for chat in locked_chats + unlocked_chats
+                    ChatLogic.get_chat_preview(session, user_id, chat) for chat in chats
                 ]
             }
         

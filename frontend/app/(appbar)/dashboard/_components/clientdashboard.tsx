@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import { Button } from "@/components/button";
 import { TuitionListing } from "@/components/types";
-import AppliedTutorsModal from "./appliedTutorsModal";
-import { ExternalLink } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
-import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
-import { useRouter } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import AppliedTutorsModal from "./appliedTutorsModal";
 
 export default function ClientDashboard({
   assignments,
@@ -22,8 +22,19 @@ export default function ClientDashboard({
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("open");
 
-  const openApplicantsModal = (requests: TuitionListing["requests"]) => {
-    setSelectedRequests(requests);
+  const openApplicantsModal = async (assignment: TuitionListing) => {
+    
+    const response = await fetch(`/api/assignments/${assignment.id}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch assignment details");
+    }
+    console.log("Assignment details fetched successfully:", assignment.id);
+    const updatedAssignment: TuitionListing = await response.json();
+    setSelectedRequests(updatedAssignment.requests || null);
     setModalOpen(true);
   };
 
@@ -156,7 +167,24 @@ export default function ClientDashboard({
           requests={selectedRequests}
           onClose={() => setModalOpen(false)}
           onAccept={handleAccept}
-          onChat={(id) => console.log("Chat", id)}
+          onChat={async (id) => {
+            const response = await fetch(`/api/chat/get-or-create`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ other_user_id: id }),
+              credentials: "include",
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(`Failed to create chat: ${error.message}`);
+            }
+
+            const chatPreview = await response.json();
+            router.push(`/chat/tutee?chatId=${chatPreview.id}`);
+          }}
           onProfile={(id) => console.log("Profile", id)}
         />
       )}
@@ -170,13 +198,13 @@ function OpenAssignmentActions({
   openApplicantsModal,
 }: {
   assignment: TuitionListing;
-  openApplicantsModal: (requests: TuitionListing["requests"]) => void;
+  openApplicantsModal: (assignment: TuitionListing) => void; //requests: TuitionListing["requests"]) => void;
 }) {
   return (
     <>
       <Button
         className="px-4 py-2 flex justify-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm w-full"
-        onClick={() => openApplicantsModal(assignment.requests)}
+        onClick={() => openApplicantsModal(assignment)}
       >
         Applicants
       </Button>

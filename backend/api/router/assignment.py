@@ -93,3 +93,11 @@ async def change_assignment_request_status(id: int, status: str, user: User = De
     assert_user_authorized = Logic.create_assert_user_authorized(user.id)
     AssignmentLogic.change_assignment_request_status(id, status, assert_user_authorized)
     return {"message": "Assignment request status changed successfully."}
+
+@router.post("/test/api/accept-assignment/{id}")
+async def accept_assignment(id: int) -> Response:
+    if settings.is_use_mock:
+        return Response(200)
+
+    AssignmentLogic.accept_assignment_request(id)
+    return {"message": "Assignment accepted successfully."}

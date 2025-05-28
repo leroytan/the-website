@@ -161,7 +161,6 @@ class SearchResult(BaseModel, Generic[T]):
     results: list[T]
     filters: dict[str, list[dict[str, str]]]
     num_pages: int = 1
-    ids: list[int] | None = None  # Optional list of IDs for the results
 
 class NewChatMessage(BaseModel):
     chat_id: int
@@ -178,3 +177,11 @@ class UserView(BaseModel):
 
 class ChatCreationInfo(BaseModel):
     other_user_id: int
+
+class PaymentRequest(BaseModel):
+    mode: str  # 'payment' or 'subscription'
+    success_url: str
+    cancel_url: str
+    hourly_rate_cents: int # in cents
+    assignment_id: int
+    assignment_request_id: int

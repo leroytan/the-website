@@ -20,6 +20,7 @@ const ApplyAssignmentButton = ({ assignmentId, AppliedStatus, status }: { assign
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ available_slots: [] }),
         credentials: "include",
       });
       const res = await data.json();

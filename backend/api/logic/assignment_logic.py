@@ -375,3 +375,26 @@ class AssignmentLogic:
             
             # Convert to AssignmentPublicView
             return [AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.PUBLIC, user_id) for assignment in assignments]
+        
+    @staticmethod
+    def accept_assignment_request(assignment_request_id: int) -> tuple[int, int]:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).filter_by(id=assignment_request_id).first()
+            if not assignment_request:
+                raise HTTPException( status_code=404, detail="Assignment request not found")
+            elif assignment_request.status != AssignmentRequestStatus.PENDING:
+                raise HTTPException( status_code=409, detail="Assignment request is not pending. Cannot accept.")
+            
+            assignment_request.status = AssignmentRequestStatus.ACCEPTED
+            
+            assignment = assignment_request.assignment
+            assignment.status = AssignmentStatus.FILLED
+            assignment.tutor_id = assignment_request.tutor_id
+
+            for request in assignment.assignment_requests:
+                if request.id != assignment_request_id:
+                    request.status = AssignmentRequestStatus.REJECTED
+
+            session.commit()
+
+            return (assignment.owner_id, assignment_request.tutor_id)

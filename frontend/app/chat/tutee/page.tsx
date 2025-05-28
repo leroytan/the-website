@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
 
 const ChatApp = () => {
@@ -294,6 +294,7 @@ const ChatApp = () => {
     })(),
   };
   
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState(1);
   const [newMessage, setNewMessage] = useState("");
@@ -307,6 +308,15 @@ const ChatApp = () => {
   const lockedChats = chatPreviews.filter((chat) => chat.isLocked);
   const unlockedChats = chatPreviews.filter((chat) => !chat.isLocked);
   const chatName = chatData[selectedChat]?.getTitle() || "Select a chat";
+
+  useEffect(() => {
+    // Check if the URL has the `param` query parameter
+    const chatId = searchParams.get(`chatId`);
+    if (chatId) {
+      setSelectedChat(Number(chatId)); // Set the selected chat based on the query param
+    }
+  }, [searchParams]); // Re-run this effect when the query param changes
+
   
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -513,6 +523,14 @@ const ChatApp = () => {
     );
     setShowDropup(false);
   };
+
+  const inputRef = useRef(null);
+
+  const handleOverlayClick = () => {
+    if (inputRef.current) {
+      inputRef.current.focus(); // Focus the input when the parent is clicked
+    }
+  };
   return (
     <div className="flex flex-col min-w-[320px] h-screen">
       <div className="flex flex-1 overflow-hidden bg-customLightYellow">
@@ -681,7 +699,7 @@ const ChatApp = () => {
                 </button>
               </div>
             </div>
-            <div className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
+            <div onClick={handleOverlayClick} className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
               <div ref={scrollRef} className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]">
                 {chatMessages.map((message, index) => (
                   <div
@@ -723,6 +741,7 @@ const ChatApp = () => {
                 )}
                 <input
                   type="text"
+                  ref={inputRef}
                   placeholder="Type your message here..."
                   className="flex-1 px-4 py-2 rounded-3xl border border-gray-300"
                   value={newMessage}

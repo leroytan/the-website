@@ -7,9 +7,6 @@ Assignment:
       type: string
     owner_id:
       type: integer
-    tutor_id:
-      type: integer
-      nullable: true
     estimated_rate:
       type: string
     weekly_frequency:
@@ -36,8 +33,6 @@ Assignment:
       type: string
     updated_at:
       type: string
-    applied:
-      type: boolean
   required:
     - id
     - title
@@ -50,7 +45,6 @@ Assignment:
     - status
     - created_at
     - updated_at
-    - applied
     - location
     
 AppliedAssignment:
@@ -60,7 +54,12 @@ AppliedAssignment:
       properties:
         request_status:
           type: string
-          nullable: true
+        applied:
+          type: boolean
+          description: Deprecated field, use request_status NOT_SUBMITTED instead
+      required:
+        - request_status
+        - applied
 
 AssignmentOwnerView:
   allOf: # Combines the Assignment and the inline model
@@ -71,6 +70,12 @@ AssignmentOwnerView:
           type: array
           items:
             $ref: '#/AssignmentRequestView'
+        tutor_id:
+          type: integer
+          nullable: true
+      required:
+        - requests
+        - tutor_id
 
 AssignmentRequestView:
   type: object
