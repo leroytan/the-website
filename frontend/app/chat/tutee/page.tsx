@@ -9,7 +9,7 @@ import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useEffect, useRef, useState } from "react";
 
 const ChatApp = () => {
 
@@ -314,6 +314,7 @@ const ChatApp = () => {
     const chatId = searchParams.get(`chatId`);
     if (chatId) {
       setSelectedChat(Number(chatId)); // Set the selected chat based on the query param
+      setShowChat(true); // Show the chat area if a chat is selected
     }
   }, [searchParams]); // Re-run this effect when the query param changes
 

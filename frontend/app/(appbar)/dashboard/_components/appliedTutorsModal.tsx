@@ -13,7 +13,7 @@ export default function AppliedTutorsModal({
 }: {
   requests: TuitionListing["requests"];
   onClose: () => void;
-  onAccept: (requestId: number, priceId: string) => void;
+  onAccept: (requestId: number, hourlyRateCents: number, tutorId: number, chatId?: number) => void;
   onChat: (tutorId: number) => void;
   onProfile: (tutorId: number) => void;
 }) {
@@ -70,7 +70,7 @@ export default function AppliedTutorsModal({
                 <div className="flex flex-col md:flex-row md:items-center gap-2 md:ml-auto">
                   <Button
                     className="px-3 py-2 flex justify-center items-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm whitespace-nowrap"
-                    onClick={() => onAccept(request.id, "")}
+                    onClick={() => onAccept(request.id, 3500, request.tutor_id)}  // Replace 3500 with actual hourly rate if available
                   >
                     Accept & Pay
                   </Button>

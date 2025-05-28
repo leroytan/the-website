@@ -45,15 +45,18 @@ export default function ClientDashboard({
         return false;
       })
     : [];
-  const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID!;
-  const handleAccept = async (requestId: number) => {
+  // const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID!;
+  const handleAccept = async (requestId: number, hourlyRateCents: number, tutorId: number, chatId?: number) => {
     try {
       //Call the backend to create a checkout session
       const session: { id: string; url: string } = await createCheckoutSession({
         mode: "payment",
-        price_id: priceId,
         success_url: window.location.origin + "/payment-success",
         cancel_url: window.location.origin + "/payment-cancel",
+        hourly_rate_cents: hourlyRateCents,
+        assignment_request_id: requestId,
+        tutor_id: tutorId,
+        chat_id: chatId
       });
 
       router.push(session.url);
