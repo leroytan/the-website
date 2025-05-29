@@ -525,7 +525,7 @@ const ChatApp = () => {
     setShowDropup(false);
   };
 
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleOverlayClick = () => {
     if (inputRef.current) {

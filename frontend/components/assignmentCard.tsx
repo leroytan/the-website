@@ -69,7 +69,10 @@ const AssignmentCard = (listing: TuitionListing) => {
               }
             })()}
           </span>
-          <ApplyAssignmentButton listing={listing} />
+          <ApplyAssignmentButton
+          assignmentId={listing.id || 1}
+          appliedStatus={listing.request_status != `NOT_SUBMITTED` }
+          status={listing.status || `OPEN`} />
         </div>
       </div>
     </div>

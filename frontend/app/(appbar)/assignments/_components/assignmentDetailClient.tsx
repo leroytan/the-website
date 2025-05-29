@@ -2,7 +2,7 @@
 import ApplyAssignmentButton from "@/app/(appbar)/assignments/_components/applyAssignmentButton";
 import { TuitionListing } from "@/components/types";
 import { timeAgo } from "@/utils/date";
-import { MapPin, CalendarDays, Clock, Hourglass, Book } from "lucide-react";
+import { Book, CalendarDays, Clock, Hourglass, MapPin } from "lucide-react";
 
 export function AssignmentDetailClient({
   assignment,
@@ -38,7 +38,7 @@ export function AssignmentDetailClient({
       {/* Apply Button */}
       <div className="mt-4">
 
-        <ApplyAssignmentButton assignmentId={assignment.id!} AppliedStatus={assignment.applied!} status={assignment.status!}/>
+        <ApplyAssignmentButton assignmentId={assignment.id!} appliedStatus={assignment.applied!} status={assignment.status!}/>
       </div>
 
       {/* Special Request */}

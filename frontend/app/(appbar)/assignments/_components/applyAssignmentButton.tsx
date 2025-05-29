@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../../../components/button";
 
-const ApplyAssignmentButton = ({ assignmentId, AppliedStatus, status }: { assignmentId: number, AppliedStatus: boolean, status: "OPEN" | "FILLED" }) => {
-  const [isApplied, setIsApplied] = useState<boolean>(AppliedStatus);
+const ApplyAssignmentButton = ({ assignmentId, appliedStatus, status }: { assignmentId: number, appliedStatus: boolean, status: "OPEN" | "FILLED" }) => {
+  const [isApplied, setIsApplied] = useState<boolean>(appliedStatus);
   const [isFilled, setIsFilled] = useState<boolean>(status === "FILLED");
   useEffect(() => {
-    setIsApplied(AppliedStatus);
-  }, [AppliedStatus]);
+    setIsApplied(appliedStatus);
+  }, [appliedStatus]);
 
   useEffect(() => {
     setIsFilled(status === "FILLED");
