@@ -183,5 +183,6 @@ class PaymentRequest(BaseModel):
     success_url: str
     cancel_url: str
     hourly_rate_cents: int # in cents
-    assignment_id: int
     assignment_request_id: int
+    tutor_id: int  # To link to chat
+    chat_id: int | None = None  # Optional, if chat is already created

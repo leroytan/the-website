@@ -22,8 +22,10 @@
     "next": "^15.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-feather": "^2.0.10",
     "react-image-crop": "^11.0.10",
     "react-swipeable": "^7.0.1",
+    "sharp": "^0.34.2",
     "tailwind-merge": "^2.5.3",
     "tailwindcss-animate": "^1.0.7"
   },
