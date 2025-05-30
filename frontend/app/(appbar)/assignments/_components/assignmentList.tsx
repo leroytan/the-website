@@ -10,11 +10,14 @@ interface AssignmentListProps {
   assignments: TuitionListing[];
   totalPages: number;
   searchParams: {
-    page?: string | string[];
+    page_number?: string;
+    page_size?: string;
+    query?: string;
+    filters?: string;
+    sort?: string;
+
     selected?: string;
-    subject?: string | string[];
-    level?: string | string[];
-    sort?: string | string[];
+    add?: string;
   };
 }
 
@@ -25,6 +28,8 @@ export function AssignmentList({
 }: AssignmentListProps) {
   // Determine currently selected assignment ID (to highlight it in the list, if needed)
   const selectedId = searchParams.selected;
+  // Determine the current page number
+  const currentPage = searchParams.page_number ? parseInt(searchParams.page_number as string) : 1;
 
   return (
     <div className="space-y-4">
@@ -87,11 +92,17 @@ export function AssignmentList({
           );
         })}
         {assignments.length === 0 && (
-          <p className="text-gray-500">
+          <p className="text-gray-500 text-center p-4">
             No assignments found for the selected filters.
           </p>
         )}
       </div>
+      {/* End of List Message */}
+      {assignments.length > 0 && currentPage === totalPages && (
+        <div className="text-center text-gray-500 mt-4">
+          <p>You’ve reached the end of the list.</p>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       <div className="mt-6">

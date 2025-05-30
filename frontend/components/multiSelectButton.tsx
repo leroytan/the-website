@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 
 interface MultiSelectProps {
-  options: string[];
+  options: string[] | { value: string; label: string }[];
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
@@ -63,6 +63,13 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
     }
   };
 
+  // Normalize options to always be objects with value and label
+  const normalizedOptions: { value: string; label: string }[] = Array.isArray(options)
+    ? typeof options[0] === "string"
+      ? (options as string[]).map((opt) => ({ value: opt, label: opt }))
+      : (options as { value: string; label: string }[])
+    : [];
+
   return (
     <div className="relative w-full" ref={ref}>
       <button
@@ -73,20 +80,28 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <span>
-  {selected.length > 0 ? (
-    <>
-      {[...selected]
-        .sort((a, b) => options.indexOf(a) - options.indexOf(b))
-        .slice(0, 3)
-        .join(", ")}
-      {selected.length > 3 && (
-        <>, +{selected.length - 3} more</>
-      )}
-    </>
-  ) : (
-    <span className="text-gray-400">{placeholder}</span>
-  )}
-</span>
+          {selected.length > 0 ? (
+            <>
+              {[...selected]
+                .sort(
+                  (a, b) =>
+                    normalizedOptions.findIndex((opt) => opt.value === a) -
+                    normalizedOptions.findIndex((opt) => opt.value === b)
+                )
+                .slice(0, 3)
+                .map(
+                  (val) =>
+                    normalizedOptions.find((opt) => opt.value === val)?.label ?? val
+                )
+                .join(", ")}
+              {selected.length > 3 && (
+                <>, +{selected.length - 3} more</>
+              )}
+            </>
+          ) : (
+            <span className="text-gray-400">{placeholder}</span>
+          )}
+        </span>
         {/* Dropdown arrow */}
         <svg
           className={`ml-2 h-4 w-4 transition-transform duration-200 ${
@@ -111,27 +126,27 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
           tabIndex={-1}
           onKeyDown={handleKeyDown}
         >
-          {options.map((option) => (
+          {normalizedOptions.map((option) => (
             <li
-              key={option}
+              key={option.value}
               role="option"
-              aria-selected={selected.includes(option)}
+              aria-selected={selected.includes(option.value)}
               tabIndex={0}
-              onClick={() => toggleOption(option)}
+              onClick={() => toggleOption(option.value)}
               onKeyDown={(e) => {
                 if (e.key === " " || e.key === "Enter") {
                   e.preventDefault();
-                  toggleOption(option);
+                  toggleOption(option.value);
                 }
               }}
               className={`px-4 py-2 cursor-pointer transition-colors flex items-center ${
-                selected.includes(option)
+                selected.includes(option.value)
                   ? "bg-customYellow text-white font-semibold"
                   : "hover:bg-gray-100 hover:text-customDarkBlue"
               }`}
             >
-              {option}
-              {selected.includes(option) && (
+              {option.label}
+              {selected.includes(option.value) && (
                 <span className="ml-auto text-white font-bold">✔</span>
               )}
             </li>
