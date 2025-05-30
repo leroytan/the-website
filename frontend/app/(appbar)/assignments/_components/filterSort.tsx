@@ -22,15 +22,31 @@ export function FilterSortBar({
   const [isPending, startTransition] = useTransition();
 
   // Prepare options
-  const subjectOptions = subjects.map((s) => s.name);
-  const levelOptions = levels.map((l) => l.name);
+  const subjectOptions = subjects.map(({id, name}) => ({
+    value: id,
+    label: name,
+  }));
+  const levelOptions = levels.map(({id, name}) => ({
+    value: id,
+    label: name,
+  }));
+// Parse filters from URL
+  const filtersParam = searchParams.get("filters") || "";
+  const filterIds = filtersParam.split(",").filter(Boolean); // Split by comma and remove empty values
 
+  // Separate filters into levels and subjects
+  const initialSelectedLevels = filterIds.filter((id) =>
+    levels.some((level) => level.id === id)
+  );
+  const initialSelectedSubjects = filterIds.filter((id) =>
+    subjects.some((subject) => subject.id === id)
+  );
   // Local state for filters
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(
-    searchParams.getAll("subject")
+    initialSelectedSubjects
   );
   const [selectedLevels, setSelectedLevels] = useState<string[]>(
-    searchParams.getAll("level")
+    initialSelectedLevels
   );
   const [selectedSort, setSelectedSort] = useState<string>(
     searchParams.get("sort") || ""
@@ -45,10 +61,16 @@ export function FilterSortBar({
   // Apply filters when button is clicked
   const applyFilters = () => {
     const params = new URLSearchParams();
-    selectedSubjects.forEach((s) => params.append("subject", s));
-    selectedLevels.forEach((l) => params.append("level", l));
+    //remove filters params if they are empty
+    if (selectedSubjects.length + selectedLevels.length === 0) {
+      params.delete("filters");
+    } else {
+      params.set("filters", [
+      ...selectedSubjects,
+      ...selectedLevels,
+    ].join(","));
+    }
     if (selectedSort) params.set("sort", selectedSort);
-    params.set("page", "1");
     router.push(`${pathname}?${params.toString()}`);
   };
 
