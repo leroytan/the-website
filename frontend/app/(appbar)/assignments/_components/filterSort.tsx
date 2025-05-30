@@ -26,12 +26,19 @@ export function FilterSortBar({
   const levelOptions = levels.map((l) => l.name);
 
   // Local state for filters
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(searchParams.getAll("subject"));
-  const [selectedLevels, setSelectedLevels] = useState<string[]>(searchParams.getAll("level"));
-  const [selectedSort, setSelectedSort] = useState<string>(searchParams.get("sort") || "");
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(
+    searchParams.getAll("subject")
+  );
+  const [selectedLevels, setSelectedLevels] = useState<string[]>(
+    searchParams.getAll("level")
+  );
+  const [selectedSort, setSelectedSort] = useState<string>(
+    searchParams.get("sort") || ""
+  );
 
   // Handlers update local state only
-  const onSubjectsChange = (selected: string[]) => setSelectedSubjects(selected);
+  const onSubjectsChange = (selected: string[]) =>
+    setSelectedSubjects(selected);
   const onLevelsChange = (selected: string[]) => setSelectedLevels(selected);
   const onChangeSort = (value: string) => setSelectedSort(value);
 
@@ -46,7 +53,7 @@ export function FilterSortBar({
   };
 
   return (
-    <div className="sticky z-20 bg-white px-6 pt-4 pb-3 shadow-md w-full">
+    <div className="sticky z-10 bg-white px-6 pt-4 pb-3 shadow-md w-full">
       <div className="flex flex-wrap gap-4 justify-start items-end">
         {/* MultiSelect for Subjects */}
         <div className="min-w-[180px]">
@@ -69,9 +76,9 @@ export function FilterSortBar({
         {/* Sort select with dropdown */}
         <div className="min-w-[180px]">
           <DropDown
+            placeholder="Sort by"
             stringOnDisplay={
-              sortOptions.find((opt) => opt.value === selectedSort)?.label ||
-              "Sort by"
+              sortOptions.find((opt) => opt.value === selectedSort)?.label || ""
             }
             stateController={(option) => onChangeSort(option.value)}
             iterable={sortOptions}

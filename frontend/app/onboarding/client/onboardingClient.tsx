@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export default function TuteeOnboarding() {
+export default function ClientOnboarding() {
   const router = useRouter() 
   const [currentStep, setCurrentStep] = useState(0)
 

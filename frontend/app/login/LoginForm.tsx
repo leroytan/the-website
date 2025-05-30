@@ -9,12 +9,14 @@ import { useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { BASE_URL } from "@/utils/constants";
+import { useAuth } from "@/context/authContext";
+import { User, Tutor } from "@/components/types";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
-
+  const { refetch } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +38,17 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     });
 
     if (res.ok) {
+      await refetch(); // refresh user and tutor data for authcontext
+      // Fetch user state and set cookies
+      const meRes = await fetch("/api/me");
+      const { user, tutor }: { user: User; tutor: Tutor | null } =
+        await meRes.json();
+
+      // Set helper cookies for middleware
+      if (user.intends_to_be_tutor && !tutor) {
+      document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
+      document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
+      }
       router.replace(redirectTo);
       router.refresh();
     } else {
