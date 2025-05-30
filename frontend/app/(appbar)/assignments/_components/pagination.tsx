@@ -9,7 +9,7 @@ interface PaginationProps {
 export function Pagination({ totalPages }: PaginationProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const currentPage = Number(searchParams.get('page')) || 1;
+  const currentPage = Number(searchParams.get('page_number')) || 1;
 
   if (totalPages <= 1) return null;  // no pagination needed
 
@@ -18,9 +18,9 @@ export function Pagination({ totalPages }: PaginationProps) {
     const params = new URLSearchParams(searchParams.toString());
     if (page === 1) {
       // Remove page param if page 1 (optional: to keep URL clean)
-      params.delete('page');
+      params.delete('page_number');
     } else {
-      params.set('page', page.toString());
+      params.set('page_number', page.toString());
     }
     // Clear selected param on page change
     params.delete('selected');
