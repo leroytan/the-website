@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { useAuth } from "@/context/authContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,6 +17,7 @@ const ROLES = ["Tutor", "Tutee/Parent"] as const;
 
 export default function SignupPage() {
   const router = useRouter();
+  const { refetch } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,7 +25,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState(""); // New state for password confirmation
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [userType, setUserType] = useState("Select Role");
+  const [userType, setUserType] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -40,7 +42,12 @@ export default function SignupPage() {
     const res = await fetch(`api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, intends_to_be_tutor: userType === "Tutor" }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        intends_to_be_tutor: userType === "Tutor",
+      }),
     });
 
     if (res.status === 400) {
@@ -48,7 +55,9 @@ export default function SignupPage() {
       return;
     }
     if (res.ok) {
+      await refetch(); // refresh user and tutor data for authcontext
       router.push("/login");
+      router.refresh();
     } else {
       setErrorMessage("Error signing up. Please try again later.");
     }
@@ -171,7 +180,9 @@ export default function SignupPage() {
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirmPassword ? "Hide password" : "Show password"
+                }
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-500" />
@@ -187,6 +198,7 @@ export default function SignupPage() {
             )}
           </div>
           <DropDown
+            placeholder="Sign up as a..."
             stringOnDisplay={userType}
             stateController={setUserType}
             iterable={[...ROLES]}
@@ -195,7 +207,7 @@ export default function SignupPage() {
           {errorMessage && (
             <p className="text-sm text-red-500 mb-4">{errorMessage}</p>
           )}
-          
+
           <motion.button
             type="submit"
             whileHover={{ scale: 1.05 }}
