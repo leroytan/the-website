@@ -9,8 +9,8 @@ import AddAssignmentOverlay from "./_components/addAssignmentOverlay";
 
 interface AssignmentsResponse {
   results: TuitionListing[];
-  totalPages: number;
-  filters: TuitionListingFilters
+  num_pages: number;
+  filters: TuitionListingFilters;
   sortOptions: { value: string; label: string }[];
 }
 
@@ -18,49 +18,50 @@ export default async function AssignmentsPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    page?: string | string[];
+    page_number?: string;
+    page_size?: string;
+    query?: string;
+    filters?: string;
+    sort?: string;
+
     selected?: string;
-    subject?: string | string[];
-    level?: string | string[];
-    sort?: string | string[];
     add?: string;
   }>;
 }) {
   const searchParamsObj = await searchParams;
 
   // Parse search parameters for current state
-  const pageParam = Array.isArray(searchParamsObj.page)
-    ? searchParamsObj.page[0]
-    : searchParamsObj.page;
-  const page = pageParam ? parseInt(pageParam) : 1;
+  const pageNumberParam = searchParamsObj.page_number
+    ? parseInt(searchParamsObj.page_number)
+    : 1;
   const selectedId = searchParamsObj.selected;
+  const queryParam = searchParamsObj.query || ""; // Parse the query parameter
+  const filterParams = searchParamsObj.filters || ""; // Parse the filters parameter
+
+  // Parse filters into an array
+  const filterIds = filterParams.split(",").filter(Boolean);
 
   //Show add assignment overlay if 'add' param is true
   const showAddOverlay = searchParamsObj.add === "true";
-  
+
   // Build query string for API request (excluding 'selected')
   const params = new URLSearchParams();
-  const subjectParams = searchParamsObj.subject;
-  const levelParams = searchParamsObj.level;
+
   const sortParam = Array.isArray(searchParamsObj.sort)
     ? searchParamsObj.sort[0]
     : searchParamsObj.sort;
 
-  if (subjectParams) {
-    const subjects = Array.isArray(subjectParams)
-      ? subjectParams
-      : [subjectParams];
-    subjects.forEach((subj) => params.append("subject", subj));
+  if (queryParam) {
+    params.set("query", queryParam);
   }
-  if (levelParams) {
-    const levels = Array.isArray(levelParams) ? levelParams : [levelParams];
-    levels.forEach((lvl) => params.append("level", lvl));
+  if (filterIds.length > 0) {
+    params.set("filters", filterIds.join(","));
   }
   if (sortParam) {
     params.set("sort", sortParam);
   }
-  params.set("page", pageParam || "1");
-
+  params.set("page_number", pageNumberParam.toString() || "1");
+  params.set("page_size", "10"); // Default page size
   // Fetch assignments list data from backend API
   const res = await fetch(`${BASE_URL}/assignments?${params.toString()}`, {
     cache: "no-store",
@@ -76,7 +77,7 @@ export default async function AssignmentsPage({
     { value: "asc", label: "Ascending" },
     { value: "desc", label: "Descending" },
   ];
-  const totalPages = data.totalPages || 6;
+  const totalPages = data.num_pages;
 
   return (
     <div className="flex flex-col items-center bg-customLightYellow h-[calc(100vh-64px)]">
@@ -117,12 +118,7 @@ export default async function AssignmentsPage({
           </div>
         )}
       </div>
-      {showAddOverlay && (
-        <AddAssignmentOverlay
-          filters={data.filters}
-        />
-      )}
+      {showAddOverlay && <AddAssignmentOverlay filters={data.filters} />}
     </div>
-    
   );
 }

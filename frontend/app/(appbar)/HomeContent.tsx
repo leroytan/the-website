@@ -1,20 +1,18 @@
-"use client"
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import ReviewCarousel from '@/components/ReviewCarousel';
-import { useAuth } from '@/context/authContext';
-
+"use client";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import ReviewCarousel from "@/components/ReviewCarousel";
+import { useAuth } from "@/context/authContext";
 
 export default function HomeContent() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   const handleRequestTutor = () => {
-    router.push('/tutors');
+    router.push("/tutors");
   };
 
   const handleJoinUs = () => {
-    router.push('/signup');
+    router.push("/signup");
   };
 
   return (
@@ -62,7 +60,7 @@ export default function HomeContent() {
             >
               Request a tutor
             </motion.button>
-            {!isAuthenticated && (
+            {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -71,7 +69,7 @@ export default function HomeContent() {
               >
                 Join Us
               </motion.button>
-            )}
+            }
           </motion.div>
         </div>
       </motion.section>
@@ -89,10 +87,10 @@ export default function HomeContent() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
-              'Personalized Learning',
-              'Expert Tutors',
-              'Flexible Scheduling',
-              'Interactive Sessions',
+              "Personalized Learning",
+              "Expert Tutors",
+              "Flexible Scheduling",
+              "Interactive Sessions",
             ].map((feature, index) => (
               <motion.div
                 key={index}
@@ -106,8 +104,8 @@ export default function HomeContent() {
                   {feature}
                 </h3>
                 <p className="text-[#4a58b5] text-sm sm:text-base">
-                  We offer tailored educational experiences to help you excel
-                  in your studies.
+                  We offer tailored educational experiences to help you excel in
+                  your studies.
                 </p>
               </motion.div>
             ))}

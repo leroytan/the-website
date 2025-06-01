@@ -43,3 +43,30 @@ export interface TuitionListingFilters {
     id: string;
   }[];
 }
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  profile_photo_url: string;
+  intends_to_be_tutor: boolean;
+  created_at: string;
+  updated_at: string;
+}
+export interface Tutor {
+  id: number;
+  name: string;
+  email: string;
+  photo_url: string;
+  highest_education: string;
+  rate: string;
+  location: string;
+  rating: number;
+  about_me: string;
+  subjects_teachable: string[];
+  levels_teachable: string[];
+  special_skills: string[];
+  resume_url: string;
+  experience: string;
+  availability: string;
+}

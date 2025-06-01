@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.r2.cloudflarestorage.com",
+        port: "",
+        pathname: "/teach-honour-excel-website-dev/profile_photos/**",
+      }
+    ]
+  },
   rewrites: async () => {
     return [
       {
