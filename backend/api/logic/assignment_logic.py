@@ -25,8 +25,6 @@ class ViewType(enum.Enum):
 
 class AssignmentLogic:
 
-    PAGE_SIZE = 10  # Default page size for pagination
-
     @staticmethod
     def convert_assignment_to_view(session: Session, assignment: Assignment, view_type: ViewType = ViewType.PUBLIC, user_id: int = None) -> AssignmentOwnerView | AssignmentPublicView:
         session.add(assignment)
@@ -127,10 +125,12 @@ class AssignmentLogic:
                 filters.append(Assignment.level_id.in_(parsed_filters["level"]))
 
             statement = statement.filter(and_(*filters))
+            # Default ordering is by created_at descending, then by id ascending
+            # TODO: Allow sorting by other fields
             statement = statement.order_by(Assignment.created_at.desc(), Assignment.id.asc())
 
-            # Apply pagination
-            page_size = search_query.page_size or AssignmentLogic.PAGE_SIZE
+            # Pagination
+            page_size = search_query.page_size
             offset = (search_query.page_number - 1) * page_size
             num_pages = math.ceil(statement.count() / page_size)
             statement = statement.offset(offset).limit(page_size)
