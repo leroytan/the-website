@@ -155,11 +155,20 @@ class SearchQuery(BaseModel):
     page_size: int = 10
     page_number: int = 1
 
+class FilterChoice(BaseModel):
+    id: str
+    name: str
+
+class SortChoice(BaseModel):
+    id: str
+    name: str
+
 T = TypeVar("T")
 
 class SearchResult(BaseModel, Generic[T]):
-    results: list[T]
-    filters: dict[str, list[dict[str, str]]]
+    results: list[T] = []
+    filters: dict[str, list[FilterChoice]] = []
+    sorts: list[SortChoice] = []
     num_pages: int = 1
 
 class NewChatMessage(BaseModel):

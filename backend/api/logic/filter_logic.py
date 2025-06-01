@@ -1,5 +1,6 @@
 from typing import Type
 
+from api.router.models import FilterChoice
 from api.storage.models import Assignment, Level, Subject, Tutor
 from api.storage.storage_service import StorageService
 from sqlalchemy.orm import Session
@@ -26,7 +27,7 @@ class FilterLogic:
         return parsed_filters
 
     @staticmethod
-    def get_filter(TableClass: Type[DeclarativeMeta]) -> list[dict[str, str]]:
+    def get_filter(TableClass: Type[DeclarativeMeta]) -> list[FilterChoice]:
         """
         Returns a list of available filters and their values for a given filter name.
         """
@@ -38,16 +39,16 @@ class FilterLogic:
                 find_one=False
             )
             items = [
-                {
-                    "id": getattr(row, "filterId"),
-                    "name": getattr(row, "name")
-                }
+                FilterChoice(
+                    id=getattr(row, "filterId"),
+                    name=getattr(row, "name")
+                )
                 for row in rows
             ]
             return items
 
     @staticmethod
-    def get_filters(TableClass: DeclarativeMeta) -> dict[str, list[dict[str, str]]]:
+    def get_filters(TableClass: DeclarativeMeta) -> dict[str, list[FilterChoice]]:
         """
         Returns a dictionary of available filters and their values.
         """
