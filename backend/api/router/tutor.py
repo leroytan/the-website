@@ -12,7 +12,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 @router.get("/api/tutors")
-async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> SearchResult[TutorPublicSummary]:
+async def search_tutors(query: str = "", filters: str = "", sorts: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[TutorPublicSummary]:
     """
     Handles the searching of specific tutors using fields such as subjects and levels.
 
@@ -35,14 +35,17 @@ async def search_tutors(query: str = "", filters: str = "", sorts: str = "") -> 
         query=query,
         filters=filter_ids,
         sorts=sort_ids,
+        page_size=page_size,
+        page_number=page_number
     )
 
-    results = TutorLogic.search_tutors(search_query)
+    res = TutorLogic.search_tutors(search_query)
     filters = FilterLogic.get_filters(Tutor)
 
     return SearchResult[TutorPublicSummary](
-        results=results,
+        results=res["results"],
         filters=filters,
+        num_pages=res["num_pages"],
     )
 
 

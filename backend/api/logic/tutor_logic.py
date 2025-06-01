@@ -1,3 +1,5 @@
+import math
+
 from api.logic.filter_logic import FilterLogic
 from api.logic.user_logic import UserLogic
 from api.router.models import (NewTutorProfile, SearchQuery, TutorProfile,
@@ -114,13 +116,24 @@ class TutorLogic:
                 filters.append(Tutor.levels.any(Level.id.in_(parsed_filters["level"])))
 
             statement = statement.filter(and_(*filters))
+            # Default ordering by rating and name
+            # TODO: Allow sorting by other fields
+            statement = statement.order_by(Tutor.rating.desc(), user_alias.name.asc())
 
-            tutors = StorageService.find(session, statement, Tutor)
+            # Pagination
+            page_size = search_query.page_size
+            offset = (search_query.page_number - 1) * page_size
+            num_pages = math.ceil(statement.count() / page_size)
+            statement = statement.offset(offset).limit(page_size)
+            tutors = statement.all()
 
             # Convert the list of Tutor objects to TutorPublicSummary objects            
             summaries = [TutorLogic.convert_tutor_to_public_summary(session, tutor) for tutor in tutors]
 
-            return summaries
+            return {
+                "results": summaries,
+                "num_pages": num_pages,
+            }
     
     @staticmethod
     def new_tutor(tutor_profile: NewTutorProfile, user_id: str|int) -> TutorProfile:

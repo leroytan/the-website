@@ -152,7 +152,7 @@ class SearchQuery(BaseModel):
     query: str | None
     filters: list[str] | None
     sorts: list[str] | None
-    page_size: int | None  # Let the API handle default
+    page_size: int = 10
     page_number: int = 1
 
 T = TypeVar("T")

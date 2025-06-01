@@ -23,6 +23,20 @@ get:
         type: array
         items:
           type: string
+    - in: query
+      name: page_number
+      schema:
+        type: integer
+        default: 1
+      required: false
+      description: page number for pagination
+    - in: query
+      name: page_size
+      schema:
+        type: integer
+        default: 10
+      required: false
+      description: number of assignments per page
   responses:
     '200':
       description: A list of tutor summaries and filters (string, int) separated by type
@@ -48,6 +62,9 @@ get:
                   - subjects
                   - levels
                   - location
+              num_pages:
+                type: integer
+                description: Total number of pages available
             required:
               - results
               - filters
