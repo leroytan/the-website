@@ -3,6 +3,7 @@ from api.config import settings
 from api.logic.assignment_logic import AssignmentLogic
 from api.logic.filter_logic import FilterLogic
 from api.logic.logic import Logic
+from api.logic.sort_logic import SortLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                NewAssignment, NewAssignmentRequest,
@@ -38,11 +39,11 @@ async def search_assignments(request: Request, query: str = "", filters: str = "
             raise e
 
     res = AssignmentLogic.search_assignments(search_query, user.id if user else None)
-    filters = FilterLogic.get_filters(Assignment)
 
     return SearchResult[AssignmentPublicView](
         results=res["results"],
-        filters=filters,
+        filters=FilterLogic.get_filters(Assignment),
+        sorts=SortLogic.get_sorts(Assignment),
         num_pages=res["num_pages"],
     )
 
