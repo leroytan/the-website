@@ -1,4 +1,5 @@
-from typing import Generic, TypeVar
+import enum
+from typing import Generic, Optional, TypeVar
 
 from api.storage.models import AssignmentRequestStatus
 from pydantic import BaseModel
@@ -127,7 +128,7 @@ class AssignmentBaseView(BaseModel):
 
 class AssignmentPublicView(AssignmentBaseView):
     applied: bool = False  # Indicates if the user has applied for the assignment
-    request_status: str = AssignmentRequestStatus.NOT_SUBMITTED  # Status of the request if applied
+    request_status: AssignmentRequestStatus = AssignmentRequestStatus.NOT_SUBMITTED  # Status of the request if applied
 
 class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
@@ -150,8 +151,8 @@ class NewAssignment(BaseModel):  # TODO: add location
 
 class SearchQuery(BaseModel):
     query: str | None
-    filters: list[str] | None
-    sorts: list[str] | None
+    filter_by: list[str] | None
+    sort_by: str | None
     page_size: int = 10
     page_number: int = 1
 
@@ -162,6 +163,20 @@ class FilterChoice(BaseModel):
 class SortChoice(BaseModel):
     id: str
     name: str
+
+class SortOrder(str, enum.Enum):
+    ASC = 'asc'
+    DESC = 'desc'
+
+# Step 1: Define an Enum for sorting criteria
+class AssignmentSortField(str, enum.Enum):
+    CREATED_AT = 'created_at'  # Sort by creation date
+    ESTIMATED_RATE = 'estimated_rate'  # Sort by estimated rate
+    WEEKLY_FREQUENCY = 'weekly_frequency'  # Sort by weekly frequency
+    LEVEL = 'level'  # Sort by level (e.g., beginner, intermediate, advanced)
+    LOCATION = 'location'  # Sort by location
+    TITLE = 'title'  # Sort by assignment title
+    RELEVANCE = 'relevance'  # Sort by relevance to the search query
 
 T = TypeVar("T")
 

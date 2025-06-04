@@ -3,6 +3,7 @@ from api.config import settings
 from api.logic.assignment_logic import AssignmentLogic
 from api.logic.filter_logic import FilterLogic
 from api.logic.logic import Logic
+from api.logic.sort_logic import SortLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                NewAssignment, NewAssignmentRequest,
@@ -13,19 +14,18 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 router = APIRouter()
 
 @router.get("/api/assignments")
-async def search_assignments(request: Request, query: str = "", filters: str = "", sorts: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[AssignmentPublicView]:
+async def search_assignments(request: Request, query: str = "", filter_by: str = "", sort_by: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[AssignmentPublicView]:
     if settings.is_use_mock:
         return mock.get_assignments()
     
     # Parse the filters and sorts from the query string
     # TODO: Implement a more robust parsing method
-    filter_ids = filters.split(",") if filters else []
-    sort_ids = sorts.split(",") if sorts else []
+    filter_ids = filter_by.split(",") if filter_by else []
 
     search_query = SearchQuery(
         query=query,
-        filters=filter_ids,
-        sorts=sort_ids,
+        filter_by=filter_ids,
+        sort_by=sort_by,
         page_size=page_size,
         page_number=page_number
     )
@@ -38,11 +38,11 @@ async def search_assignments(request: Request, query: str = "", filters: str = "
             raise e
 
     res = AssignmentLogic.search_assignments(search_query, user.id if user else None)
-    filters = FilterLogic.get_filters(Assignment)
 
     return SearchResult[AssignmentPublicView](
         results=res["results"],
-        filters=filters,
+        filters=FilterLogic.get_filters(Assignment),
+        sorts=SortLogic.get_sorts(Assignment),
         num_pages=res["num_pages"],
     )
 

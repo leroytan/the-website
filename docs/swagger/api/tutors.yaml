@@ -9,20 +9,18 @@ get:
       description: The search query for tutors
       schema:
         type: string
-    - name: sort
+    - name: filter_by
       in: query
       required: false
-      description: Sorting criteria for the tutor list
+      description: filter ids, comma-separated, to filter tutors
       schema:
         type: string
-    - name: filter
+    - name: sort_by
       in: query
       required: false
-      description: Filter criteria for the tutor list
+      description: a single sort id
       schema:
-        type: array
-        items:
-          type: string
+        type: string
     - in: query
       name: page_number
       schema:

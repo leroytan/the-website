@@ -12,7 +12,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 @router.get("/api/tutors")
-async def search_tutors(query: str = "", filters: str = "", sorts: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[TutorPublicSummary]:
+async def search_tutors(query: str = "", filter_by: str = "", sort_by: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[TutorPublicSummary]:
     """
     Handles the searching of specific tutors using fields such as subjects and levels.
 
@@ -28,13 +28,12 @@ async def search_tutors(query: str = "", filters: str = "", sorts: str = "", pag
     
     # Parse the filters and sorts from the query string
     # TODO: Implement a more robust parsing method
-    filter_ids = filters.split(",") if filters else []
-    sort_ids = sorts.split(",") if sorts else []
+    filter_ids = filter_by.split(",") if filter_by else []
 
     search_query = SearchQuery(
         query=query,
-        filters=filter_ids,
-        sorts=sort_ids,
+        filter_by=filter_ids,
+        sort_by=sort_by,
         page_size=page_size,
         page_number=page_number
     )
@@ -68,7 +67,7 @@ async def get_tutor_profile(id: int, request: Request) -> TutorPublicSummary | T
         return mock.get_tutor_profile()
     
     try:
-        user = await RouterAuthUtils.get_current_user(request)
+        user = RouterAuthUtils.get_current_user(request)
         is_self = user and user.id == id
     except HTTPException:
         is_self = False
