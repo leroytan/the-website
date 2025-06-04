@@ -68,7 +68,7 @@ async def get_tutor_profile(id: int, request: Request) -> TutorPublicSummary | T
         return mock.get_tutor_profile()
     
     try:
-        user = await RouterAuthUtils.get_current_user(request)
+        user = RouterAuthUtils.get_current_user(request)
         is_self = user and user.id == id
     except HTTPException:
         is_self = False
