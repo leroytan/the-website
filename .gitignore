@@ -38,3 +38,5 @@ frontend/next-env.d.ts
 # python
 **/__pycache__/
 backend/venv/
+
+.DS_Store

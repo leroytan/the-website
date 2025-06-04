@@ -128,7 +128,7 @@ class AssignmentBaseView(BaseModel):
 
 class AssignmentPublicView(AssignmentBaseView):
     applied: bool = False  # Indicates if the user has applied for the assignment
-    request_status: str = AssignmentRequestStatus.NOT_SUBMITTED  # Status of the request if applied
+    request_status: AssignmentRequestStatus = AssignmentRequestStatus.NOT_SUBMITTED  # Status of the request if applied
 
 class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
@@ -151,8 +151,8 @@ class NewAssignment(BaseModel):  # TODO: add location
 
 class SearchQuery(BaseModel):
     query: str | None
-    filters: list[str] | None
-    sorts: list[str] | None
+    filter_by: list[str] | None
+    sort_by: str | None
     page_size: int = 10
     page_number: int = 1
 
