@@ -150,9 +150,9 @@ class NewAssignment(BaseModel):  # TODO: add location
     location: str
 
 class SearchQuery(BaseModel):
-    query: str | None
-    filter_by: list[str] | None
-    sort_by: str | None
+    query: str
+    filter_by: list[str]
+    sort_by: str
     page_size: int = 10
     page_number: int = 1
 
@@ -177,6 +177,7 @@ class AssignmentSortField(str, enum.Enum):
     LOCATION = 'location'  # Sort by location
     TITLE = 'title'  # Sort by assignment title
     RELEVANCE = 'relevance'  # Sort by relevance to the search query
+    DEFAULT = ''
 
 T = TypeVar("T")
 
@@ -185,6 +186,7 @@ class SearchResult(BaseModel, Generic[T]):
     filters: dict[str, list[FilterChoice]] = []
     sorts: list[SortChoice] = []
     num_pages: int = 1
+    debug: list = []  # Additional information, e.g., weekly frequency for assignments
 
 class NewChatMessage(BaseModel):
     chat_id: int

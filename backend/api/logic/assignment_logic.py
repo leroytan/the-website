@@ -17,7 +17,7 @@ from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
-
+from api.logic.sort_logic import SortLogic
 
 class ViewType(enum.Enum):
     OWNER = "owner"
@@ -126,8 +126,7 @@ class AssignmentLogic:
 
             statement = statement.filter(and_(*filters))
             # Default ordering is by created_at descending, then by id ascending
-            # TODO: Allow sorting by other fields
-            statement = statement.order_by(Assignment.created_at.desc(), Assignment.id.asc())
+            statement = statement.order_by(SortLogic.get_sorting(Assignment, search_query.sort_by))
 
             # Pagination
             page_size = search_query.page_size
