@@ -5,31 +5,54 @@ from sqlalchemy.orm.decl_api import DeclarativeMeta
 
 class SortLogic:
 
+    @staticmethod
+    def parse_sort_id(sort_id: str) -> tuple[str, SortOrder]:
+        """
+        Parses the sort_id into a field and order.
+        Returns a tuple of (field, order).
+        """
+        # Let the sort_id be empty string if no sorting is applied
+        if sort_id == "":
+            return "", SortOrder.DESC
+        elif "_" not in sort_id:
+            raise ValueError(f"Invalid sort_id format: {sort_id}")
+        
+        field, order_str = sort_id.rsplit("_", 1)
+        order = SortOrder(order_str.lower())
+        
+        return field.lower(), order
+
     # Type hint sqlalchemy query object as return type
     @staticmethod
-    def apply_sorting(sort_id: str, TableClass: DeclarativeMeta) -> str:
+    def get_sorting(TableClass: DeclarativeMeta, sort_id: str) -> str:
         """
         Applies sorting to a given table class based on the sort_id.
         Returns the SQLAlchemy order_by clause as a string.
         """
-        if TableClass == Tutor:
-            if sort_id == "name":
-                return Tutor.name.asc()
-            elif sort_id == "rating":
-                return Tutor.rating.desc()
-            elif sort_id == "price":
-                return Tutor.rate.asc()
-            else:
-                raise ValueError(f"Invalid sort_id for Tutor: {sort_id}")
-        elif TableClass == Assignment:
-            if sort_id == AssignmentSortField.created_at.value:
-                return Assignment.created_at.desc()
-            elif sort_id == AssignmentSortField.due_date.value:
-                return Assignment.due_date.asc()
-            elif sort_id == AssignmentSortField.price.value:
-                return Assignment.price.asc()
-            else:
-                raise ValueError(f"Invalid sort_id for Assignment: {sort_id}")
+
+        field, order = SortLogic.parse_sort_id(sort_id)
+
+        if TableClass == Assignment:
+            field = AssignmentSortField(field)
+            match field:
+                case AssignmentSortField.DEFAULT | AssignmentSortField.CREATED_AT:
+                    return Assignment.created_at.desc() if order == SortOrder.DESC else Assignment.created_at.asc()
+                case AssignmentSortField.ESTIMATED_RATE:
+                    raise ValueError("Estimated rate sorting is not supported yet.")
+                    return Assignment.estimated_rate.desc() if order == SortOrder.DESC else Assignment.estimated_rate.asc()
+                case AssignmentSortField.WEEKLY_FREQUENCY:
+                    return Assignment.weekly_frequency.desc() if order == SortOrder.DESC else Assignment.weekly_frequency.asc()
+                case AssignmentSortField.LEVEL:
+                    raise ValueError("Level sorting is not supported yet.")
+                    return Assignment.level.desc() if order == SortOrder.DESC else Assignment.level.asc()
+                case AssignmentSortField.TITLE:
+                    return Assignment.title.desc() if order == SortOrder.DESC else Assignment.title.asc()
+                case AssignmentSortField.LOCATION:
+                    raise ValueError("Location sorting is not supported yet.")
+                    return Assignment.location.asc() if order == SortOrder.ASC else Assignment.location.desc()
+                case AssignmentSortField.RELEVANCE:
+                    raise ValueError("Relevance sorting is not supported yet.")
+                    return Assignment.relevance.desc()
         else:
             raise ValueError(f"Unsupported TableClass: {TableClass}")
         
