@@ -114,7 +114,7 @@ class AssignmentLogic:
                 ))
 
             # get filters from the search query
-            parsed_filters = FilterLogic.parse_filters(search_query.filters)
+            parsed_filters = FilterLogic.parse_filters(search_query.filter_by)
 
             # Filter by subjects
             if "subject" in parsed_filters:

@@ -10,17 +10,17 @@ get:
       required: false
       description: query string to search
     - in: query
-      name: filter
+      name: filter_by
       schema:
         type: string
       required: false
-      description: filter ids
+      description: filter ids, comma-separated, to filter assignments
     - in: query
-      name: sort
+      name: sort_by
       schema:
         type: string
       required: false
-      description: ordering of assignments
+      description: a single sort id
     - in: query
       name: page_number
       schema:
