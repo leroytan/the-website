@@ -44,6 +44,7 @@ async def search_assignments(request: Request, query: str = "", filter_by: str =
         filters=FilterLogic.get_filters(Assignment),
         sorts=SortLogic.get_sorts(Assignment),
         num_pages=res["num_pages"],
+        debug=[assigment.title for assigment in res["results"]],
     )
 
 
