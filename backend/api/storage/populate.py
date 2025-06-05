@@ -222,7 +222,6 @@ def insert_test_data(engine: object) -> bool:
     tutors = [
         Tutor(
             id=users[2].id,  # Alice
-            photo_url="https://randomuser.me/api/portraits/women/1.jpg",
             highest_education="Ph.D. in Mathematics",
             availability="Weekdays 3PM-8PM, Weekends 10AM-4PM",
             resume_url="https://example.com/alice_resume.pdf",
@@ -234,7 +233,6 @@ def insert_test_data(engine: object) -> bool:
         ),
         Tutor(
             id=users[3].id,  # Bob
-            photo_url="https://randomuser.me/api/portraits/men/1.jpg",
             highest_education="Master's in Physics",
             availability="Weekends and evenings",
             resume_url="https://example.com/bob_resume.pdf",
@@ -246,7 +244,6 @@ def insert_test_data(engine: object) -> bool:
         ),
         Tutor(
             id=users[4].id,  # Carol
-            photo_url="https://randomuser.me/api/portraits/women/2.jpg",
             highest_education="Bachelor's in English Literature",
             availability="Flexible schedule",
             resume_url="https://example.com/carol_resume.pdf",
@@ -258,7 +255,6 @@ def insert_test_data(engine: object) -> bool:
         ),
         Tutor(
             id=users[5].id,  # David
-            photo_url="https://randomuser.me/api/portraits/men/2.jpg",
             highest_education="Master's in Computer Science",
             availability="Weekday evenings",
             resume_url="https://example.com/david_resume.pdf",
@@ -270,7 +266,6 @@ def insert_test_data(engine: object) -> bool:
         ),
         Tutor(
             id=users[6].id,  # Eva
-            photo_url="https://randomuser.me/api/portraits/women/3.jpg",
             highest_education="Ph.D. in Chemistry",
             availability="Weekends only",
             resume_url="https://example.com/eva_resume.pdf",
@@ -282,7 +277,6 @@ def insert_test_data(engine: object) -> bool:
         ),
         Tutor(
             id=users[7].id,  # Frank
-            photo_url="https://randomuser.me/api/portraits/men/3.jpg",
             highest_education="Master's in Spanish",
             availability="Afternoons and weekends",
             resume_url="https://example.com/frank_resume.pdf",
