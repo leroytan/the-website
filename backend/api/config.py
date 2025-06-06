@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     database_config: str = "LOCAL"  # Default to using local DB
     database_url_local: str
     database_url_dev1: str
+    database_url_test: str = ""
     database_url_prod: str
     is_use_mock: bool = True
     db_populate_check: bool = False
@@ -38,10 +39,14 @@ class Settings(BaseSettings):
                 return self.database_url_local
             case "DEV1":
                 return self.database_url_dev1
+            case "TEST":
+                return self.database_url_test
             case "PROD":
                 return self.database_url_prod
             
     def make_engine(self, create_engine: callable, NullPool: callable):
+        if self.database_url == "":
+            raise ValueError("Database URL is not set. Please check your configuration.")
         if self.database_config == "LOCAL":
             return create_engine(self.database_url)
         else:
