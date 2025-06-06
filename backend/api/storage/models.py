@@ -38,7 +38,6 @@ class Tutor(Base):
     id = Column(Integer, ForeignKey('User.id'), primary_key=True)
     
     # Tutor-specific fields
-    photo_url = Column(String, nullable=True)
     highest_education = Column(String, nullable=True)
     availability = Column(String, nullable=True)
     resume_url = Column(String, nullable=True)

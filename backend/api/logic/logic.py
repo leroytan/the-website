@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
-from api.common.models import LoginRequest, SignupRequest
+from api.router.models import LoginRequest, SignupRequest
 from api.storage.models import User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException

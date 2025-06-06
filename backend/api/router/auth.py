@@ -1,11 +1,10 @@
-from api.common.models import LoginRequest, SignupRequest
+from api.router.models import LoginRequest, SignupRequest
 from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
 from api.storage.models import User
 from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 
 router = APIRouter()
-
 
 @router.post("/api/auth/login")
 async def login(

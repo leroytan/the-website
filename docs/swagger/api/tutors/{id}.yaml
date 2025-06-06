@@ -95,9 +95,6 @@ TutorProfile:
       type: string
     email:
       type: string
-    photo_url:
-      type: string
-      nullable: true
     highest_education:
       type: string
       nullable: true

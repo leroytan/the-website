@@ -14,6 +14,7 @@ class SignupRequest(BaseModel):
     email: str
     password: str
     name: str
+    intends_to_be_tutor: bool = False
 
 class TutorPublicSummary(BaseModel):
     id: int
@@ -27,13 +28,11 @@ class TutorPublicSummary(BaseModel):
     availability: str | None
 
 class NewTutorProfile(BaseModel):
-    photo_url: str | None
     highest_education: str | None
     availability: str | None
     resume_url: str | None
     rate: str | None
     location: str | None
-    rating: float | None
     about_me: str | None
     experience: str | None
     subjects_teachable: list[str]
