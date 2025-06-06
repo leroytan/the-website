@@ -83,7 +83,7 @@ export function FilterSortBar({
   };
 
   return (
-    <div className="sticky top-14 z-10 bg-white px-6 pt-4 pb-3 shadow-md w-full">
+    <div className="sticky top-14 z-10 bg-white px-6 pt-4 pb-3 shadow-md w-full relative">
       <div className="flex flex-wrap gap-4 justify-start items-end">
         {/* MultiSelect for Subjects */}
         <div className="min-w-[180px]">

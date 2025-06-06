@@ -11,7 +11,7 @@ interface AssignmentsResponse {
   results: TuitionListing[];
   num_pages: number;
   filters: TuitionListingFilters;
-  sortOptions: { value: string; label: string }[];
+  sorts: { id: string; name: string }[];
 }
 
 export default async function AssignmentsPage({
@@ -21,8 +21,8 @@ export default async function AssignmentsPage({
     page_number?: string;
     page_size?: string;
     query?: string;
-    filters?: string;
-    sort?: string;
+    filter_by?: string;
+    sort_by?: string;
 
     selected?: string;
     add?: string;
@@ -36,7 +36,7 @@ export default async function AssignmentsPage({
     : 1;
   const selectedId = searchParamsObj.selected;
   const queryParam = searchParamsObj.query || ""; // Parse the query parameter
-  const filterParams = searchParamsObj.filters || ""; // Parse the filters parameter
+  const filterParams = searchParamsObj.filter_by || ""; // Parse the filters parameter
 
   // Parse filters into an array
   const filterIds = filterParams.split(",").filter(Boolean);
@@ -47,18 +47,18 @@ export default async function AssignmentsPage({
   // Build query string for API request (excluding 'selected')
   const params = new URLSearchParams();
 
-  const sortParam = Array.isArray(searchParamsObj.sort)
-    ? searchParamsObj.sort[0]
-    : searchParamsObj.sort;
+  const sortParam = Array.isArray(searchParamsObj.sort_by)
+    ? searchParamsObj.sort_by[0]
+    : searchParamsObj.sort_by;
 
   if (queryParam) {
     params.set("query", queryParam);
   }
   if (filterIds.length > 0) {
-    params.set("filters", filterIds.join(","));
+    params.set("filter_by", filterIds.join(","));
   }
   if (sortParam) {
-    params.set("sort", sortParam);
+    params.set("sort_by", sortParam);
   }
   params.set("page_number", pageNumberParam.toString() || "1");
   params.set("page_size", "10"); // Default page size
@@ -72,11 +72,10 @@ export default async function AssignmentsPage({
   // Adjust destructuring to match TuitionListingFilters properties
   const subjects = data.filters?.subjects ?? [];
   const levels = data.filters?.levels ?? [];
-  const sortOptions = data.sortOptions || [
-    { value: "recent", label: "Recently Posted" },
-    { value: "asc", label: "Ascending" },
-    { value: "desc", label: "Descending" },
-  ];
+  const sortOptions = (data.sorts ?? []).map((option) => ({
+    value: option.id,
+    label: option.name,
+  }));
   const totalPages = data.num_pages;
 
   return (

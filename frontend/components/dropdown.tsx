@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useRef, useState } from "react";
 
 interface DropDownProps<T> {
@@ -76,7 +77,6 @@ function DropDown<T>({
         className="px-4 py-2 border rounded-full bg-white text-customDarkBlue font-medium flex items-center justify-between w-full"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        disabled={iterable.length === 0}
       >
         <span className={showPlaceholder ? "text-gray-400" : ""}>
           {showPlaceholder ? placeholder : stringOnDisplay}

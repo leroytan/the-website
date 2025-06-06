@@ -10,7 +10,7 @@ export function Button({
     children: React.ReactNode;
     className?: string;
     disabled?: boolean;
-    onClick: () => void;
+    onClick?: () => void;
     type?: "button" | "submit" | "reset";
     
   }) {
