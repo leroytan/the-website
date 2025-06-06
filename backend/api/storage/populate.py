@@ -59,7 +59,7 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
         level = random.choice(levels)
         subject = random.choice(subjects)
         title = f"{subject.name} Tutoring Session #{i+1}"
-        rate = f"${random.choice([30, 35, 40, 45, 50])}/hour"
+        rate = random.choice([30, 35, 40, 45, 50])
         status = random.choice(status_choices)
         assigned_tutor = random.choice(tutors) if status == AssignmentStatus.FILLED else None
 
@@ -68,7 +68,7 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
             owner_id=requester.id,
             tutor_id=assigned_tutor.id if assigned_tutor else None,
             level_id=level.id,
-            estimated_rate=rate,
+            estimated_rate_hourly=rate,
             weekly_frequency=random.choice([1, 2, 3]),
             special_requests=random.choice(special_requests),
             status=status,
@@ -350,7 +350,7 @@ def insert_test_data(engine: object) -> bool:
             owner_id=users[0].id,  # John Doe requesting 
             tutor_id=None,  # No tutor assigned yet
             level_id=4,
-            estimated_rate="$45/hour",
+            estimated_rate_hourly=45,
             weekly_frequency=2,
             special_requests="Need help preparing for calculus final exam",
             status=AssignmentStatus.OPEN,
@@ -361,7 +361,7 @@ def insert_test_data(engine: object) -> bool:
             owner_id=users[1].id,  # Jane Smith requesting
             tutor_id=tutors[2].id,     # Carol as tutor
             level_id=3,
-            estimated_rate="$35/hour",
+            estimated_rate_hourly=35,
             weekly_frequency=1,
             special_requests="Essay writing assistance needed",
             status=AssignmentStatus.FILLED,
@@ -372,7 +372,7 @@ def insert_test_data(engine: object) -> bool:
             owner_id=users[0].id,  # John Doe requesting
             tutor_id=None,  # No tutor assigned yet
             level_id=4,
-            estimated_rate="$50/hour",
+            estimated_rate_hourly=50,
             weekly_frequency=3,
             special_requests="Need help with Python programming project",
             status=AssignmentStatus.OPEN,

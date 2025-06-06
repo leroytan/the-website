@@ -128,7 +128,7 @@ export default function ClientDashboard({
                 {/* Rate */}
                 <div className="md:col-span-1">
                   <span className="block md:hidden font-semibold">Rate:</span>
-                  {assignment.estimated_rate}
+                  {assignment.estimated_rate_hourly}
                 </div>
                 {/* Schedule */}
                 <div className="md:col-span-1">

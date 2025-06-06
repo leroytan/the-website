@@ -514,7 +514,7 @@ const ChatApp = () => {
       <AssignmentCard
         title={""}
         location={""}
-        estimated_rate={""}
+        estimated_rate_hourly={""}
         weekly_frequency={0}
         available_slots={[]}
         special_requests={""}

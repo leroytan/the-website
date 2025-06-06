@@ -48,7 +48,7 @@ export function AssignmentList({
               } `}
             >
               <div className="absolute top-4 right-4 text-green-600 bg-green-100 font-bold px-3 py-1 rounded-lg">
-                {assign.estimated_rate}
+                {assign.estimated_rate_hourly}
               </div>
               <h3 className="text-xl font-semibold mb-2">{assign.title}</h3>
               <p className="text-sm text-gray-600">

@@ -16,7 +16,7 @@ export function AssignmentDetailClient({
           {assignment.title}
         </h2>
         <div className="text-green-600 bg-green-100 font-bold px-3 py-1 rounded-lg">
-          {assignment.estimated_rate}
+          {assignment.estimated_rate_hourly}
         </div>
       </div>
       <div className="text-sm text-gray-500">

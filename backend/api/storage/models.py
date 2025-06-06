@@ -79,7 +79,7 @@ class Assignment(Base, SerializerMixin):
     owner_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
     level_id = Column(Integer, ForeignKey('Level.id'), nullable=False)  # Foreign key to Level
-    estimated_rate = Column(String, nullable=False)
+    estimated_rate_hourly = Column(Integer, nullable=False)
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
     location = Column(String, nullable=False)

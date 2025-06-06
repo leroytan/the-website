@@ -44,7 +44,7 @@ const AssignmentCard = (listing: TuitionListing) => {
       </div>
       <div className="mt-2">
         <p className="text-sm font-semibold text-gray-600">
-          {listing.estimated_rate}
+          {listing.estimated_rate_hourly}
         </p>
         <div className="text-xs text-gray-600 flex flex-row justify-between items-end">
           <span>

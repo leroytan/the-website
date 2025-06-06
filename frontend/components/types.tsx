@@ -6,7 +6,7 @@ export interface TuitionListing {
   location: string;
   owner_id?: number;
   applied?: boolean;
-  estimated_rate: string;
+  estimated_rate_hourly: string;
   weekly_frequency: number;
   available_slots: {
     id: number;

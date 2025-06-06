@@ -156,7 +156,7 @@ const AddAssignmentOverlay = ({
 
     const listingToAdd = {
       title,
-      estimated_rate: `$${formData.fees}/hour`,
+      estimated_rate_hourly: `$${formData.fees}/hour`,
       weekly_frequency: formData.slots.length,
       available_slots,
       special_requests: formData.special_requests,

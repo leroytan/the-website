@@ -116,7 +116,7 @@ class AssignmentBaseView(BaseModel):
     updated_at: str
     title: str
     owner_id: int
-    estimated_rate: str
+    estimated_rate_hourly: int  # in dollars
     weekly_frequency: int
     available_slots: list[AssignmentSlotView]
     special_requests: str
@@ -140,7 +140,7 @@ class NewAssignmentSlot(BaseModel):
 
 class NewAssignment(BaseModel):  # TODO: add location
     title: str
-    estimated_rate: str
+    estimated_rate_hourly: int # in dollars
     weekly_frequency: int
     available_slots: list[NewAssignmentSlot]
     special_requests: str | None
@@ -170,7 +170,7 @@ class SortOrder(str, enum.Enum):
 # Step 1: Define an Enum for sorting criteria
 class AssignmentSortField(str, enum.Enum):
     CREATED_AT = 'created_at'  # Sort by creation date
-    ESTIMATED_RATE = 'estimated_rate'  # Sort by estimated rate
+    estimated_rate_hourly = 'estimated_rate_hourly'  # Sort by estimated rate
     WEEKLY_FREQUENCY = 'weekly_frequency'  # Sort by weekly frequency
     LEVEL = 'level'  # Sort by level (e.g., beginner, intermediate, advanced)
     LOCATION = 'location'  # Sort by location
