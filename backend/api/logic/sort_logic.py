@@ -1,5 +1,5 @@
 from api.router.models import AssignmentSortField, SortChoice, SortOrder
-from api.storage.models import Assignment, Tutor
+from api.storage.models import Assignment, Tutor, Level
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 
 
@@ -37,14 +37,12 @@ class SortLogic:
             match field:
                 case AssignmentSortField.DEFAULT | AssignmentSortField.CREATED_AT:
                     return Assignment.created_at.desc() if order == SortOrder.DESC else Assignment.created_at.asc()
-                case AssignmentSortField.ESTIMATED_RATE:
-                    raise ValueError("Estimated rate sorting is not supported yet.")
-                    return Assignment.estimated_rate.desc() if order == SortOrder.DESC else Assignment.estimated_rate.asc()
+                case AssignmentSortField.estimated_rate_hourly:
+                    return Assignment.estimated_rate_hourly.desc() if order == SortOrder.DESC else Assignment.estimated_rate_hourly.asc()
                 case AssignmentSortField.WEEKLY_FREQUENCY:
                     return Assignment.weekly_frequency.desc() if order == SortOrder.DESC else Assignment.weekly_frequency.asc()
-                case AssignmentSortField.LEVEL:
-                    raise ValueError("Level sorting is not supported yet.")
-                    return Assignment.level.desc() if order == SortOrder.DESC else Assignment.level.asc()
+                case AssignmentSortField.LEVEL:  # Level has a explicit sort order
+                    return Level.sort_order.desc() if order == SortOrder.DESC else Level.sort_order.asc()
                 case AssignmentSortField.TITLE:
                     return Assignment.title.desc() if order == SortOrder.DESC else Assignment.title.asc()
                 case AssignmentSortField.LOCATION:
@@ -66,7 +64,7 @@ class SortLogic:
         BOTH = [SortOrder.ASC, SortOrder.DESC]
 
         match field:
-            case AssignmentSortField.CREATED_AT | AssignmentSortField.ESTIMATED_RATE | AssignmentSortField.WEEKLY_FREQUENCY | AssignmentSortField.LEVEL | AssignmentSortField.TITLE:
+            case AssignmentSortField.CREATED_AT | AssignmentSortField.estimated_rate_hourly | AssignmentSortField.WEEKLY_FREQUENCY | AssignmentSortField.LEVEL | AssignmentSortField.TITLE:
                 return BOTH
             case AssignmentSortField.RELEVANCE:
                 return DESC

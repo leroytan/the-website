@@ -7,8 +7,10 @@ Assignment:
       type: string
     owner_id:
       type: integer
-    estimated_rate:
-      type: string
+    estimated_rate_hourly:
+      type: number
+      format: int64
+      description: Estimated hourly rate for the assignment in dollars.
     weekly_frequency:
       type: integer
     available_slots:
@@ -37,7 +39,7 @@ Assignment:
     - id
     - title
     - owner_id
-    - estimated_rate
+    - estimated_rate_hourly
     - weekly_frequency
     - available_slots
     - subjects
@@ -127,8 +129,10 @@ NewAssignment:
   properties:
     title:
       type: string
-    estimated_rate:
-      type: string
+    estimated_rate_hourly:
+      type: number
+      format: int64
+      description: Estimated hourly rate for the assignment in dollars.
     weekly_frequency:
       type: integer
     available_slots:
@@ -148,7 +152,7 @@ NewAssignment:
       type: string
   required:
     - title
-    - estimated_rate
+    - estimated_rate_hourly
     - weekly_frequency
     - available_slots
     - subjects

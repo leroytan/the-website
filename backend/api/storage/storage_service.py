@@ -11,6 +11,7 @@ from sqlalchemy import (ColumnElement, Engine, and_, inspect, or_, select,
 from sqlalchemy.orm import Query, Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy_utils import create_database, database_exists
+from api.storage.seed import seed_database
 
 
 class StorageService:
@@ -29,6 +30,10 @@ class StorageService:
             # SQLAlchemy automatically creates tables from the Base metadata
             Base.metadata.create_all(db_engine)
             print("Tables created")
+            with Session(db_engine) as session:
+                print("Seeding database")
+                seed_database(session)
+                print("Database seeded")
             if settings.db_populate_check:
                 print("Inserting test data")
                 success = insert_test_data(db_engine)

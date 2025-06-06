@@ -2,12 +2,13 @@ import datetime
 import enum
 
 from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
-                        ForeignKey, Integer, String, UniqueConstraint)
+                        ForeignKey, Integer, String, UniqueConstraint, asc, desc)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.ext.declarative import declared_attr
 
 # Create a base class for declarative models
 Decl_Base = declarative_base()
@@ -16,6 +17,12 @@ class Base(Decl_Base):
     __abstract__ = True
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class SortableMixin:
+    @declared_attr
+    def sort_order(cls):
+        return Column(Integer, nullable=False)
+
 
 class User(Base, SerializerMixin):
     """Base User model"""
@@ -38,7 +45,6 @@ class Tutor(Base):
     id = Column(Integer, ForeignKey('User.id'), primary_key=True)
     
     # Tutor-specific fields
-    photo_url = Column(String, nullable=True)
     highest_education = Column(String, nullable=True)
     availability = Column(String, nullable=True)
     resume_url = Column(String, nullable=True)
@@ -73,7 +79,7 @@ class Assignment(Base, SerializerMixin):
     owner_id = Column(Integer, ForeignKey('User.id'))  # Foreign key to User
     tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
     level_id = Column(Integer, ForeignKey('Level.id'), nullable=False)  # Foreign key to Level
-    estimated_rate = Column(String, nullable=False)
+    estimated_rate_hourly = Column(Integer, nullable=False)
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
     location = Column(String, nullable=False)
@@ -188,7 +194,7 @@ class AssignmentSubject(Base):
     assignment_id = Column(Integer, ForeignKey('Assignment.id'))
     subjectId = Column(Integer, ForeignKey('Subject.id'))
 
-class Level(Base):
+class Level(Base, SortableMixin):
     """
     Level model
     """

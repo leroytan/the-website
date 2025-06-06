@@ -76,7 +76,7 @@ async def get_tutor_profile(id: int, request: Request) -> TutorPublicSummary | T
 
 @router.put("/api/tutors/{id}")
 async def update_tutor_profile(
-    tutorProfile: TutorProfile,
+    tutorProfile: NewTutorProfile,
     id: int,
     user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:

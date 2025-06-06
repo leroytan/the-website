@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, selectinload
 
 
 class TutorLogic:
@@ -199,41 +199,36 @@ class TutorLogic:
                 return TutorLogic.convert_tutor_to_profile(session, tutor)
 
     @staticmethod
-    def update_profile(tutor_profile: TutorProfile, id: str | int) -> TutorProfile:
+    def update_profile(tutor_profile: NewTutorProfile, id: str | int) -> TutorProfile:
 
         with Session(StorageService.engine) as session:
             # Find the existing tutor profile
-            if not StorageService.find(session, {"id": id}, Tutor, find_one=True):
+            tutor = session.query(Tutor).options(
+                selectinload(Tutor.subjects),
+                selectinload(Tutor.levels),
+                selectinload(Tutor.special_skills)
+            ).filter(Tutor.id == id).first()
+            if not tutor:
                 raise HTTPException(
                     status_code=404,
                     detail="Tutor not found"
                 )
 
-            tutor_dict = tutor_profile.model_dump()
+            tutor_dict = tutor_profile.model_dump(exclude_unset=True)
 
-            tutor_dict.pop("id", None)
             tutor_dict.pop("subjects_teachable", None)
             tutor_dict.pop("levels_teachable", None)
             tutor_dict.pop("special_skills", None)
 
-            # TODO: settle the update logic to update User and Tutor
-            user_dict = {
-                "name": tutor_dict["name"],
-                "email": tutor_dict["email"]
-            }
-            StorageService.update(session, {"id": id}, user_dict, User)
-            
-            tutor_dict.pop("name")
-            tutor_dict.pop("email")
-            updated_tutor = StorageService.update(session, {"id": id}, tutor_dict, Tutor)
-
-            session.add(updated_tutor)
+            # Update the tutor profile in the database
+            for field, updated_value in tutor_dict.items():
+                setattr(tutor, field, updated_value)
 
             # Fetch the related Subject, Level, and SpecialSkill objects
-            updated_tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjects_teachable)).all()
-            updated_tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levels_teachable)).all()
-            updated_tutor.special_skills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.special_skills)).all()
+            tutor.subjects = session.query(Subject).filter(Subject.name.in_(tutor_profile.subjects_teachable)).all()
+            tutor.levels = session.query(Level).filter(Level.name.in_(tutor_profile.levels_teachable)).all()
+            tutor.special_skills = session.query(SpecialSkill).filter(SpecialSkill.name.in_(tutor_profile.special_skills)).all()
             session.commit()
-            session.refresh(updated_tutor)
+            session.refresh(tutor)
 
-            return TutorLogic.convert_tutor_to_profile(session, updated_tutor)
+            return TutorLogic.convert_tutor_to_profile(session, tutor)

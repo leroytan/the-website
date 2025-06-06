@@ -36,7 +36,7 @@ class AssignmentLogic:
             "updated_at": assignment.updated_at.isoformat(),
             "title": assignment.title,
             "owner_id": assignment.owner_id,
-            "estimated_rate": assignment.estimated_rate,
+            "estimated_rate_hourly": assignment.estimated_rate_hourly,
             "weekly_frequency": assignment.weekly_frequency,
             "available_slots": [
                 AssignmentSlotView(
@@ -102,6 +102,7 @@ class AssignmentLogic:
             statement = statement.outerjoin(tutor_alias, Assignment.tutor)
             statement = statement.outerjoin(user_alias, tutor_alias.user)
             statement = statement.outerjoin(owner_alias, Assignment.owner)
+            statement = statement.outerjoin(Assignment.level)
 
             # General search (matching name, location, or about_me)
             if search_query.query:
@@ -125,9 +126,15 @@ class AssignmentLogic:
                 filters.append(Assignment.level_id.in_(parsed_filters["level"]))
 
             statement = statement.filter(and_(*filters))
-            # Default ordering is by created_at descending, then by id ascending
-            statement = statement.order_by(SortLogic.get_sorting(Assignment, search_query.sort_by))
-
+            try:
+                # Default ordering is by created_at descending, then by id ascending
+                statement = statement.order_by(SortLogic.get_sorting(Assignment, search_query.sort_by))
+            except ValueError as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=str(e)
+                )
+                
             # Pagination
             page_size = search_query.page_size
             offset = (search_query.page_number - 1) * page_size
@@ -154,7 +161,7 @@ class AssignmentLogic:
                 title=new_assignment.title,
                 owner_id=user_id,
                 level_id=level_id,
-                estimated_rate=new_assignment.estimated_rate,
+                estimated_rate_hourly=new_assignment.estimated_rate_hourly,
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
                 status=AssignmentStatus.OPEN,

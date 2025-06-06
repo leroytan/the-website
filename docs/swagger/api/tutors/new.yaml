@@ -24,9 +24,6 @@ post:
 NewTutorProfile:
     type: object
     properties:
-      photo_url:
-        type: string
-        nullable: true
       highest_education:
         type: string
         nullable: true
@@ -41,10 +38,6 @@ NewTutorProfile:
         nullable: true
       location:
         type: string
-        nullable: true
-      rating:
-        type: number
-        format: float
         nullable: true
       about_me:
         type: string
