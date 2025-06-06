@@ -59,7 +59,7 @@ export interface Tutor {
   email: string;
   photo_url: string;
   highest_education: string;
-  rate: string;
+  rate: number;
   location: string;
   rating: number;
   about_me: string;

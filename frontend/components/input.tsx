@@ -11,7 +11,7 @@ function Input({
   type: string;
   name: string;
   placeholder: string;
-  value: string;
+  value: any;
   accept?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
