@@ -1,3 +1,4 @@
+"use client";
 import React, { useRef, useState, useEffect } from "react";
 
 interface MultiSelectProps {
@@ -64,7 +65,9 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
   };
 
   // Normalize options to always be objects with value and label
-  const normalizedOptions: { value: string; label: string }[] = Array.isArray(options)
+  const normalizedOptions: { value: string; label: string }[] = Array.isArray(
+    options
+  )
     ? typeof options[0] === "string"
       ? (options as string[]).map((opt) => ({ value: opt, label: opt }))
       : (options as { value: string; label: string }[])
@@ -91,12 +94,11 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
                 .slice(0, 3)
                 .map(
                   (val) =>
-                    normalizedOptions.find((opt) => opt.value === val)?.label ?? val
+                    normalizedOptions.find((opt) => opt.value === val)?.label ??
+                    val
                 )
                 .join(", ")}
-              {selected.length > 3 && (
-                <>, +{selected.length - 3} more</>
-              )}
+              {selected.length > 3 && <>, +{selected.length - 3} more</>}
             </>
           ) : (
             <span className="text-gray-400">{placeholder}</span>
@@ -126,31 +128,35 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
           tabIndex={-1}
           onKeyDown={handleKeyDown}
         >
-          {normalizedOptions.map((option) => (
-            <li
-              key={option.value}
-              role="option"
-              aria-selected={selected.includes(option.value)}
-              tabIndex={0}
-              onClick={() => toggleOption(option.value)}
-              onKeyDown={(e) => {
-                if (e.key === " " || e.key === "Enter") {
-                  e.preventDefault();
-                  toggleOption(option.value);
-                }
-              }}
-              className={`px-4 py-2 cursor-pointer transition-colors flex items-center ${
-                selected.includes(option.value)
-                  ? "bg-customYellow text-white font-semibold"
-                  : "hover:bg-gray-100 hover:text-customDarkBlue"
-              }`}
-            >
-              {option.label}
-              {selected.includes(option.value) && (
-                <span className="ml-auto text-white font-bold">✔</span>
-              )}
-            </li>
-          ))}
+          {normalizedOptions.length === 0 ? (
+            <li className="px-4 py-2 text-gray-400">No options</li>
+          ) : (
+            normalizedOptions.map((option) => (
+              <li
+                key={option.value}
+                role="option"
+                aria-selected={selected.includes(option.value)}
+                tabIndex={0}
+                onClick={() => toggleOption(option.value)}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    toggleOption(option.value);
+                  }
+                }}
+                className={`px-4 py-2 cursor-pointer transition-colors flex items-center ${
+                  selected.includes(option.value)
+                    ? "bg-customYellow text-white font-semibold"
+                    : "hover:bg-gray-100 hover:text-customDarkBlue"
+                }`}
+              >
+                {option.label}
+                {selected.includes(option.value) && (
+                  <span className="ml-auto text-white font-bold">✔</span>
+                )}
+              </li>
+            ))
+          )}
         </ul>
       )}
     </div>

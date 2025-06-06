@@ -7,6 +7,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <>
 
-  return <ComponentLayout>{children}</ComponentLayout>;
+      <ComponentLayout>
+        {children}
+      </ComponentLayout>
+    </>
+  );
 }
