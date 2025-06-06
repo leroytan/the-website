@@ -432,6 +432,7 @@ const ChatApp = () => {
     }
     const data = await response.json();
     const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
+    console.log(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
     const socket = new WebSocket(
       `${wsURL}/ws/chat?access_token=${data.access_token}`
     );

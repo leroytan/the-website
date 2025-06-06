@@ -11,13 +11,13 @@ const nextConfig = {
     ]
   },
   rewrites: async () => {
-    console.log("Rewrites are being set up based on DEPLOY_TYPE. NODE_ENV is ignored in this case.");
-    console.log("DEPLOY_TYPE:", process.env.DEPLOY_TYPE);
+    console.log("Rewrites are being set up based on NEXT_PUBLIC_DEPLOY_TYPE. NODE_ENV is ignored in this case.");
+    console.log("NEXT_PUBLIC_DEPLOY_TYPE:", process.env.NEXT_PUBLIC_DEPLOY_TYPE);
     return [
       {
         source: "/api/:path*",
         destination: (() => {
-          switch (process.env.DEPLOY_TYPE) {
+          switch (process.env.NEXT_PUBLIC_DEPLOY_TYPE) {
             case 'local':
               return process.env.NEXT_PUBLIC_API_BASE_URL_LOCAL;
             case 'development':
