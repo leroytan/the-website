@@ -94,7 +94,6 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
 
     session.add_all(slots)
     session.add_all(assignment_subjects)
-    session.commit()
     print(f"✅ {count} seeded assignments added with seed={seed}.")
 
 
@@ -112,50 +111,14 @@ def insert_test_data(engine: object) -> bool:
     def table_has_data(model):
         return session.query(model).count() > 0
     
-    # Only add data if tables are empty
+    # Only add data if the following (non-seeded) tables are empty
     if any([
         table_has_data(User),
         table_has_data(Tutor),
-        table_has_data(Subject),
-        table_has_data(Level),
-        table_has_data(SpecialSkill),
         table_has_data(Assignment)
     ]):
         print("Database already contains data. Skipping test data insertion.")
         return False
-    
-    # Create test subjects
-    subjects = [
-        Subject(name="Mathematics"),
-        Subject(name="Physics"),
-        Subject(name="Chemistry"),
-        Subject(name="Biology"),
-        Subject(name="English Literature"),
-        Subject(name="Computer Science"),
-        Subject(name="History"),
-        Subject(name="Spanish"),
-        Subject(name="Economics"),
-        Subject(name="Music")
-    ]
-    session.add_all(subjects)
-    
-    # Create test levels
-    levels = [
-        Level(name="Primary 1"),
-        Level(name="Primary 2"),
-        Level(name="Primary 3"),
-        Level(name="Primary 4"),
-        Level(name="Primary 5"),
-        Level(name="Primary 6"),
-        Level(name="Secondary 1"),
-        Level(name="Secondary 2"),
-        Level(name="Secondary 3"),
-        Level(name="Secondary 4"),
-        Level(name="Secondary 5"),
-        Level(name="Junior College 1"),
-        Level(name="Junior College 2"),
-    ]
-    session.add_all(levels)
     
     # Create test special skills
     populate_special_skills = [
@@ -169,8 +132,8 @@ def insert_test_data(engine: object) -> bool:
     ]
     session.add_all(populate_special_skills)
     
-    # Commit these tables first to get IDs
-    session.commit()
+    # Flush to get IDs
+    session.flush()
     
     # Create test users (mix of regular users and tutors)
     users = [
@@ -216,7 +179,7 @@ def insert_test_data(engine: object) -> bool:
         )
     ]
     session.add_all(users)
-    session.commit()
+    session.flush()
     
     # Create tutors (for users 3-8)
     tutors = [
@@ -288,66 +251,66 @@ def insert_test_data(engine: object) -> bool:
         )
     ]
     session.add_all(tutors)
-    session.commit()
+    session.flush()
     
     # Assign subjects to tutors
     tutor_subjects = [
         # Alice teaches Math and Statistics
-        TutorSubject(tutor_id=tutors[0].id, subjectId=subjects[0].id),  # Math
+        TutorSubject(tutor_id=tutors[0].id, subjectId=1),  # Math
         
         # Bob teaches Physics and Math
-        TutorSubject(tutor_id=tutors[1].id, subjectId=subjects[1].id),  # Physics
-        TutorSubject(tutor_id=tutors[1].id, subjectId=subjects[0].id),  # Math
+        TutorSubject(tutor_id=tutors[1].id, subjectId=2),  # Physics
+        TutorSubject(tutor_id=tutors[1].id, subjectId=1),  # Math
         
         # Carol teaches English Literature and History
-        TutorSubject(tutor_id=tutors[2].id, subjectId=subjects[4].id),  # English Literature
-        TutorSubject(tutor_id=tutors[2].id, subjectId=subjects[6].id),  # History
+        TutorSubject(tutor_id=tutors[2].id, subjectId=5),  # English Literature
+        TutorSubject(tutor_id=tutors[2].id, subjectId=7),  # History
         
         # David teaches Computer Science and Math
-        TutorSubject(tutor_id=tutors[3].id, subjectId=subjects[5].id),  # Computer Science
-        TutorSubject(tutor_id=tutors[3].id, subjectId=subjects[0].id),  # Math
+        TutorSubject(tutor_id=tutors[3].id, subjectId=6),  # Computer Science
+        TutorSubject(tutor_id=tutors[3].id, subjectId=1),  # Math
         
         # Eva teaches Chemistry and Biology
-        TutorSubject(tutor_id=tutors[4].id, subjectId=subjects[2].id),  # Chemistry
-        TutorSubject(tutor_id=tutors[4].id, subjectId=subjects[3].id),  # Biology
+        TutorSubject(tutor_id=tutors[4].id, subjectId=3),  # Chemistry
+        TutorSubject(tutor_id=tutors[4].id, subjectId=4),  # Biology
         
         # Frank teaches Spanish and Music
-        TutorSubject(tutor_id=tutors[5].id, subjectId=subjects[7].id),  # Spanish
-        TutorSubject(tutor_id=tutors[5].id, subjectId=subjects[9].id)   # Music
+        TutorSubject(tutor_id=tutors[5].id, subjectId=8),  # Spanish
+        TutorSubject(tutor_id=tutors[5].id, subjectId=10)  # Music
     ]
     session.add_all(tutor_subjects)
-    
+
     # Assign levels to tutors
     tutor_levels = [
         # Alice teaches 
-        TutorLevel(tutor_id=tutors[0].id, level_id=levels[2].id),
-        TutorLevel(tutor_id=tutors[0].id, level_id=levels[3].id),
-        TutorLevel(tutor_id=tutors[0].id, level_id=levels[4].id),
+        TutorLevel(tutor_id=tutors[0].id, level_id=3),
+        TutorLevel(tutor_id=tutors[0].id, level_id=4),
+        TutorLevel(tutor_id=tutors[0].id, level_id=5),
         
         # Bob teaches 
-        TutorLevel(tutor_id=tutors[1].id, level_id=levels[2].id),
-        TutorLevel(tutor_id=tutors[1].id, level_id=levels[3].id),
+        TutorLevel(tutor_id=tutors[1].id, level_id=3),
+        TutorLevel(tutor_id=tutors[1].id, level_id=4),
         
         # Carol teaches 
-        TutorLevel(tutor_id=tutors[2].id, level_id=levels[1].id),
-        TutorLevel(tutor_id=tutors[2].id, level_id=levels[2].id),
-        TutorLevel(tutor_id=tutors[2].id, level_id=levels[3].id),
+        TutorLevel(tutor_id=tutors[2].id, level_id=2),
+        TutorLevel(tutor_id=tutors[2].id, level_id=3),
+        TutorLevel(tutor_id=tutors[2].id, level_id=4),
         
         # David teaches
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[2].id),
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[3].id),
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[4].id),
-        TutorLevel(tutor_id=tutors[3].id, level_id=levels[5].id),
+        TutorLevel(tutor_id=tutors[3].id, level_id=3),
+        TutorLevel(tutor_id=tutors[3].id, level_id=4),
+        TutorLevel(tutor_id=tutors[3].id, level_id=5),
+        TutorLevel(tutor_id=tutors[3].id, level_id=6),
         
         # Eva teaches 
-        TutorLevel(tutor_id=tutors[4].id, level_id=levels[1].id),
-        TutorLevel(tutor_id=tutors[4].id, level_id=levels[2].id),
-        TutorLevel(tutor_id=tutors[4].id, level_id=levels[3].id),
+        TutorLevel(tutor_id=tutors[4].id, level_id=2),
+        TutorLevel(tutor_id=tutors[4].id, level_id=3),
+        TutorLevel(tutor_id=tutors[4].id, level_id=4),
         
         # Frank teaches
-        TutorLevel(tutor_id=tutors[5].id, level_id=levels[0].id),
-        TutorLevel(tutor_id=tutors[5].id, level_id=levels[1].id),
-        TutorLevel(tutor_id=tutors[5].id, level_id=levels[2].id) 
+        TutorLevel(tutor_id=tutors[5].id, level_id=1),
+        TutorLevel(tutor_id=tutors[5].id, level_id=2),
+        TutorLevel(tutor_id=tutors[5].id, level_id=3)
     ]
     session.add_all(tutor_levels)
     
@@ -386,7 +349,7 @@ def insert_test_data(engine: object) -> bool:
             title="Calculus Finals Prep",
             owner_id=users[0].id,  # John Doe requesting 
             tutor_id=None,  # No tutor assigned yet
-            level_id=levels[3].id,
+            level_id=4,
             estimated_rate="$45/hour",
             weekly_frequency=2,
             special_requests="Need help preparing for calculus final exam",
@@ -397,7 +360,7 @@ def insert_test_data(engine: object) -> bool:
             title="Essay-Writing Clinic",
             owner_id=users[1].id,  # Jane Smith requesting
             tutor_id=tutors[2].id,     # Carol as tutor
-            level_id=levels[2].id,
+            level_id=3,
             estimated_rate="$35/hour",
             weekly_frequency=1,
             special_requests="Essay writing assistance needed",
@@ -408,7 +371,7 @@ def insert_test_data(engine: object) -> bool:
             title="Programming Coaching (Python)",
             owner_id=users[0].id,  # John Doe requesting
             tutor_id=None,  # No tutor assigned yet
-            level_id=levels[3].id,
+            level_id=4,
             estimated_rate="$50/hour",
             weekly_frequency=3,
             special_requests="Need help with Python programming project",
@@ -468,13 +431,13 @@ def insert_test_data(engine: object) -> bool:
     # Link subjects to assignments
     assignment_subjects = [
         # Assignment 1: Math
-        AssignmentSubject(assignment_id=assignments[0].id, subjectId=subjects[0].id),
+        AssignmentSubject(assignment_id=assignments[0].id, subjectId=1),
         
         # Assignment 2: English Literature
-        AssignmentSubject(assignment_id=assignments[1].id, subjectId=subjects[4].id),
+        AssignmentSubject(assignment_id=assignments[1].id, subjectId=5),
         
         # Assignment 3: Computer Science
-        AssignmentSubject(assignment_id=assignments[2].id, subjectId=subjects[5].id)
+        AssignmentSubject(assignment_id=assignments[2].id, subjectId=6)
     ]
     session.add_all(assignment_subjects)
     
@@ -521,9 +484,9 @@ def insert_test_data(engine: object) -> bool:
     ]
 
     session.add_all(private_chats)
-    session.commit()
-    for chat in private_chats:
-        session.refresh(chat)
+    session.flush()
+    # for chat in private_chats:
+    #     session.refresh(chat)
 
     # Create chat messages
     chat_messages = [
@@ -663,6 +626,9 @@ def insert_test_data(engine: object) -> bool:
 
     session.add_all(chat_messages)
 
+    subjects = session.query(Subject).all()
+    levels = session.query(Level).all()
+    
     generate_bulk_assignments(session, users, tutors, subjects, levels, count=50, seed=42)
     
     # Final commit

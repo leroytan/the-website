@@ -102,6 +102,7 @@ class AssignmentLogic:
             statement = statement.outerjoin(tutor_alias, Assignment.tutor)
             statement = statement.outerjoin(user_alias, tutor_alias.user)
             statement = statement.outerjoin(owner_alias, Assignment.owner)
+            statement = statement.outerjoin(Assignment.level)
 
             # General search (matching name, location, or about_me)
             if search_query.query:
