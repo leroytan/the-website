@@ -1,0 +1,122 @@
+get:
+  tags:
+    - assignment-request
+  summary: retrieves an assignment request by id
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: the id of the assignment request to retrieve
+      schema:
+        type: string
+  responses:
+    '200':
+      description: successful retrieval of the assignment request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AssignmentRequestView'
+
+put:
+  tags:
+    - assignment-request
+  summary: updates an assignment request by id
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: the id of the assignment request to update
+      schema:
+        type: string
+  requestBody:
+    required: true
+    description: the updated assignment request data
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/NewAssignmentRequest'
+  responses:
+    '200':
+      description: confirmation of successful update
+
+
+components:
+  schemas:
+    AssignmentSlotView:
+      title: AssignmentSlotView
+      type: object
+      properties:
+        id:
+          type: integer
+        day:
+          type: string
+        start_time:
+          type: string
+        end_time:
+          type: string
+      required:
+        - id
+        - day
+        - start_time
+        - end_time
+
+    AssignmentRequestView:
+      title: AssignmentRequestView
+      type: object
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        tutor_id:
+          type: integer
+        tutor_name:
+          type: string
+        tutor_profile_photo_url:
+          type: string
+          nullable: true
+        requested_rate_hourly:
+          type: integer
+          description: in dollars
+        requested_duration:
+          type: integer
+          description: in minutes
+        available_slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentSlotView'
+        status:
+          type: string
+      required:
+        - id
+        - created_at
+        - updated_at
+        - tutor_id
+        - tutor_name
+        - requested_rate_hourly
+        - requested_duration
+        - available_slots
+        - status
+
+    NewAssignmentRequest:
+      title: NewAssignmentRequest
+      type: object
+      properties:
+        requested_rate_hourly:
+          type: integer
+          default: 35
+          description: in dollars
+        requested_duration:
+          type: integer
+          default: 60
+          description: in minutes
+        available_slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentSlotView'
+      required:
+        - requested_rate_hourly
+        - requested_duration
+        - available_slots

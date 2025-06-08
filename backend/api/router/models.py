@@ -104,10 +104,15 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    requested_rate_hourly: int  # in dollars
+    requested_duration: int  # in minutes
     available_slots: list[AssignmentSlotView]
     status: str
 
+# TODO: Remove default values when frontend is ready to handle them
 class NewAssignmentRequest(BaseModel):
+    requested_rate_hourly: int =35  # in dollars
+    requested_duration: int = 60  # in minutes
     available_slots: list[AssignmentSlotView]  # List of slot IDs
 
 class AssignmentBaseView(BaseModel):

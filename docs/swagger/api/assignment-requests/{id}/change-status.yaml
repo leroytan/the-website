@@ -1,6 +1,6 @@
 put:
   tags:
-    - assignment
+    - assignment-request
   summary: Owner accepts a tutor for the specified assignment, requiring tutor authorization
   parameters:
     - name: id

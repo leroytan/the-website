@@ -451,22 +451,65 @@ def insert_test_data(engine: object) -> bool:
             created_at=utc_now() - datetime.timedelta(days=1),
             tutor_id=tutors[1].id,  # Bob requesting assignment
             status=AssignmentRequestStatus.PENDING,
-            assignment_id=assignments[0].id  # For the first assignment
+            assignment_id=assignments[0].id,  # For the first assignment
+            requested_rate_hourly=40,  # Example rate
+            requested_duration=90,  # Example duration in minutes
         ),
         AssignmentRequest(
             created_at=utc_now() - datetime.timedelta(days=3),
             tutor_id=tutors[2].id,  # Carol requesting assignment
             status=AssignmentRequestStatus.ACCEPTED,
-            assignment_id=assignments[1].id  # For the second assignment
+            assignment_id=assignments[1].id,  # For the second assignment
+            requested_rate_hourly=35,  # Example rate
+            requested_duration=60,  # Example duration in minutes
         ),
         AssignmentRequest(
             created_at=utc_now() - datetime.timedelta(days=4),
             tutor_id=tutors[5].id,  # Frank requesting assignment
             status=AssignmentRequestStatus.REJECTED,
-            assignment_id=assignments[0].id  # For the first assignment
+            assignment_id=assignments[0].id,  # For the first assignment
+            requested_rate_hourly=45,  # Example rate
+            requested_duration=120,  # Example duration in minutes
         )
     ]
     session.add_all(assignment_requests)
+    session.flush()  # Ensure IDs are available for slots
+
+    # add available slots for assignment requests
+    assignment_request_slots = [
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[0].id,
+            day="Monday",
+            start_time="16:00",
+            end_time="18:00"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[0].id,
+            day="Wednesday",
+            start_time="16:00",
+            end_time="18:00"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[1].id,
+            day="Saturday",
+            start_time="10:00",
+            end_time="12:00"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[2].id,
+            day="Tuesday",
+            start_time="18:00",
+            end_time="19:30"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[2].id,
+            day="Thursday",
+            start_time="18:00",
+            end_time="19:30"
+        ),
+    ]
+
+    session.add_all(assignment_request_slots)
 
     # Create private chatrooms
     private_chats = [

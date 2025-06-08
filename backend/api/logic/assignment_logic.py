@@ -17,7 +17,7 @@ from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, joinedload
 
 
 class ViewType(enum.Enum):
@@ -264,7 +264,7 @@ class AssignmentLogic:
     def request_assignment(assignment_id: str | int, new_assignment_request: NewAssignmentRequest, tutor_id: str | int) -> None:
         with Session(StorageService.engine) as session:
             # Find the assignment
-            assignment = StorageService.find(session, {"id": assignment_id}, Assignment, find_one=True)
+            assignment = session.query(Assignment).filter_by(id=assignment_id).first()
             if not assignment:
                 raise HTTPException(
                     status_code=404,
@@ -288,6 +288,8 @@ class AssignmentLogic:
                 assignment_req = AssignmentRequest(
                     assignment_id=assignment.id,
                     tutor_id=tutor_id,
+                    requested_rate_hourly=new_assignment_request.requested_rate_hourly,
+                    requested_duration=new_assignment_request.requested_duration,
                 )
 
                 session.add(assignment_req)
@@ -425,3 +427,75 @@ class AssignmentLogic:
                     detail="Assignment not found for the given request"
                 )
             return assignment_request.assignment.lesson_duration
+
+    @staticmethod
+    def get_assignment_request_by_id(assignment_request_id: int, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).filter_by(
+                id=assignment_request_id
+            ).first()
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+            
+            # Check if the user is the owner of the assignment
+            assert_user_authorized(assignment_request.tutor_id)
+
+            return AssignmentRequestView(
+                id=assignment_request.id,
+                created_at=assignment_request.created_at.isoformat(),
+                updated_at=assignment_request.updated_at.isoformat(),
+                tutor_id=assignment_request.tutor_id,
+                tutor_name=assignment_request.tutor.user.name,
+                tutor_profile_photo_url=UserLogic.get_profile_photo_url(assignment_request.tutor_id),
+                requested_rate_hourly=assignment_request.requested_rate_hourly,
+                requested_duration=assignment_request.requested_duration,
+                available_slots=[
+                    AssignmentSlotView(
+                        id=slot.id,
+                        day=slot.day,
+                        start_time=slot.start_time,
+                        end_time=slot.end_time,
+                    )
+                    for slot in assignment_request.available_slots
+                ],
+                status=str(assignment_request.status)
+            )
+        
+    @staticmethod
+    def update_assignment_request_by_id(assignment_request_id: int, new_assignment_request: NewAssignmentRequest, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).filter_by(
+                id=assignment_request_id
+            ).first()
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+            
+            # Check if the user is the owner of the assignment
+            assert_user_authorized(assignment_request.tutor_id)
+
+            # Update the assignment request
+            assignment_request.requested_rate_hourly = new_assignment_request.requested_rate_hourly
+            assignment_request.requested_duration = new_assignment_request.requested_duration
+
+            StorageService.delete(session, {"assignment_request_id": assignment_request.id}, AssignmentSlot)
+
+            # Add new slots
+            for slot in new_assignment_request.available_slots:
+                assignment_slot = StorageService.insert(session, AssignmentSlot(
+                    day=slot.day,
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                    assignment_request_id=assignment_request.id
+                ))
+                session.add(assignment_slot)
+            
+            session.commit()
+            session.refresh(assignment_request)
+
+            return AssignmentLogic.get_assignment_request_by_id(assignment_request.id, assert_user_authorized)

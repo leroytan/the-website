@@ -131,12 +131,14 @@ class AssignmentRequest(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
     tutor_id = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
+    requested_rate_hourly = Column(Integer, nullable=False)
+    requested_duration = Column(Integer, nullable=False)  # Duration in minutes
     status = Column(ENUM(AssignmentRequestStatus), default=AssignmentRequestStatus.PENDING)
 
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     assignment = relationship('Assignment', foreign_keys=[assignment_id], back_populates='assignment_requests')
-    available_slots = relationship('AssignmentSlot', back_populates='assignment_request', primaryjoin="AssignmentRequest.id == AssignmentSlot.assignment_request_id")
+    available_slots = relationship('AssignmentSlot', back_populates='assignment_request', cascade='all, delete-orphan')
 
     # Constraints
     # Composite unique constraint on column1 and column2
