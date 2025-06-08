@@ -407,3 +407,21 @@ class AssignmentLogic:
             session.commit()
 
             return (assignment.owner_id, assignment_request.tutor_id)
+        
+    @staticmethod
+    def get_lesson_duration(assignment_request_id: int) -> int:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).outerjoin(Assignment).filter(
+                AssignmentRequest.id == assignment_request_id
+            ).first()
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+            if not assignment_request.assignment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found for the given request"
+                )
+            return assignment_request.assignment.lesson_duration

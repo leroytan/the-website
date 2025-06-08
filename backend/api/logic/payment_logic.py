@@ -22,9 +22,12 @@ class PaymentLogic:
             dict: Response indicating success or failure.
         """
 
-        deposit = payment_request.hourly_rate_cents / 2  # Assuming the deposit is half of the hourly rate
-
         try:
+            lesson_duration = AssignmentLogic.get_lesson_duration(
+                payment_request.assignment_request_id
+            )
+
+            fee = payment_request.hourly_rate_cents * lesson_duration / 60
             checkout_session = stripe.checkout.Session.create(
                 line_items=[{
                     'price_data': {
@@ -32,7 +35,7 @@ class PaymentLogic:
                         'product_data': {
                             'name': settings.stripe_product_name,  # Product name from settings
                         },
-                        'unit_amount': int(deposit),  # Final price in cents
+                        'unit_amount': int(fee),  # Final price in cents
                     },
                     'quantity': 1,
                 }],
@@ -71,7 +74,7 @@ class PaymentLogic:
 
                 # Example: extract details
                 customer_id = payment_intent.get('customer')
-                amount_received = payment_intent['amount_received']
+                amount_received = payment_intent.get('amount_received')
                 metadata = payment_intent.get('metadata', {})
 
                 # Change status of assignment request to accepted
