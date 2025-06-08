@@ -1,8 +1,8 @@
+import asyncio
 import json
 from collections.abc import Callable
 from datetime import datetime
 
-from api.logic.logic import Logic
 from api.router.models import NewChatMessage
 from api.storage.models import ChatMessage, ChatReadStatus, PrivateChat, User
 from api.storage.storage_service import StorageService
@@ -103,7 +103,7 @@ class ChatLogic:
             return ChatLogic.get_chat_preview(session, current_user_id, chat)
 
     @staticmethod
-    async def handle_private_message(active_connections: dict[str|int, WebSocket], new_chat_message: NewChatMessage, sender_id: int) -> None:
+    async def handle_private_message(active_connections: dict[str|int, WebSocket], new_chat_message: NewChatMessage, sender_id: int, mutex: asyncio.Lock) -> None:
         """
         Handles the incoming chat message, processes it, and returns a ChatMessage object.
 
@@ -138,9 +138,7 @@ class ChatLogic:
 
             # Add the message to the session
             session.add(chat_message)
-            session.commit()
-            session.refresh(chat_message)
-            receiver_id = chat_message.receiver_id
+            receiver_id = chat_message.receiver_id_from_chat(chat)
 
             # Update the read status for the receiver
             read_status = session.query(ChatReadStatus).filter_by(chat_id=chat_id, user_id=receiver_id).first()
@@ -159,7 +157,8 @@ class ChatLogic:
                     to_send = json.dumps(ChatLogic.get_convert_message(-1)(chat_message))
                     await active_connections[receiver_id].send_text(to_send)
                 except RuntimeError:
-                    active_connections.pop(receiver_id, None)
+                    async with mutex:
+                        active_connections.pop(receiver_id, None)
 
             if sender_id in active_connections:
                 # Send the message to the sender's WebSocket
@@ -167,7 +166,8 @@ class ChatLogic:
                     to_send = json.dumps(ChatLogic.get_convert_message(sender_id)(chat_message))
                     await active_connections[sender_id].send_text(to_send)
                 except RuntimeError:
-                    active_connections.pop(sender_id, None)
+                    async with mutex:
+                        active_connections.pop(sender_id, None)
 
     @staticmethod
     def get_private_chat_history(chat_id: int, user_id: int, created_before: str, limit: int) -> dict:

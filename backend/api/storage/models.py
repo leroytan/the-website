@@ -262,9 +262,12 @@ class ChatMessage(Base, SerializerMixin):
     sender = relationship('User', foreign_keys=[sender_id])
     chat = relationship('PrivateChat', foreign_keys=[chat_id], back_populates='messages')
 
+    def receiver_id_from_chat(self, chat: PrivateChat) -> int:
+        return chat.user2_id if self.sender_id == chat.user1_id else chat.user1_id
+
     @hybrid_property
     def receiver_id(self):
-        return self.chat.user2_id if self.sender_id == self.chat.user1_id else self.chat.user1_id
+        return self.receiver_id_from_chat(self.chat)
 
     @hybrid_property
     def receiver(self):

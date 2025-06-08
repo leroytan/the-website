@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from api.logic.chat_logic import ChatLogic
@@ -10,6 +11,7 @@ from fastapi.routing import APIRouter
 
 router = APIRouter()
 
+mutex = asyncio.Lock()
 active_connections = {}
 
 # Route for getting jwt for websocket purposes
@@ -31,7 +33,8 @@ async def get_jwt(request: Request, _: User = Depends(RouterAuthUtils.get_curren
 async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
     user = RouterAuthUtils.get_user_from_jwt(access_token)
     await websocket.accept()
-    active_connections[user.id] = websocket
+    async with mutex:
+        active_connections[user.id] = websocket
     try:
         while True:
             data = await websocket.receive_text()
@@ -44,10 +47,11 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
                 chat_id=chat_id,
             )
 
-            await ChatLogic.handle_private_message(active_connections, message, user.id)
+            await ChatLogic.handle_private_message(active_connections, message, user.id, mutex)
     except WebSocketDisconnect:
-        if user.id in active_connections:
-            del active_connections[user.id]
+        async with mutex:
+            if user.id in active_connections:
+                del active_connections[user.id]
         print(f"WebSocket connection closed for user {user.id}")
 
 @router.post("/api/chat/get-or-create")
