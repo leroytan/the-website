@@ -2,13 +2,14 @@ import datetime
 import enum
 
 from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
-                        ForeignKey, Integer, String, UniqueConstraint, asc, desc)
+                        ForeignKey, Integer, String, UniqueConstraint, asc,
+                        desc)
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.declarative import declared_attr
 
 # Create a base class for declarative models
 Decl_Base = declarative_base()
@@ -80,6 +81,7 @@ class Assignment(Base, SerializerMixin):
     tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
     level_id = Column(Integer, ForeignKey('Level.id'), nullable=False)  # Foreign key to Level
     estimated_rate_hourly = Column(Integer, nullable=False)
+    lesson_duration = Column(Integer, nullable=False)  # Duration in minutes
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
     location = Column(String, nullable=False)

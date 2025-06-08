@@ -45,12 +45,13 @@ class Settings(BaseSettings):
                 return self.database_url_prod
             
     def make_engine(self, create_engine: callable, NullPool: callable):
-        if self.database_url == "":
+        db_url = self.database_url
+        if db_url == "":
             raise ValueError("Database URL is not set. Please check your configuration.")
         if self.database_config == "LOCAL":
-            return create_engine(self.database_url)
+            return create_engine(db_url)
         else:
-            return create_engine(self.database_url, client_encoding='utf8', poolclass=NullPool)
+            return create_engine(db_url, client_encoding='utf8', poolclass=NullPool)
 
 # Instantiate the settings object
 settings = Settings()

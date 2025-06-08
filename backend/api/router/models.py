@@ -117,6 +117,7 @@ class AssignmentBaseView(BaseModel):
     title: str
     owner_id: int
     estimated_rate_hourly: int  # in dollars
+    lesson_duration: int  # in minutes
     weekly_frequency: int
     available_slots: list[AssignmentSlotView]
     special_requests: str
@@ -138,9 +139,11 @@ class NewAssignmentSlot(BaseModel):
     start_time: str
     end_time: str
 
-class NewAssignment(BaseModel):  # TODO: add location
+# TODO: Remove lesson_duration default when frontend is ready to handle it
+class NewAssignment(BaseModel):
     title: str
     estimated_rate_hourly: int # in dollars
+    lesson_duration: int = 90  # in minutes
     weekly_frequency: int
     available_slots: list[NewAssignmentSlot]
     special_requests: str | None

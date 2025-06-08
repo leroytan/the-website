@@ -3,6 +3,7 @@ import math
 from collections.abc import Callable
 
 from api.logic.filter_logic import FilterLogic
+from api.logic.sort_logic import SortLogic
 from api.logic.user_logic import UserLogic
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                AssignmentRequestView, AssignmentSlotView,
@@ -17,7 +18,7 @@ from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
-from api.logic.sort_logic import SortLogic
+
 
 class ViewType(enum.Enum):
     OWNER = "owner"
@@ -37,6 +38,7 @@ class AssignmentLogic:
             "title": assignment.title,
             "owner_id": assignment.owner_id,
             "estimated_rate_hourly": assignment.estimated_rate_hourly,
+            "lesson_duration": assignment.lesson_duration,
             "weekly_frequency": assignment.weekly_frequency,
             "available_slots": [
                 AssignmentSlotView(
@@ -151,7 +153,7 @@ class AssignmentLogic:
             }
         
     @staticmethod
-    def new_assignment(new_assignment: NewAssignment, user_id: str|int) -> AssignmentOwnerView:
+    def new_assignment(new_assignment: NewAssignment, user_id: int) -> AssignmentOwnerView:
         with Session(StorageService.engine) as session:
 
             level_id = session.query(Level).filter_by(name=new_assignment.level).one().id
@@ -162,6 +164,7 @@ class AssignmentLogic:
                 owner_id=user_id,
                 level_id=level_id,
                 estimated_rate_hourly=new_assignment.estimated_rate_hourly,
+                lesson_duration=new_assignment.lesson_duration,
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
                 status=AssignmentStatus.OPEN,
@@ -169,7 +172,25 @@ class AssignmentLogic:
             )
 
             try:
-                assignment = StorageService.insert(session, assignment)
+                session.add(assignment)
+
+                assignment.subjects = session.query(Subject).filter(Subject.name.in_(new_assignment.subjects)).all()
+
+                # Create assignment slots
+                for slot in new_assignment.available_slots:
+                    # TODO: Enforce that slot duration is >= lesson_duration
+                    assignment_slot = AssignmentSlot(
+                        day=slot.day,
+                        start_time=slot.start_time,
+                        end_time=slot.end_time,
+                        assignment_id=assignment.id
+                    )
+                    session.add(assignment_slot)
+                assignment.available_slots = session.query(AssignmentSlot).filter(AssignmentSlot.assignment_id == assignment.id).all()
+
+                session.commit()
+                session.refresh(assignment)
+                return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
             except IntegrityError as e:
                 if isinstance(e.orig, ForeignKeyViolation):
                     raise HTTPException(
@@ -181,28 +202,10 @@ class AssignmentLogic:
                         status_code=500,
                         detail=e.orig.args[0]
                     )
-
-            session.add(assignment)
-
-            assignment.subjects = session.query(Subject).filter(Subject.name.in_(new_assignment.subjects)).all()
-
-            # Create assignment slots
-            for slot in new_assignment.available_slots:
-                assignment_slot = AssignmentSlot(
-                    day=slot.day,
-                    start_time=slot.start_time,
-                    end_time=slot.end_time,
-                    assignment_id=assignment.id
-                )
-                session.add(assignment_slot)
-            assignment.available_slots = session.query(AssignmentSlot).filter(AssignmentSlot.assignment_id == assignment.id).all()
-
-            session.commit()
-            session.refresh(assignment)
-            return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
+                    
         
     @staticmethod
-    def get_assignment_by_id(id: str | int, user_id: int = None) -> AssignmentOwnerView | AssignmentPublicView:
+    def get_assignment_by_id(id: int, user_id: int = None) -> AssignmentOwnerView | AssignmentPublicView:
         with Session(StorageService.engine) as session:
             assignment = StorageService.find(session, {"id": id}, Assignment, find_one=True)
             if not assignment:

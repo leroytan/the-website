@@ -43,7 +43,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: '#/TutorProfile'
+          $ref: '#/NewTutorProfile'
   responses:
     '200':
       description: Confirmation of successful update
@@ -139,6 +139,47 @@ TutorProfile:
     - id
     - name
     - email
+    - subjects_teachable
+    - levels_teachable
+    - special_skills
+
+NewTutorProfile:
+  type: object
+  properties:
+    highest_education:
+      type: string
+      nullable: true
+    availability:
+      type: string
+      nullable: true
+    resume_url:
+      type: string
+      nullable: true
+    rate:
+      type: string
+      nullable: true
+    location:
+      type: string
+      nullable: true
+    about_me:
+      type: string
+      nullable: true
+    experience:
+      type: string
+      nullable: true
+    subjects_teachable:
+      type: array
+      items:
+        type: string
+    levels_teachable:
+      type: array
+      items:
+        type: string
+    special_skills:
+      type: array
+      items:
+        type: string
+  required:
     - subjects_teachable
     - levels_teachable
     - special_skills
