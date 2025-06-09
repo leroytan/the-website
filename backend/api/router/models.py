@@ -20,10 +20,14 @@ class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photo_url: str | None
+    highest_education: str
     rate: str | None
     rating: float | None
+    about_me: str
     subjects_teachable: list[str]
     levels_teachable: list[str]
+    special_skills: list[str]
+    resume_url: str
     experience: str | None
     availability: str | None
 
@@ -97,6 +101,11 @@ class AssignmentSlotView(BaseModel):
     start_time: str
     end_time: str
 
+class NewAssignmentSlot(BaseModel):
+    day: str
+    start_time: str
+    end_time: str
+
 class AssignmentRequestView(BaseModel):
     id: int
     created_at: str
@@ -113,7 +122,7 @@ class AssignmentRequestView(BaseModel):
 class NewAssignmentRequest(BaseModel):
     requested_rate_hourly: int =35  # in dollars
     requested_duration: int = 60  # in minutes
-    available_slots: list[AssignmentSlotView]  # List of slot IDs
+    available_slots: list[NewAssignmentSlot]
 
 class AssignmentBaseView(BaseModel):
     id: int
@@ -138,11 +147,6 @@ class AssignmentPublicView(AssignmentBaseView):
 class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
     requests: list[AssignmentRequestView]
-
-class NewAssignmentSlot(BaseModel):
-    day: str
-    start_time: str
-    end_time: str
 
 # TODO: Remove lesson_duration default when frontend is ready to handle it
 class NewAssignment(BaseModel):
@@ -198,7 +202,17 @@ class SearchResult(BaseModel, Generic[T]):
 class NewChatMessage(BaseModel):
     chat_id: int
     content: str
+    message_type: str = "text_message"
 
+class ChatPreview(BaseModel):
+    id: int
+    name: str
+    last_message: str
+    last_update: str
+    last_message_type: str
+    has_unread: bool
+    is_locked: bool
+    has_messages: bool
 class UserView(BaseModel):
     id: int
     name: str

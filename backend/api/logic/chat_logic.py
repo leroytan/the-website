@@ -3,7 +3,7 @@ import json
 from collections.abc import Callable
 from datetime import datetime
 
-from api.router.models import NewChatMessage
+from api.router.models import ChatPreview, NewChatMessage
 from api.storage.models import ChatMessage, ChatReadStatus, PrivateChat, User
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException, WebSocket
@@ -14,9 +14,11 @@ from sqlalchemy.orm import Session, joinedload
 
 
 class ChatLogic:
+    active_connections: dict[str|int, WebSocket] = {}
+    mutex = asyncio.Lock()
 
     @staticmethod
-    def get_chat_preview(session: Session, user_id: int, chat: PrivateChat) -> dict:
+    def get_chat_preview(session: Session, user_id: int, chat: PrivateChat) -> ChatPreview:
         """
         Get a preview of the chat.
         """
@@ -31,6 +33,7 @@ class ChatLogic:
         # Get message content and created_at
         last_message = res.content if res else ""
         last_message_time = res.created_at.isoformat() if res else ""
+        last_message_type = res.message_type if res else "text_message"
         read_status = session.query(ChatReadStatus).filter(
             ChatReadStatus.chat_id == chat_id,
             ChatReadStatus.user_id == user_id,
@@ -38,15 +41,16 @@ class ChatLogic:
         has_unread = not read_status.is_read if read_status else False
 
         # Frontend expects the following format
-        return {
-            "id": chat_id,
-            "name": other_name,
-            "last_message": last_message,
-            "last_update": last_message_time,
-            "has_unread": has_unread,
-            "is_locked": chat.is_locked,
-            "has_messages": bool(res),
-        }
+        return ChatPreview(
+            id=chat_id,
+            name=other_name,
+            last_message=last_message,
+            last_update=last_message_time,
+            last_message_type=last_message_type,
+            has_unread=has_unread,
+            is_locked=chat.is_locked,
+            has_messages=bool(res),
+        )
 
     @staticmethod
     def get_convert_message(user_id: int) -> Callable[[ChatMessage], dict]:
@@ -60,6 +64,7 @@ class ChatLogic:
                 "chat_id": message.chat_id,
                 "sender": message.sender.name,
                 "content": message.content,
+                "message_type": message.message_type,
                 "created_at": message.created_at.isoformat(),
                 "updated_at": message.updated_at.isoformat(),
                 "sent_by_user": sent_by_user,
@@ -67,7 +72,7 @@ class ChatLogic:
         return convert_message
 
     @staticmethod
-    def get_or_create_private_chat(current_user_id: int, other_user_id: int) -> dict:
+    def get_or_create_private_chat(current_user_id: int, other_user_id: int) -> ChatPreview:
         """
         Get or create a chatroom between two users.
 
@@ -103,7 +108,7 @@ class ChatLogic:
             return ChatLogic.get_chat_preview(session, current_user_id, chat)
 
     @staticmethod
-    async def handle_private_message(active_connections: dict[str|int, WebSocket], new_chat_message: NewChatMessage, sender_id: int, mutex: asyncio.Lock) -> None:
+    async def handle_private_message(new_chat_message: NewChatMessage, sender_id: int) -> None:
         """
         Handles the incoming chat message, processes it, and returns a ChatMessage object.
 
@@ -133,7 +138,8 @@ class ChatLogic:
             chat_message = ChatMessage(
                 content=new_chat_message.content,
                 sender_id=sender_id,
-                chat_id=chat_id
+                chat_id=chat_id,
+                message_type=new_chat_message.message_type
             )
 
             # Add the message to the session
@@ -150,24 +156,26 @@ class ChatLogic:
             session.commit()
             
             # Send the message to the receiver via WebSocket
-            if receiver_id in active_connections:
+            if receiver_id in ChatLogic.active_connections:
                 # Send the message to the receiver's WebSocket
                 # Ensure that the receiver is connected
                 try:
                     to_send = json.dumps(ChatLogic.get_convert_message(-1)(chat_message))
-                    await active_connections[receiver_id].send_text(to_send)
+                    print(f"Sending message to receiver {receiver_id}: {to_send}")
+                    await ChatLogic.active_connections[receiver_id].send_text(to_send)
                 except RuntimeError:
-                    async with mutex:
-                        active_connections.pop(receiver_id, None)
+                    async with ChatLogic.mutex:
+                        ChatLogic.active_connections.pop(receiver_id, None)
 
-            if sender_id in active_connections:
+            if sender_id in ChatLogic.active_connections:
                 # Send the message to the sender's WebSocket
                 try:
                     to_send = json.dumps(ChatLogic.get_convert_message(sender_id)(chat_message))
-                    await active_connections[sender_id].send_text(to_send)
+                    print(f"Sending message to sender {sender_id}: {to_send}")
+                    await ChatLogic.active_connections[sender_id].send_text(to_send)
                 except RuntimeError:
-                    async with mutex:
-                        active_connections.pop(sender_id, None)
+                    async with ChatLogic.mutex:
+                        ChatLogic.active_connections.pop(sender_id, None)
 
     @staticmethod
     def get_private_chat_history(chat_id: int, user_id: int, created_before: str, limit: int) -> dict:

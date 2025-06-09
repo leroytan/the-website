@@ -33,6 +33,7 @@ const ChatApp = () => {
         isLocked: dto.is_locked,
         hasMessages: dto.has_messages,
         lastUpdate: new Date(dto.last_update),
+        lastMessageType: dto.last_message_type === "text_message" ? "textMessage" : "tutorRequest",
       } : null;
       return new ChatThread(
         dto.id,
@@ -48,6 +49,7 @@ const ChatApp = () => {
         id: dto.id,
         sender: dto.sender,
         content: dto.content,
+        type: dto.message_type === "text_message" ? "textMessage" : "tutorRequest",
         createdAt: dto.created_at,
         updatedAt: dto.updated_at,
         sentByUser: dto.sent_by_user,
@@ -73,6 +75,7 @@ const ChatApp = () => {
         isLocked: isLocked,
         hasMessages: false,
         lastUpdate: new Date(),
+        lastMessageType: "text_message", // Default for new chats
       };
       this.hasMoreMessages = this.initialPreview.hasMessages;
       this.hasUnreadMessages = this.initialPreview.hasUnread;
@@ -82,6 +85,7 @@ const ChatApp = () => {
       return this.messages.map((message) => ({
         sender: message.sender,
         content: message.content,
+        type: message.type,
         time: to12HourTime(message.createdAt),
         sentByUser: message.sentByUser,
       }));
@@ -105,6 +109,7 @@ const ChatApp = () => {
         id: msg.id,
         sender: msg.sender,
         content: msg.content,
+        type: msg.message_type === "text_message" ? "textMessage" : "tutorRequest",
         createdAt: msg.created_at,
         updatedAt: msg.updated_at,
         sentByUser: msg.sent_by_user,
@@ -123,17 +128,27 @@ const ChatApp = () => {
     getPreview(): ChatPreview {
       const latestMessage = this.getLatestMessage();
       if (latestMessage === null) {
+        if (this.initialPreview.lastMessageType === "tutorRequest") {
+          this.initialPreview.lastMessage = (<i>Tutor Request</i>);
+        }
         return this.initialPreview;
       }
+
+      let lastMessageContent: string | ReactElement = latestMessage.content;
+      if (latestMessage.type === "tutorRequest") {
+        lastMessageContent = (<i>Tutor Request</i>);
+      }
+
       return {
         id: this.id,
         name: this.title,
-        lastMessage: latestMessage.content,
+        lastMessage: lastMessageContent,
         displayTime: timeAgo(latestMessage.createdAt),
         hasUnread: this.hasUnreadMessages,
         isLocked: this.isLocked,
         hasMessages: this.messages.length > 0,
         lastUpdate: new Date(latestMessage.createdAt),
+        lastMessageType: latestMessage.type,
       };
     }
 
@@ -142,6 +157,7 @@ const ChatApp = () => {
         id: msg.id,
         sender: msg.sender,
         content: msg.content,
+        type: msg.type,
         createdAt: msg.createdAt,
         updatedAt: msg.updatedAt,
         sentByUser: msg.sentByUser,
@@ -149,7 +165,7 @@ const ChatApp = () => {
       const copiedPreview = this.initialPreview
         ? { ...this.initialPreview }
         : null;
-    
+
       const newThread = new ChatThread(
         this.id,
         this.isLocked,
@@ -157,7 +173,7 @@ const ChatApp = () => {
         copiedMessages,
         copiedPreview
       );
-    
+
       return newThread;
     }
   }
@@ -165,12 +181,13 @@ const ChatApp = () => {
   interface ChatData {
     [key: number]: ChatThread;
   }
-  
+
   type ChatPreviewBackendDTO = {
     id: number;                    // Needed for navigation or fetching full chat
     name: string;                  // Display name (user or group)
     last_message: string;          // Plain text version of the latest message
     last_update: string;           // ISO 8601 string for sorting and display
+    last_message_type: string;     // "text_message" or "tutor_request"
     has_unread: boolean;          // For notification badge
     is_locked: boolean;           // Optional security/status flag
     has_messages: boolean;         // If chat is empty, hide or style differently
@@ -185,6 +202,7 @@ const ChatApp = () => {
     isLocked?: boolean; // true if the chat is locked, false if unlocked
     hasMessages: boolean; // true if the chat has messages, false if no messages
     lastUpdate: Date; // Date object for sorting and display
+    lastMessageType: string; // "textMessage" or "tutorRequest"
   };
 
   type MessageBackendDTO = {
@@ -192,15 +210,23 @@ const ChatApp = () => {
     chat_id: number;
     sender: string;
     content: string;
+    message_type: string; // "text_message" or "tutor_request"
     created_at: string; // ISO 8601 format
     updated_at: string; // ISO 8601 format
     sent_by_user: boolean; // true if sent by the user, false if sent by the other party
   }
 
+  type TutorRequest = {
+    type: "tutor_request";
+    hourlyRate: number;
+    lessonDuration: number;
+  };
+
   type Message = {
     id: number;
     sender: string;
     content: string | ReactElement;
+    type: string; // "textMessage" or "tutorRequest"
     createdAt: string; // ISO 8601 format
     updatedAt: string; // ISO 8601 format
     sentByUser: boolean; // true if sent by the user, false if sent by the other party
@@ -209,6 +235,7 @@ const ChatApp = () => {
   type MessageDisplay = {
     sender: string;
     content: string | ReactElement;
+    type: string; // "textMessage" or "tutorRequest"
     time: string;
     sentByUser: boolean;
   };
@@ -219,6 +246,7 @@ const ChatApp = () => {
       chat_id: 1,
       sender: "Alice",
       content: "Hey! Are you free later?",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 3600000).toISOString(), // 1h ago
       updated_at: new Date(Date.now() - 3600000).toISOString(),
       sent_by_user: false,
@@ -228,6 +256,7 @@ const ChatApp = () => {
       chat_id: 1,
       sender: "You",
       content: "Yeah, after 5 works!",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 3500000).toISOString(),
       updated_at: new Date(Date.now() - 3500000).toISOString(),
       sent_by_user: true,
@@ -237,18 +266,20 @@ const ChatApp = () => {
       chat_id: 1,
       sender: "Alice",
       content: "Perfect, see you then.",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 3400000).toISOString(),
       updated_at: new Date(Date.now() - 3400000).toISOString(),
       sent_by_user: false,
     },
   ];
-  
+
   const messageDTOsForBob: MessageBackendDTO[] = [
     {
       id: 4,
       chat_id: 2,
       sender: "You",
       content: "Hey Bob, sent the docs over.",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 7200000).toISOString(), // 2h ago
       updated_at: new Date(Date.now() - 7200000).toISOString(),
       sent_by_user: true,
@@ -258,24 +289,26 @@ const ChatApp = () => {
       chat_id: 2,
       sender: "Bob",
       content: "Awesome, reviewing now.",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 7100000).toISOString(),
       updated_at: new Date(Date.now() - 7100000).toISOString(),
       sent_by_user: false,
     },
   ];
-  
+
   const messageDTOsForCharlie: MessageBackendDTO[] = [
     {
       id: 6,
       chat_id: 3,
       sender: "Charlie",
       content: "Lunch today?",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 10800000).toISOString(), // 3h ago
       updated_at: new Date(Date.now() - 10800000).toISOString(),
       sent_by_user: false,
     }
   ];
-  
+
   const initialChatData: ChatData = {
     1: (() => {
       const thread = new ChatThread(1, false, "Alice");
@@ -293,7 +326,7 @@ const ChatApp = () => {
       return thread;
     })(),
   };
-  
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState(1);
@@ -318,7 +351,7 @@ const ChatApp = () => {
     }
   }, [searchParams]); // Re-run this effect when the query param changes
 
-  
+
   const socketRef = useRef<WebSocket | null>(null);
 
   const fetchChats = async () => {
@@ -341,47 +374,50 @@ const ChatApp = () => {
     }
   };
 
-  const fetchHistoricalMessages = async () => {
+  const fetchHistoricalMessages = async (chatId: number) => {
     const container = scrollRef.current;
-    if (!container) return;
-  
-    const existingThread = chatData[selectedChat] || new ChatThread(selectedChat, false);
+    if (!container) {
+      console.error("Scroll container not found");
+      return;
+    }
+
+    const existingThread = chatData[chatId] || new ChatThread(chatId, false);
     if (!existingThread.hasMoreMessages) {
       return;
     }
-  
+
     const previousScrollHeight = container.scrollHeight;
-  
+
     try {
       const createdBefore = existingThread.getEarliestMessageCreated();
       const params = new URLSearchParams({ limit: "10" });
       if (createdBefore) {
         params.append("created_before", createdBefore);
       }
-  
-      const response = await fetch(`/api/chat/${selectedChat}?${params}`, {
+
+      const response = await fetch(`/api/chat/${chatId}?${params}`, {
         method: "GET",
         credentials: "include",
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch chat messages");
       }
-  
+
       const data = await response.json();
-  
+
       // Apply update inside setChatData
       setChatData((prevChatData) => {
-        const updatedThread = prevChatData[selectedChat]?.clone() || new ChatThread(selectedChat, false);
+        const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
         updatedThread.addHistoricalMessages(data.messages);
         updatedThread.hasMoreMessages = data.has_more;
-  
+
         return {
           ...prevChatData,
-          [selectedChat]: updatedThread,
+          [chatId]: updatedThread,
         };
       });
-  
+
       // Restore scroll position
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -403,25 +439,37 @@ const ChatApp = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChat, chatMessages]);
+  }, [selectedChat]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       if (scrollRef.current?.scrollTop === 0) {
-        fetchHistoricalMessages(); // call the async function
+        fetchHistoricalMessages(selectedChat); // call the async function
       }
     };
-  
+
     const scrollContainer = scrollRef.current;
     scrollContainer?.addEventListener("scroll", handleScroll);
-  
+
     return () => {
       scrollContainer?.removeEventListener("scroll", handleScroll);
     };
   }, [fetchHistoricalMessages]);
-  
+
+  const selectedChatRef = useRef(selectedChat);
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  const lastUpdatedChatRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (lastUpdatedChatRef.current === selectedChat) {
+      scrollToBottom();
+      lastUpdatedChatRef.current = null; // reset after scrolling
+    }
+  }, [chatData, selectedChat]);
 
   const initWebSocket = async () => {
     const response = await fetch(`/api/chat/jwt`, {
@@ -444,6 +492,7 @@ const ChatApp = () => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
       setChatData((prevChatData: ChatData) => {
         const chatId = parsedData.chat_id;
+        lastUpdatedChatRef.current = chatId; // Update the last updated chat reference
         const chatThread = prevChatData[chatId]?.clone() || ChatThread.fromMessageDTO(parsedData);
         chatThread.addRecentMessage(parsedData);
         chatThread.hasUnreadMessages = !parsedData.sent_by_user;
@@ -477,7 +526,7 @@ const ChatApp = () => {
     setShowChat(true);
     setNewMessage("");
     if (chatMessages.length < 10) {
-      fetchHistoricalMessages();
+      fetchHistoricalMessages(chatId);
     }
     const response = await fetch(`/api/chat/${chatId}/read`, {
       method: "POST",
@@ -710,11 +759,34 @@ const ChatApp = () => {
                   >
                     <div
                       className={`p-2 rounded-xl ${message.sentByUser
-                          ? "bg-customDarkBlue text-white"
-                          : "bg-gray-300"
+                        ? "bg-customDarkBlue text-white"
+                        : "bg-gray-300"
                         }`}
                     >
-                      {message.content}
+                      {message.type === "tutorRequest" ? (
+                        (() => {
+                          try {
+                            const tutorRequest: TutorRequest = JSON.parse(message.content as string);
+                            return (
+                              <div className="max-w-sm mx-auto p-6 bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-2">📚 Tutor Request</h2>
+                                <p className="text-gray-700 mb-1"><span className="font-medium">Rate:</span>  ${tutorRequest.hourlyRate}/hr</p>
+                                <p className="text-gray-700 mb-4"><span className="font-medium">Lesson Duration:</span> {tutorRequest.lessonDuration} min</p>
+                                {!message.sentByUser && (
+                                <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 hover:bg-customYellow">
+                                  Accept
+                                </button>
+                                )}
+                              </div>
+                            );
+                          } catch (e) {
+                            console.error("Failed to parse tutor request content:", e);
+                            return <p>{message.content}</p>; // Fallback to plain text if parsing fails
+                          }
+                        })()
+                      ) : (
+                        <p>{message.content}</p>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 mt-1 flex justify-end">
                       {message.time}

@@ -3,7 +3,7 @@ import json
 
 from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
-from api.router.models import ChatCreationInfo, NewChatMessage
+from api.router.models import ChatCreationInfo, NewChatMessage, ChatPreview
 from api.storage.models import User
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -11,8 +11,9 @@ from fastapi.routing import APIRouter
 
 router = APIRouter()
 
-mutex = asyncio.Lock()
-active_connections = {}
+# No longer needed as they are static members of ChatLogic
+# mutex = asyncio.Lock()
+# active_connections = {}
 
 # Route for getting jwt for websocket purposes
 @router.get("/api/chat/jwt")
@@ -33,29 +34,31 @@ async def get_jwt(request: Request, _: User = Depends(RouterAuthUtils.get_curren
 async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
     user = RouterAuthUtils.get_user_from_jwt(access_token)
     await websocket.accept()
-    async with mutex:
-        active_connections[user.id] = websocket
+    async with ChatLogic.mutex:
+        ChatLogic.active_connections[user.id] = websocket
     try:
         while True:
             data = await websocket.receive_text()
             data_dict = json.loads(data)
             chat_id = data_dict["chat_id"]
             content = data_dict["content"]
+            message_type = data_dict.get("message_type", "text_message")
             
             message = NewChatMessage(
                 content=content,
                 chat_id=chat_id,
+                message_type=message_type
             )
-
-            await ChatLogic.handle_private_message(active_connections, message, user.id, mutex)
+ 
+            await ChatLogic.handle_private_message(message, user.id)
     except WebSocketDisconnect:
-        async with mutex:
-            if user.id in active_connections:
-                del active_connections[user.id]
+        async with ChatLogic.mutex:
+            if user.id in ChatLogic.active_connections:
+                del ChatLogic.active_connections[user.id]
         print(f"WebSocket connection closed for user {user.id}")
 
 @router.post("/api/chat/get-or-create")
-async def get_or_create_chat(chat_info: ChatCreationInfo, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def get_or_create_chat(chat_info: ChatCreationInfo, user: User = Depends(RouterAuthUtils.get_current_user)) -> ChatPreview:
     """
     Create a new chat between two users.
 

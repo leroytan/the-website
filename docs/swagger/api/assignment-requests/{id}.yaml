@@ -115,8 +115,23 @@ components:
         available_slots:
           type: array
           items:
-            $ref: '#/components/schemas/AssignmentSlotView'
+            $ref: '#/components/schemas/NewAssignmentSlot'
       required:
         - requested_rate_hourly
         - requested_duration
         - available_slots
+
+    NewAssignmentSlot:
+      title: NewAssignmentSlot
+      type: object
+      properties:
+        day:
+          type: string
+        start_time:
+          type: string
+        end_time:
+          type: string
+      required:
+        - day
+        - start_time
+        - end_time

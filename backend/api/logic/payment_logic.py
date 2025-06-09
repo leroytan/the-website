@@ -82,7 +82,7 @@ class PaymentLogic:
                 
                 preview = ChatLogic.get_or_create_private_chat(owner_id, requester_id)
 
-                ChatLogic.unlock_chat(preview["id"], owner_id)
+                ChatLogic.unlock_chat(preview.id, owner_id)
 
                 return {"status": "success"}
 

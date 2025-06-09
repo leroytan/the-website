@@ -1,14 +1,17 @@
+import asyncio
 import enum
+import json
 import math
 from collections.abc import Callable
 
+from api.logic.chat_logic import ChatLogic
 from api.logic.filter_logic import FilterLogic
 from api.logic.sort_logic import SortLogic
 from api.logic.user_logic import UserLogic
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                AssignmentRequestView, AssignmentSlotView,
                                NewAssignment, NewAssignmentRequest,
-                               SearchQuery)
+                               SearchQuery, NewChatMessage)
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, Level, Subject, Tutor, User)
@@ -66,6 +69,8 @@ class AssignmentLogic:
                     tutor_id=request.tutor_id,
                     tutor_name=request.tutor.user.name,
                     tutor_profile_photo_url=UserLogic.get_profile_photo_url(request.tutor_id),
+                    requested_rate_hourly=request.requested_rate_hourly,
+                    requested_duration=request.requested_duration,
                     available_slots=[
                         AssignmentSlotView(
                             id=slot.id,
@@ -85,7 +90,7 @@ class AssignmentLogic:
                 for request in assignment.assignment_requests:
                     if request.tutor_id == user_id:
                         base_data["applied"] = True
-                        base_data["request_status"] = str(request.status)
+                        base_data["request_status"] = request.status.value
                         break
             return AssignmentPublicView(**base_data)
         
@@ -498,4 +503,30 @@ class AssignmentLogic:
             session.commit()
             session.refresh(assignment_request)
 
+            # Send a chat message to the assignment owner
+            assignment = assignment_request.assignment
+            chat_id = ChatLogic.get_or_create_private_chat(assignment.owner_id, assignment_request.tutor_id).id
+            
+            message_content = json.dumps({
+                "hourlyRate": assignment_request.requested_rate_hourly,
+                "lessonDuration": assignment_request.requested_duration,
+                "availableSlots": [
+                    {"day": s.day, "startTime": s.start_time, "endTime": s.end_time}
+                    for s in assignment_request.available_slots
+                ]
+            })
+            
+            new_chat_message = NewChatMessage(
+                chat_id=chat_id,
+                content=message_content,
+                message_type="tutor_request"
+            )
+            
+            print("Sending chat message to assignment owner")
+            # Handle the private message asynchronously
+            asyncio.create_task(ChatLogic.handle_private_message(
+                new_chat_message,
+                assignment_request.tutor_id,
+            ))
+ 
             return AssignmentLogic.get_assignment_request_by_id(assignment_request.id, assert_user_authorized)
