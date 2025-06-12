@@ -1,1 +1,1 @@
-ngrok http 8000 --url=hog-closing-suitably.ngrok-free.app
+ngrok start --config ngrok_config.yml the-backend

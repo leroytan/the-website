@@ -53,7 +53,6 @@ export default function ClientDashboard({
         mode: "payment",
         success_url: window.location.origin + "/payment-success",
         cancel_url: window.location.origin + "/payment-cancel",
-        hourly_rate_cents: hourlyRateCents,
         assignment_request_id: requestId,
         tutor_id: tutorId,
         chat_id: chatId

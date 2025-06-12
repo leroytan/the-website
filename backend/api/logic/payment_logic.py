@@ -27,7 +27,13 @@ class PaymentLogic:
                 payment_request.assignment_request_id
             )
 
-            fee = payment_request.hourly_rate_cents * lesson_duration / 60
+            hourly_rate = AssignmentLogic.get_request_hourly_rate(
+                payment_request.assignment_request_id
+            )
+
+            num_hours = lesson_duration / 60  # Convert minutes to hours
+            hourly_rate_cents = hourly_rate * 100  # Convert dollars to cents
+            fee = num_hours * hourly_rate_cents  # Total fee in cents
             checkout_session = stripe.checkout.Session.create(
                 line_items=[{
                     'price_data': {
@@ -53,9 +59,10 @@ class PaymentLogic:
                     "url": checkout_session["url"]}
         except stripe.error.StripeError as e:
             # Handle Stripe-specific errors
+            print(f"Stripe error: {e}")
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise e
         
     @staticmethod
     def handle_stripe_webhook(payload, sig_header: str) -> dict:
@@ -73,12 +80,10 @@ class PaymentLogic:
                 payment_intent = event['data']['object']  # contains a stripe.PaymentIntent
 
                 # Example: extract details
-                customer_id = payment_intent.get('customer')
-                amount_received = payment_intent.get('amount_received')
                 metadata = payment_intent.get('metadata', {})
 
                 # Change status of assignment request to accepted
-                owner_id, requester_id = AssignmentLogic.accept_assignment_request(metadata['assignment_request_id'])
+                owner_id, requester_id = AssignmentLogic.accept_assignment_request(int(metadata['assignment_request_id']))
                 
                 preview = ChatLogic.get_or_create_private_chat(owner_id, requester_id)
 

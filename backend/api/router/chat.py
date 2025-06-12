@@ -4,7 +4,7 @@ import json
 from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import ChatCreationInfo, NewChatMessage, ChatPreview
-from api.storage.models import User
+from api.storage.models import User, ChatMessageType
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRouter
@@ -42,7 +42,7 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
             data_dict = json.loads(data)
             chat_id = data_dict["chat_id"]
             content = data_dict["content"]
-            message_type = data_dict.get("message_type", "text_message")
+            message_type = data_dict.get("message_type", ChatMessageType.TEXT_MESSAGE)
             
             message = NewChatMessage(
                 content=content,

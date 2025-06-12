@@ -1,7 +1,7 @@
 import enum
 from typing import Generic, Optional, TypeVar
 
-from api.storage.models import AssignmentRequestStatus
+from api.storage.models import AssignmentRequestStatus, ChatMessageType
 from pydantic import BaseModel
 
 
@@ -202,7 +202,7 @@ class SearchResult(BaseModel, Generic[T]):
 class NewChatMessage(BaseModel):
     chat_id: int
     content: str
-    message_type: str = "text_message"
+    message_type: ChatMessageType = ChatMessageType.TEXT_MESSAGE
 
 class ChatPreview(BaseModel):
     id: int
@@ -229,7 +229,6 @@ class PaymentRequest(BaseModel):
     mode: str  # 'payment' or 'subscription'
     success_url: str
     cancel_url: str
-    hourly_rate_cents: int # in cents
     assignment_request_id: int
     tutor_id: int  # To link to chat
     chat_id: int | None = None  # Optional, if chat is already created

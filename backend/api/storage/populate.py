@@ -5,7 +5,7 @@ from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentStatus, AssignmentSubject,
                                 ChatMessage, Level, PrivateChat, SpecialSkill,
                                 Subject, Tutor, TutorLevel, TutorSpecialSkill,
-                                TutorSubject, User)
+                                TutorSubject, User, ChatMessageType)
 from sqlalchemy.orm import Session
 
 
@@ -550,177 +550,170 @@ def insert_test_data(engine: object) -> bool:
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Hi Jane, I need help with my calculus finals.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=2)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=2)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Sure John, I can help you with that!",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Awesome! I'm struggling with integration by parts.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Let's go through an example. Do you have a problem in mind?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Yes! ∫x·e^x dx. I don't know where to start.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Perfect example. You'll want to set u = x and dv = e^x dx.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Ah, got it. So du = dx and v = e^x?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=15)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=15)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Exactly! Now use the formula: ∫u·dv = uv - ∫v·du.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=10)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=10)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Bob, are you available for a study session?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=2)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=2)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Yes Alice, let's meet this weekend.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Saturday afternoon works for me. Maybe 2 PM?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Perfect. Should we meet at the library?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Yes, third floor study room. I’ll reserve it.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Great! Let’s cover chapters 5 to 7?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Sounds good. I’ll bring my notes and problem sets.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="David, I have some questions about the assignment.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=2)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=2)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Sure Carol, feel free to ask me anytime.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="I'm stuck on question 3. What's the best approach?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Start by identifying the variables. It's mostly substitution.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="Got it. And question 5? The logic section confused me.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Focus on truth tables. Want me to walk through one?",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="Yes, please! That would help a lot.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
+        ChatMessage(
+            chat_id=tutor_request_chat.id,
+            sender_id=users[0].id, # John Doe (tutee)
+            content="Got it. And question 5? The logic section confused me.",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[5].id,
+            content="Focus on truth tables. Want me to walk through one?",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[4].id,
+            content="Yes, please! That would help a lot.",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
         ChatMessage(
             chat_id=tutor_request_chat.id,
             sender_id=users[0].id, # John Doe (tutee)
             content='{"hourlyRate": 50, "lessonDuration": 90}',
-            message_type="tutor_request",
-            created_at=utc_now() - datetime.timedelta(minutes=10)
-        ),
+            message_type=ChatMessageType.TUTOR_REQUEST,
+            created_at=utc_now() - datetime.timedelta(minutes=10)),
         ChatMessage(
             chat_id=tutor_request_chat.id,
             sender_id=users[2].id, # Alice Johnson (tutor)
             content="I've received your request. Let me know if you have any questions.",
-            message_type="text_message",
-            created_at=utc_now() - datetime.timedelta(minutes=5)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(minutes=5)),
         ChatMessage(
             chat_id=tutor_request_chat.id,
             sender_id=users[0].id, # John Doe (tutee)
             content='{"hourlyRate": 60, "lessonDuration": 120}',
-            message_type="tutor_request",
-            created_at=utc_now() - datetime.timedelta(minutes=0)
-        ),
+            message_type=ChatMessageType.TUTOR_REQUEST,
+            created_at=utc_now() - datetime.timedelta(minutes=0)),
     ]
 
     session.add_all(chat_messages)

@@ -401,15 +401,14 @@ class AssignmentLogic:
             elif assignment_request.status != AssignmentRequestStatus.PENDING:
                 raise HTTPException( status_code=409, detail="Assignment request is not pending. Cannot accept.")
             
-            assignment_request.status = AssignmentRequestStatus.ACCEPTED
-            
             assignment = assignment_request.assignment
             assignment.status = AssignmentStatus.FILLED
             assignment.tutor_id = assignment_request.tutor_id
 
             for request in assignment.assignment_requests:
-                if request.id != assignment_request_id:
-                    request.status = AssignmentRequestStatus.REJECTED
+                request.status = AssignmentRequestStatus.REJECTED
+
+            assignment_request.status = AssignmentRequestStatus.ACCEPTED
 
             session.commit()
 
@@ -418,7 +417,7 @@ class AssignmentLogic:
     @staticmethod
     def get_lesson_duration(assignment_request_id: int) -> int:
         with Session(StorageService.engine) as session:
-            assignment_request = session.query(AssignmentRequest).outerjoin(Assignment).filter(
+            assignment_request = session.query(AssignmentRequest).options(joinedload(AssignmentRequest.assignment)).filter(
                 AssignmentRequest.id == assignment_request_id
             ).first()
             if not assignment_request:
@@ -432,6 +431,17 @@ class AssignmentLogic:
                     detail="Assignment not found for the given request"
                 )
             return assignment_request.assignment.lesson_duration
+        
+    @staticmethod
+    def get_request_hourly_rate(assignment_request_id: int) -> int:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).filter_by(id=assignment_request_id).first()
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+            return assignment_request.requested_rate_hourly
 
     @staticmethod
     def get_assignment_request_by_id(assignment_request_id: int, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
@@ -505,11 +515,16 @@ class AssignmentLogic:
 
             # Send a chat message to the assignment owner
             assignment = assignment_request.assignment
-            chat_id = ChatLogic.get_or_create_private_chat(assignment.owner_id, assignment_request.tutor_id).id
+            chat = ChatLogic.get_or_create_private_chat(assignment.owner_id, assignment_request.tutor_id)
+            chat_id = chat.id
             
             message_content = json.dumps({
                 "hourlyRate": assignment_request.requested_rate_hourly,
                 "lessonDuration": assignment_request.requested_duration,
+                "assignmentRequestId": assignment_request.id,
+                "assignmentId": assignment.id,
+                "tutorId": assignment_request.tutor_id,
+                "assignmentTitle": assignment.title,
                 "availableSlots": [
                     {"day": s.day, "startTime": s.start_time, "endTime": s.end_time}
                     for s in assignment_request.available_slots
@@ -521,12 +536,17 @@ class AssignmentLogic:
                 content=message_content,
                 message_type="tutor_request"
             )
+
+            # Store the chat message and get the message ID
+            chat_message = ChatLogic.store_private_message(session, new_chat_message, assignment_request.tutor_id)
             
+            # Update the assigment request with the chat message ID
+            assignment_request.chat_message_id = chat_message.id
+            session.commit()
+            session.refresh(chat_message, ["chat", "sender", "assignment_request"])
+
             print("Sending chat message to assignment owner")
             # Handle the private message asynchronously
-            asyncio.create_task(ChatLogic.handle_private_message(
-                new_chat_message,
-                assignment_request.tutor_id,
-            ))
+            asyncio.create_task(ChatLogic.send_private_message(chat_message=chat_message))
  
             return AssignmentLogic.get_assignment_request_by_id(assignment_request.id, assert_user_authorized)

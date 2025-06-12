@@ -134,11 +134,13 @@ class AssignmentRequest(Base):
     requested_rate_hourly = Column(Integer, nullable=False)
     requested_duration = Column(Integer, nullable=False)  # Duration in minutes
     status = Column(ENUM(AssignmentRequestStatus), default=AssignmentRequestStatus.PENDING)
+    chat_message_id = Column(Integer, ForeignKey('ChatMessage.id'), nullable=True)  # Foreign key to ChatMessage
 
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     assignment = relationship('Assignment', foreign_keys=[assignment_id], back_populates='assignment_requests')
     available_slots = relationship('AssignmentSlot', back_populates='assignment_request', cascade='all, delete-orphan')
+    chat_message = relationship('ChatMessage', foreign_keys=[chat_message_id], uselist=False)
 
     # Constraints
     # Composite unique constraint on column1 and column2
@@ -251,15 +253,31 @@ class PrivateChat(Base, SerializerMixin):
         CheckConstraint('user1_id < user2_id', name='check_user_order'),
     )
 
+class ChatMessageType(enum.Enum):
+    """
+    Enum for chat message types
+    """
+    TEXT_MESSAGE = 'text_message'
+    TUTOR_REQUEST = 'tutor_request'
+
+class TutorRequestStatus(enum.Enum):
+    """
+    Enum for tutor request status
+    """
+    PENDING = 'PENDING'
+    ACCEPTED = 'ACCEPTED'
+    EXPIRED = 'EXPIRED'
+
 class ChatMessage(Base, SerializerMixin):
     __tablename__ = 'ChatMessage'
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(String, nullable=False)
-    message_type = Column(String, nullable=False, default="text_message") # "text_message" or "tutor_request"
+    message_type = Column(ENUM(ChatMessageType), nullable=False, default=ChatMessageType.TEXT_MESSAGE)
     sender_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
     chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)  # Foreign key to PrivateChat
+    assignment_request = relationship('AssignmentRequest', back_populates='chat_message', uselist=False)
     
     # Relationships
     sender = relationship('User', foreign_keys=[sender_id])

@@ -1,4 +1,5 @@
 "use client";
+import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import AssignmentCard from "@/components/assignmentCard";
 import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
@@ -9,7 +10,9 @@ import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useEffect, useRef, useState, useCallback } from "react";
+import { useError } from "@/context/errorContext";
+import { M_PLUS_1 } from "next/font/google";
 
 const ChatApp = () => {
 
@@ -19,6 +22,7 @@ const ChatApp = () => {
     private title: string;
     private messages: Message[];
     private initialPreview: ChatPreview;
+    private indexOfLastTutorRequest: number = -1; // Index of the last tutor request message, -1 if none
     public hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
     public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no unread messages
 
@@ -39,6 +43,7 @@ const ChatApp = () => {
         dto.id,
         dto.is_locked,
         dto.name,
+        -1, 
         messages,
         preview,
       );
@@ -58,13 +63,14 @@ const ChatApp = () => {
       // For now, we assume the chat is locked and the sender is the first message's sender
       const isLocked = true; // new chats are locked by default
       const sender = dto.sender; // the sender of the first message
-      return new ChatThread(dto.chat_id, isLocked, sender, messages);
+      return new ChatThread(dto.chat_id, isLocked, sender, -1, messages);
     }
 
-    constructor(id: number, isLocked: boolean, title: string = "Select a chat", messages: Message[] = [], initialPreview: ChatPreview | null = null) {
+    constructor(id: number, isLocked: boolean, title: string = "Select a chat", indexOfLastTutorRequest: number = -1, messages: Message[] = [], initialPreview: ChatPreview | null = null) {
       this.id = id;
       this.isLocked = isLocked;
       this.title = title;
+      this.indexOfLastTutorRequest = indexOfLastTutorRequest;
       this.messages = messages;
       this.initialPreview = initialPreview || {
         id: id,
@@ -117,12 +123,24 @@ const ChatApp = () => {
     }
 
     addRecentMessage(message: MessageBackendDTO): void {
+      if (message.message_type === "tutor_request") {
+        const index = this.indexOfLastTutorRequest;
+        if (index !== -1) {
+          const content = JSON.parse(this.messages[index].content as string);
+          content.status = "EXPIRED"; // Update the status of the tutor request to PENDING
+          this.messages[index].content = JSON.stringify(content); // Convert back to string
+        }
+        this.indexOfLastTutorRequest = this.messages.length; // Update the index of the last tutor request
+      }
       this.messages.push(...this.convertSortMessages([message]));
     }
 
     addHistoricalMessages(messages: MessageBackendDTO[]): void {
       const newMessages = this.convertSortMessages(messages);
       this.messages.unshift(...newMessages);
+      // find the index of the last tutor request in the new messages
+      const lastTutorRequestIndex = this.messages.findLastIndex((msg) => msg.type === "tutorRequest");
+      this.indexOfLastTutorRequest = lastTutorRequestIndex;
     }
 
     getPreview(): ChatPreview {
@@ -170,6 +188,7 @@ const ChatApp = () => {
         this.id,
         this.isLocked,
         this.title,
+        this.indexOfLastTutorRequest,
         copiedMessages,
         copiedPreview
       );
@@ -220,6 +239,11 @@ const ChatApp = () => {
     type: "tutor_request";
     hourlyRate: number;
     lessonDuration: number;
+    assignmentRequestId: number;
+    assignmentId: number;
+    tutorId: number;
+    assignmentTitle?: string;
+    status?: "PENDING" | "ACCEPTED" | "EXPIRED"; // Default to PENDING
   };
 
   type Message = {
@@ -335,6 +359,7 @@ const ChatApp = () => {
   const [showDropup, setShowDropup] = useState(false);
 
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
+  const { setError } = useError();
 
   const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
   const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
@@ -342,17 +367,26 @@ const ChatApp = () => {
   const unlockedChats = chatPreviews.filter((chat) => !chat.isLocked);
   const chatName = chatData[selectedChat]?.getTitle() || "Select a chat";
 
-  useEffect(() => {
-    // Check if the URL has the `param` query parameter
-    const chatId = searchParams.get(`chatId`);
-    if (chatId) {
-      setSelectedChat(Number(chatId)); // Set the selected chat based on the query param
-      setShowChat(true); // Show the chat area if a chat is selected
-    }
-  }, [searchParams]); // Re-run this effect when the query param changes
-
-
   const socketRef = useRef<WebSocket | null>(null);
+
+  const chatJustFetchedRef = useRef(false);
+  
+  useEffect(() => {
+    if (chatJustFetchedRef.current) {
+      chatJustFetchedRef.current = false;
+      const chatIdFromParams = searchParams.get("chatId");
+      if (chatIdFromParams) {
+        const chatId = parseInt(chatIdFromParams, 10);
+        if (chatData[chatId]) {
+          handleChatSelection(chatId);
+        } else {
+          setError("Chat not found or inaccessible. Please select an existing chat.");
+          const currentPath = window.location.href.split("?")[0].slice(window.location.origin.length); // Get the current URL without query params
+          router.push(currentPath); // Redirect to base chat URL to clear invalid chatId
+        }
+      }
+    }
+  }, [chatData]);
 
   const fetchChats = async () => {
     try {
@@ -369,15 +403,16 @@ const ChatApp = () => {
         tmpChatData[chat.id] = chatThread;
       });
       setChatData(tmpChatData);
+      chatJustFetchedRef.current = true;
     } catch (error) {
-      console.error("Error fetching chats:", error);
+      setError("Oops! Something went wrong while fetching chats.");
     }
   };
 
   const fetchHistoricalMessages = async (chatId: number) => {
     const container = scrollRef.current;
     if (!container) {
-      console.error("Scroll container not found");
+      setError("Chat display area not found. Please refresh the page.");
       return;
     }
 
@@ -401,10 +436,23 @@ const ChatApp = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch chat messages");
+        const errorData = await response.json();
+        setError(errorData.detail || "Failed to fetch chat messages. Please try again.");
+        return;
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        setError("Received invalid response from server. Please try again.");
+        return;
+      }
+
+      if (!data.messages || typeof data.has_more === "undefined") {
+        setError("Unexpected data format from server. Please try again.");
+        return;
+      }
 
       // Apply update inside setChatData
       setChatData((prevChatData) => {
@@ -427,7 +475,7 @@ const ChatApp = () => {
         });
       });
     } catch (error) {
-      console.error("Error fetching chat messages:", error);
+      setError("An unexpected error occurred while fetching chat messages. Please try again.");
     }
   };
 
@@ -511,7 +559,7 @@ const ChatApp = () => {
 
   const hasInitializedSocket = useRef(false);
 
-  // Persistent state
+  // This only runs when the component mounts
   useEffect(() => {
     if (!hasInitializedSocket.current) {
       fetchChats();
@@ -543,6 +591,8 @@ const ChatApp = () => {
         [chatId]: updatedThread,
       };
     });
+    const currentUrl = window.location.href.split("?")[0]; // Get the current URL without query params
+    router.push(`${currentUrl}?chatId=${chatId}`); // Update URL with chatId
   };
 
   const handleSendMessage = () => {
@@ -573,6 +623,24 @@ const ChatApp = () => {
       ></AssignmentCard>
     );
     setShowDropup(false);
+  };
+
+  const handleAcceptAssignment = async (assignmentRequestId: number, hourlyRate: number, tutorId: number) => {
+    try {
+      const session: { id: string; url: string } = await createCheckoutSession({
+        mode: "payment",
+        success_url: window.location.origin + "/payment-success",
+        cancel_url: window.location.origin + "/payment-cancel",
+        assignment_request_id: assignmentRequestId,
+        tutor_id: tutorId,
+        chat_id: selectedChatRef.current
+      });
+
+      router.push(session.url);
+    } catch (err) {
+      console.error("Stripe error:", err);
+      alert(err);
+    }
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -767,15 +835,48 @@ const ChatApp = () => {
                         (() => {
                           try {
                             const tutorRequest: TutorRequest = JSON.parse(message.content as string);
+                            if (tutorRequest.assignmentRequestId === undefined || tutorRequest.tutorId === undefined) {
+                              console.error("Invalid tutor request message:", message.content);
+                              return <p>Error: Invalid tutor request message.</p>;
+                            }
                             return (
                               <div className="max-w-sm mx-auto p-6 bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                                <h2 className="text-xl font-semibold text-gray-800 mb-2">📚 Tutor Request</h2>
+                                <h2 className="text-xl font-semibold text-gray-800 mb-2">{tutorRequest.assignmentTitle && (
+                                  <p className="text-gray-700 mb-2">
+                                    <span className="font-medium">📚 </span>{" "}
+                                    <Link
+                                      href={`/assignments?selected=${tutorRequest.assignmentId}`}
+                                      className="text-customDarkBlue hover:underline"
+                                    >
+                                      {tutorRequest.assignmentTitle}
+                                    </Link>
+                                  </p>
+                                )}</h2>
+                                
                                 <p className="text-gray-700 mb-1"><span className="font-medium">Rate:</span>  ${tutorRequest.hourlyRate}/hr</p>
                                 <p className="text-gray-700 mb-4"><span className="font-medium">Lesson Duration:</span> {tutorRequest.lessonDuration} min</p>
-                                {!message.sentByUser && (
-                                <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 hover:bg-customYellow">
+                                {tutorRequest.status === "ACCEPTED" && (
+                                  <div className="w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                    Accepted
+                                  </div>
+                                )}
+                                {message.sentByUser && tutorRequest.status === "PENDING" && (
+                                  <div className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                    Pending
+                                  </div>
+                                )}
+                                {!message.sentByUser && (tutorRequest.status === "PENDING") && (
+                                <button
+                                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 hover:bg-customYellow"
+                                  onClick={() => handleAcceptAssignment(tutorRequest.assignmentRequestId, tutorRequest.hourlyRate, tutorRequest.tutorId)}
+                                >
                                   Accept
                                 </button>
+                                )}
+                                {tutorRequest.status === "EXPIRED" && (
+                                  <div className="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                    Expired
+                                  </div>
                                 )}
                               </div>
                             );
