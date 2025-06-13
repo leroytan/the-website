@@ -28,3 +28,46 @@ get:
                     format: date-time
               tutor:
                 $ref: './tutors/{id}.yaml/#/TutorProfile'
+put:
+  tags:
+    - me
+  summary: updates logged-in user profile information
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              nullable: true
+            intends_to_be_tutor:
+              type: boolean
+              nullable: true
+  responses:
+    '200':
+      description: User profile updated successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              email:
+                type: string
+              profile_photo_url:
+                type: string
+              intends_to_be_tutor:
+                type: boolean
+              created_at:
+                type: string
+                format: date-time
+              updated_at:
+                type: string
+                format: date-time
+    '404':
+      description: User not found

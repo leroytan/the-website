@@ -222,6 +222,10 @@ class UserView(BaseModel):
     created_at: str
     updated_at: str
 
+class UserUpdateRequest(BaseModel):
+    name: str | None = None
+    intends_to_be_tutor: bool | None = None
+
 class ChatCreationInfo(BaseModel):
     other_user_id: int
 
