@@ -2,13 +2,14 @@ import datetime
 import enum
 
 from sqlalchemy import (Boolean, CheckConstraint, Column, DateTime, Float,
-                        ForeignKey, Integer, String, UniqueConstraint, asc, desc)
+                        ForeignKey, Integer, String, UniqueConstraint, asc,
+                        desc)
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from sqlalchemy_serializer import SerializerMixin
-from sqlalchemy.ext.declarative import declared_attr
 
 # Create a base class for declarative models
 Decl_Base = declarative_base()
@@ -80,6 +81,7 @@ class Assignment(Base, SerializerMixin):
     tutor_id = Column(Integer, ForeignKey('Tutor.id'), nullable=True)  # Foreign key to Tutor
     level_id = Column(Integer, ForeignKey('Level.id'), nullable=False)  # Foreign key to Level
     estimated_rate_hourly = Column(Integer, nullable=False)
+    lesson_duration = Column(Integer, nullable=False)  # Duration in minutes
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
     location = Column(String, nullable=False)
@@ -129,12 +131,16 @@ class AssignmentRequest(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     assignment_id = Column(Integer, ForeignKey('Assignment.id'))  # Foreign key to Assignment
     tutor_id = Column(Integer, ForeignKey('Tutor.id'))  # Foreign key to Tutor
+    requested_rate_hourly = Column(Integer, nullable=False)
+    requested_duration = Column(Integer, nullable=False)  # Duration in minutes
     status = Column(ENUM(AssignmentRequestStatus), default=AssignmentRequestStatus.PENDING)
+    chat_message_id = Column(Integer, ForeignKey('ChatMessage.id'), nullable=True)  # Foreign key to ChatMessage
 
     # Relationships
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     assignment = relationship('Assignment', foreign_keys=[assignment_id], back_populates='assignment_requests')
-    available_slots = relationship('AssignmentSlot', back_populates='assignment_request', primaryjoin="AssignmentRequest.id == AssignmentSlot.assignment_request_id")
+    available_slots = relationship('AssignmentSlot', back_populates='assignment_request', cascade='all, delete-orphan')
+    chat_message = relationship('ChatMessage', foreign_keys=[chat_message_id], uselist=False)
 
     # Constraints
     # Composite unique constraint on column1 and column2
@@ -247,22 +253,42 @@ class PrivateChat(Base, SerializerMixin):
         CheckConstraint('user1_id < user2_id', name='check_user_order'),
     )
 
+class ChatMessageType(enum.Enum):
+    """
+    Enum for chat message types
+    """
+    TEXT_MESSAGE = 'text_message'
+    TUTOR_REQUEST = 'tutor_request'
+
+class TutorRequestStatus(enum.Enum):
+    """
+    Enum for tutor request status
+    """
+    PENDING = 'PENDING'
+    ACCEPTED = 'ACCEPTED'
+    EXPIRED = 'EXPIRED'
+
 class ChatMessage(Base, SerializerMixin):
     __tablename__ = 'ChatMessage'
 
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(String, nullable=False)
+    message_type = Column(ENUM(ChatMessageType), nullable=False, default=ChatMessageType.TEXT_MESSAGE)
     sender_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
     chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)  # Foreign key to PrivateChat
+    assignment_request = relationship('AssignmentRequest', back_populates='chat_message', uselist=False)
     
     # Relationships
     sender = relationship('User', foreign_keys=[sender_id])
     chat = relationship('PrivateChat', foreign_keys=[chat_id], back_populates='messages')
 
+    def receiver_id_from_chat(self, chat: PrivateChat) -> int:
+        return chat.user2_id if self.sender_id == chat.user1_id else chat.user1_id
+
     @hybrid_property
     def receiver_id(self):
-        return self.chat.user2_id if self.sender_id == self.chat.user1_id else self.chat.user1_id
+        return self.receiver_id_from_chat(self.chat)
 
     @hybrid_property
     def receiver(self):

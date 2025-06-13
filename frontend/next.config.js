@@ -11,31 +11,33 @@ const nextConfig = {
     ]
   },
   rewrites: async () => {
+    console.log("Rewrites are being set up based on NEXT_PUBLIC_DEPLOY_TYPE. NODE_ENV is ignored in this case.");
+    console.log("NEXT_PUBLIC_DEPLOY_TYPE:", process.env.NEXT_PUBLIC_DEPLOY_TYPE);
     return [
       {
         source: "/api/:path*",
-        destination:
-          process.env.NEXT_PUBLIC_VERCEL_ENV === "local"
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL_LOCAL}/:path*`
-            : process.env.NODE_ENV === "development"
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL_DEVELOPMENT}/:path*`
-            : process.env.NODE_ENV === "production"
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL_PRODUCTION}/:path*`
-            : `/api/:path*`,
+        destination: (() => {
+          switch (process.env.NEXT_PUBLIC_DEPLOY_TYPE) {
+            case 'local':
+              return process.env.NEXT_PUBLIC_API_BASE_URL_LOCAL;
+            case 'development':
+              return process.env.NEXT_PUBLIC_API_BASE_URL_DEVELOPMENT;
+            case 'test':
+              return process.env.NEXT_PUBLIC_API_BASE_URL_TEST;
+            case 'production':
+              return process.env.NEXT_PUBLIC_API_BASE_URL_PRODUCTION;
+            default:
+              return "/api"; // Fallback to local if no match
+          }
+        })() + "/:path*",
       },
       {
         source: "/docs",
-        destination:
-          process.env.NODE_ENV === "development"
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL_DEVELOPMENT}/py/docs`
-            : "/api/py/docs",
+        destination: "/api/py/docs",  // Not used
       },
       {
         source: "/openapi.json",
-        destination:
-          process.env.NODE_ENV === "development"
-            ? `${process.env.NEXT_PUBLIC_API_BASE_URL_DEVELOPMENT}/py/openapi.json`
-            : "/api/py/openapi.json",
+        destination: "/api/py/openapi.json",  // Not used
       },
     ];
   },

@@ -1,4 +1,5 @@
 "use client";
+import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import AssignmentCard from "@/components/assignmentCard";
 import { geistMono, geistSans } from "@/components/layout";
 import UserMenu from "@/components/UserMenu";
@@ -9,7 +10,9 @@ import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { ReactElement, useEffect, useRef, useState } from "react";
+import React, { ReactElement, useEffect, useRef, useState, useCallback } from "react";
+import { useError } from "@/context/errorContext";
+import { M_PLUS_1 } from "next/font/google";
 
 const ChatApp = () => {
 
@@ -19,6 +22,7 @@ const ChatApp = () => {
     private title: string;
     private messages: Message[];
     private initialPreview: ChatPreview;
+    private indexOfLastTutorRequest: number = -1; // Index of the last tutor request message, -1 if none
     public hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
     public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no unread messages
 
@@ -33,11 +37,13 @@ const ChatApp = () => {
         isLocked: dto.is_locked,
         hasMessages: dto.has_messages,
         lastUpdate: new Date(dto.last_update),
+        lastMessageType: dto.last_message_type === "text_message" ? "textMessage" : "tutorRequest",
       } : null;
       return new ChatThread(
         dto.id,
         dto.is_locked,
         dto.name,
+        -1, 
         messages,
         preview,
       );
@@ -48,6 +54,7 @@ const ChatApp = () => {
         id: dto.id,
         sender: dto.sender,
         content: dto.content,
+        type: dto.message_type === "text_message" ? "textMessage" : "tutorRequest",
         createdAt: dto.created_at,
         updatedAt: dto.updated_at,
         sentByUser: dto.sent_by_user,
@@ -56,13 +63,14 @@ const ChatApp = () => {
       // For now, we assume the chat is locked and the sender is the first message's sender
       const isLocked = true; // new chats are locked by default
       const sender = dto.sender; // the sender of the first message
-      return new ChatThread(dto.chat_id, isLocked, sender, messages);
+      return new ChatThread(dto.chat_id, isLocked, sender, -1, messages);
     }
 
-    constructor(id: number, isLocked: boolean, title: string = "Select a chat", messages: Message[] = [], initialPreview: ChatPreview | null = null) {
+    constructor(id: number, isLocked: boolean, title: string = "Select a chat", indexOfLastTutorRequest: number = -1, messages: Message[] = [], initialPreview: ChatPreview | null = null) {
       this.id = id;
       this.isLocked = isLocked;
       this.title = title;
+      this.indexOfLastTutorRequest = indexOfLastTutorRequest;
       this.messages = messages;
       this.initialPreview = initialPreview || {
         id: id,
@@ -73,6 +81,7 @@ const ChatApp = () => {
         isLocked: isLocked,
         hasMessages: false,
         lastUpdate: new Date(),
+        lastMessageType: "text_message", // Default for new chats
       };
       this.hasMoreMessages = this.initialPreview.hasMessages;
       this.hasUnreadMessages = this.initialPreview.hasUnread;
@@ -82,6 +91,7 @@ const ChatApp = () => {
       return this.messages.map((message) => ({
         sender: message.sender,
         content: message.content,
+        type: message.type,
         time: to12HourTime(message.createdAt),
         sentByUser: message.sentByUser,
       }));
@@ -105,6 +115,7 @@ const ChatApp = () => {
         id: msg.id,
         sender: msg.sender,
         content: msg.content,
+        type: msg.message_type === "text_message" ? "textMessage" : "tutorRequest",
         createdAt: msg.created_at,
         updatedAt: msg.updated_at,
         sentByUser: msg.sent_by_user,
@@ -112,28 +123,50 @@ const ChatApp = () => {
     }
 
     addRecentMessage(message: MessageBackendDTO): void {
+      if (message.message_type === "tutor_request") {
+        const index = this.indexOfLastTutorRequest;
+        if (index !== -1) {
+          const content = JSON.parse(this.messages[index].content as string);
+          content.status = "EXPIRED"; // Update the status of the tutor request to PENDING
+          this.messages[index].content = JSON.stringify(content); // Convert back to string
+        }
+        this.indexOfLastTutorRequest = this.messages.length; // Update the index of the last tutor request
+      }
       this.messages.push(...this.convertSortMessages([message]));
     }
 
     addHistoricalMessages(messages: MessageBackendDTO[]): void {
       const newMessages = this.convertSortMessages(messages);
       this.messages.unshift(...newMessages);
+      // find the index of the last tutor request in the new messages
+      const lastTutorRequestIndex = this.messages.findLastIndex((msg) => msg.type === "tutorRequest");
+      this.indexOfLastTutorRequest = lastTutorRequestIndex;
     }
 
     getPreview(): ChatPreview {
       const latestMessage = this.getLatestMessage();
       if (latestMessage === null) {
+        if (this.initialPreview.lastMessageType === "tutorRequest") {
+          this.initialPreview.lastMessage = (<i>Tutor Request</i>);
+        }
         return this.initialPreview;
       }
+
+      let lastMessageContent: string | ReactElement = latestMessage.content;
+      if (latestMessage.type === "tutorRequest") {
+        lastMessageContent = (<i>Tutor Request</i>);
+      }
+
       return {
         id: this.id,
         name: this.title,
-        lastMessage: latestMessage.content,
+        lastMessage: lastMessageContent,
         displayTime: timeAgo(latestMessage.createdAt),
         hasUnread: this.hasUnreadMessages,
         isLocked: this.isLocked,
         hasMessages: this.messages.length > 0,
         lastUpdate: new Date(latestMessage.createdAt),
+        lastMessageType: latestMessage.type,
       };
     }
 
@@ -142,6 +175,7 @@ const ChatApp = () => {
         id: msg.id,
         sender: msg.sender,
         content: msg.content,
+        type: msg.type,
         createdAt: msg.createdAt,
         updatedAt: msg.updatedAt,
         sentByUser: msg.sentByUser,
@@ -149,15 +183,16 @@ const ChatApp = () => {
       const copiedPreview = this.initialPreview
         ? { ...this.initialPreview }
         : null;
-    
+
       const newThread = new ChatThread(
         this.id,
         this.isLocked,
         this.title,
+        this.indexOfLastTutorRequest,
         copiedMessages,
         copiedPreview
       );
-    
+
       return newThread;
     }
   }
@@ -165,12 +200,13 @@ const ChatApp = () => {
   interface ChatData {
     [key: number]: ChatThread;
   }
-  
+
   type ChatPreviewBackendDTO = {
     id: number;                    // Needed for navigation or fetching full chat
     name: string;                  // Display name (user or group)
     last_message: string;          // Plain text version of the latest message
     last_update: string;           // ISO 8601 string for sorting and display
+    last_message_type: string;     // "text_message" or "tutor_request"
     has_unread: boolean;          // For notification badge
     is_locked: boolean;           // Optional security/status flag
     has_messages: boolean;         // If chat is empty, hide or style differently
@@ -185,6 +221,7 @@ const ChatApp = () => {
     isLocked?: boolean; // true if the chat is locked, false if unlocked
     hasMessages: boolean; // true if the chat has messages, false if no messages
     lastUpdate: Date; // Date object for sorting and display
+    lastMessageType: string; // "textMessage" or "tutorRequest"
   };
 
   type MessageBackendDTO = {
@@ -192,15 +229,28 @@ const ChatApp = () => {
     chat_id: number;
     sender: string;
     content: string;
+    message_type: string; // "text_message" or "tutor_request"
     created_at: string; // ISO 8601 format
     updated_at: string; // ISO 8601 format
     sent_by_user: boolean; // true if sent by the user, false if sent by the other party
   }
 
+  type TutorRequest = {
+    type: "tutor_request";
+    hourlyRate: number;
+    lessonDuration: number;
+    assignmentRequestId: number;
+    assignmentId: number;
+    tutorId: number;
+    assignmentTitle?: string;
+    status?: "PENDING" | "ACCEPTED" | "EXPIRED"; // Default to PENDING
+  };
+
   type Message = {
     id: number;
     sender: string;
     content: string | ReactElement;
+    type: string; // "textMessage" or "tutorRequest"
     createdAt: string; // ISO 8601 format
     updatedAt: string; // ISO 8601 format
     sentByUser: boolean; // true if sent by the user, false if sent by the other party
@@ -209,6 +259,7 @@ const ChatApp = () => {
   type MessageDisplay = {
     sender: string;
     content: string | ReactElement;
+    type: string; // "textMessage" or "tutorRequest"
     time: string;
     sentByUser: boolean;
   };
@@ -219,6 +270,7 @@ const ChatApp = () => {
       chat_id: 1,
       sender: "Alice",
       content: "Hey! Are you free later?",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 3600000).toISOString(), // 1h ago
       updated_at: new Date(Date.now() - 3600000).toISOString(),
       sent_by_user: false,
@@ -228,6 +280,7 @@ const ChatApp = () => {
       chat_id: 1,
       sender: "You",
       content: "Yeah, after 5 works!",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 3500000).toISOString(),
       updated_at: new Date(Date.now() - 3500000).toISOString(),
       sent_by_user: true,
@@ -237,18 +290,20 @@ const ChatApp = () => {
       chat_id: 1,
       sender: "Alice",
       content: "Perfect, see you then.",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 3400000).toISOString(),
       updated_at: new Date(Date.now() - 3400000).toISOString(),
       sent_by_user: false,
     },
   ];
-  
+
   const messageDTOsForBob: MessageBackendDTO[] = [
     {
       id: 4,
       chat_id: 2,
       sender: "You",
       content: "Hey Bob, sent the docs over.",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 7200000).toISOString(), // 2h ago
       updated_at: new Date(Date.now() - 7200000).toISOString(),
       sent_by_user: true,
@@ -258,24 +313,26 @@ const ChatApp = () => {
       chat_id: 2,
       sender: "Bob",
       content: "Awesome, reviewing now.",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 7100000).toISOString(),
       updated_at: new Date(Date.now() - 7100000).toISOString(),
       sent_by_user: false,
     },
   ];
-  
+
   const messageDTOsForCharlie: MessageBackendDTO[] = [
     {
       id: 6,
       chat_id: 3,
       sender: "Charlie",
       content: "Lunch today?",
+      message_type: "text_message",
       created_at: new Date(Date.now() - 10800000).toISOString(), // 3h ago
       updated_at: new Date(Date.now() - 10800000).toISOString(),
       sent_by_user: false,
     }
   ];
-  
+
   const initialChatData: ChatData = {
     1: (() => {
       const thread = new ChatThread(1, false, "Alice");
@@ -293,7 +350,7 @@ const ChatApp = () => {
       return thread;
     })(),
   };
-  
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState(1);
@@ -302,6 +359,7 @@ const ChatApp = () => {
   const [showDropup, setShowDropup] = useState(false);
 
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
+  const { setError } = useError();
 
   const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
   const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
@@ -309,17 +367,26 @@ const ChatApp = () => {
   const unlockedChats = chatPreviews.filter((chat) => !chat.isLocked);
   const chatName = chatData[selectedChat]?.getTitle() || "Select a chat";
 
-  useEffect(() => {
-    // Check if the URL has the `param` query parameter
-    const chatId = searchParams.get(`chatId`);
-    if (chatId) {
-      setSelectedChat(Number(chatId)); // Set the selected chat based on the query param
-      setShowChat(true); // Show the chat area if a chat is selected
-    }
-  }, [searchParams]); // Re-run this effect when the query param changes
-
-  
   const socketRef = useRef<WebSocket | null>(null);
+
+  const chatJustFetchedRef = useRef(false);
+  
+  useEffect(() => {
+    if (chatJustFetchedRef.current) {
+      chatJustFetchedRef.current = false;
+      const chatIdFromParams = searchParams.get("chatId");
+      if (chatIdFromParams) {
+        const chatId = parseInt(chatIdFromParams, 10);
+        if (chatData[chatId]) {
+          handleChatSelection(chatId);
+        } else {
+          setError("Chat not found or inaccessible. Please select an existing chat.");
+          const currentPath = window.location.href.split("?")[0].slice(window.location.origin.length); // Get the current URL without query params
+          router.push(currentPath); // Redirect to base chat URL to clear invalid chatId
+        }
+      }
+    }
+  }, [chatData]);
 
   const fetchChats = async () => {
     try {
@@ -336,52 +403,69 @@ const ChatApp = () => {
         tmpChatData[chat.id] = chatThread;
       });
       setChatData(tmpChatData);
+      chatJustFetchedRef.current = true;
     } catch (error) {
-      console.error("Error fetching chats:", error);
+      setError("Oops! Something went wrong while fetching chats.");
     }
   };
 
-  const fetchHistoricalMessages = async () => {
+  const fetchHistoricalMessages = async (chatId: number) => {
     const container = scrollRef.current;
-    if (!container) return;
-  
-    const existingThread = chatData[selectedChat] || new ChatThread(selectedChat, false);
+    if (!container) {
+      setError("Chat display area not found. Please refresh the page.");
+      return;
+    }
+
+    const existingThread = chatData[chatId] || new ChatThread(chatId, false);
     if (!existingThread.hasMoreMessages) {
       return;
     }
-  
+
     const previousScrollHeight = container.scrollHeight;
-  
+
     try {
       const createdBefore = existingThread.getEarliestMessageCreated();
       const params = new URLSearchParams({ limit: "10" });
       if (createdBefore) {
         params.append("created_before", createdBefore);
       }
-  
-      const response = await fetch(`/api/chat/${selectedChat}?${params}`, {
+
+      const response = await fetch(`/api/chat/${chatId}?${params}`, {
         method: "GET",
         credentials: "include",
       });
-  
+
       if (!response.ok) {
-        throw new Error("Failed to fetch chat messages");
+        const errorData = await response.json();
+        setError(errorData.detail || "Failed to fetch chat messages. Please try again.");
+        return;
       }
-  
-      const data = await response.json();
-  
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        setError("Received invalid response from server. Please try again.");
+        return;
+      }
+
+      if (!data.messages || typeof data.has_more === "undefined") {
+        setError("Unexpected data format from server. Please try again.");
+        return;
+      }
+
       // Apply update inside setChatData
       setChatData((prevChatData) => {
-        const updatedThread = prevChatData[selectedChat]?.clone() || new ChatThread(selectedChat, false);
+        const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
         updatedThread.addHistoricalMessages(data.messages);
         updatedThread.hasMoreMessages = data.has_more;
-  
+
         return {
           ...prevChatData,
-          [selectedChat]: updatedThread,
+          [chatId]: updatedThread,
         };
       });
-  
+
       // Restore scroll position
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -391,7 +475,7 @@ const ChatApp = () => {
         });
       });
     } catch (error) {
-      console.error("Error fetching chat messages:", error);
+      setError("An unexpected error occurred while fetching chat messages. Please try again.");
     }
   };
 
@@ -403,25 +487,37 @@ const ChatApp = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChat, chatMessages]);
+  }, [selectedChat]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       if (scrollRef.current?.scrollTop === 0) {
-        fetchHistoricalMessages(); // call the async function
+        fetchHistoricalMessages(selectedChat); // call the async function
       }
     };
-  
+
     const scrollContainer = scrollRef.current;
     scrollContainer?.addEventListener("scroll", handleScroll);
-  
+
     return () => {
       scrollContainer?.removeEventListener("scroll", handleScroll);
     };
   }, [fetchHistoricalMessages]);
-  
+
+  const selectedChatRef = useRef(selectedChat);
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  const lastUpdatedChatRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (lastUpdatedChatRef.current === selectedChat) {
+      scrollToBottom();
+      lastUpdatedChatRef.current = null; // reset after scrolling
+    }
+  }, [chatData, selectedChat]);
 
   const initWebSocket = async () => {
     const response = await fetch(`/api/chat/jwt`, {
@@ -432,6 +528,7 @@ const ChatApp = () => {
     }
     const data = await response.json();
     const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
+    console.log(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
     const socket = new WebSocket(
       `${wsURL}/ws/chat?access_token=${data.access_token}`
     );
@@ -443,6 +540,7 @@ const ChatApp = () => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
       setChatData((prevChatData: ChatData) => {
         const chatId = parsedData.chat_id;
+        lastUpdatedChatRef.current = chatId; // Update the last updated chat reference
         const chatThread = prevChatData[chatId]?.clone() || ChatThread.fromMessageDTO(parsedData);
         chatThread.addRecentMessage(parsedData);
         chatThread.hasUnreadMessages = !parsedData.sent_by_user;
@@ -461,7 +559,7 @@ const ChatApp = () => {
 
   const hasInitializedSocket = useRef(false);
 
-  // Persistent state
+  // This only runs when the component mounts
   useEffect(() => {
     if (!hasInitializedSocket.current) {
       fetchChats();
@@ -476,7 +574,7 @@ const ChatApp = () => {
     setShowChat(true);
     setNewMessage("");
     if (chatMessages.length < 10) {
-      fetchHistoricalMessages();
+      fetchHistoricalMessages(chatId);
     }
     const response = await fetch(`/api/chat/${chatId}/read`, {
       method: "POST",
@@ -493,6 +591,8 @@ const ChatApp = () => {
         [chatId]: updatedThread,
       };
     });
+    const currentUrl = window.location.href.split("?")[0]; // Get the current URL without query params
+    router.push(`${currentUrl}?chatId=${chatId}`); // Update URL with chatId
   };
 
   const handleSendMessage = () => {
@@ -523,6 +623,24 @@ const ChatApp = () => {
       ></AssignmentCard>
     );
     setShowDropup(false);
+  };
+
+  const handleAcceptAssignment = async (assignmentRequestId: number, hourlyRate: number, tutorId: number) => {
+    try {
+      const session: { id: string; url: string } = await createCheckoutSession({
+        mode: "payment",
+        success_url: window.location.origin + "/payment-success",
+        cancel_url: window.location.origin + "/payment-cancel",
+        assignment_request_id: assignmentRequestId,
+        tutor_id: tutorId,
+        chat_id: selectedChatRef.current
+      });
+
+      router.push(session.url);
+    } catch (err) {
+      console.error("Stripe error:", err);
+      alert(err);
+    }
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -709,11 +827,67 @@ const ChatApp = () => {
                   >
                     <div
                       className={`p-2 rounded-xl ${message.sentByUser
-                          ? "bg-customDarkBlue text-white"
-                          : "bg-gray-300"
+                        ? "bg-customDarkBlue text-white"
+                        : "bg-gray-300"
                         }`}
                     >
-                      {message.content}
+                      {message.type === "tutorRequest" ? (
+                        (() => {
+                          try {
+                            const tutorRequest: TutorRequest = JSON.parse(message.content as string);
+                            if (tutorRequest.assignmentRequestId === undefined || tutorRequest.tutorId === undefined) {
+                              console.error("Invalid tutor request message:", message.content);
+                              return <p>Error: Invalid tutor request message.</p>;
+                            }
+                            return (
+                              <div className="max-w-sm mx-auto p-6 bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-2">{tutorRequest.assignmentTitle && (
+                                  <p className="text-gray-700 mb-2">
+                                    <span className="font-medium">📚 </span>{" "}
+                                    <Link
+                                      href={`/assignments?selected=${tutorRequest.assignmentId}`}
+                                      className="text-customDarkBlue hover:underline"
+                                    >
+                                      {tutorRequest.assignmentTitle}
+                                    </Link>
+                                  </p>
+                                )}</h2>
+                                
+                                <p className="text-gray-700 mb-1"><span className="font-medium">Rate:</span>  ${tutorRequest.hourlyRate}/hr</p>
+                                <p className="text-gray-700 mb-4"><span className="font-medium">Lesson Duration:</span> {tutorRequest.lessonDuration} min</p>
+                                {tutorRequest.status === "ACCEPTED" && (
+                                  <div className="w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                    Accepted
+                                  </div>
+                                )}
+                                {message.sentByUser && tutorRequest.status === "PENDING" && (
+                                  <div className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                    Pending
+                                  </div>
+                                )}
+                                {!message.sentByUser && (tutorRequest.status === "PENDING") && (
+                                <button
+                                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 hover:bg-customYellow"
+                                  onClick={() => handleAcceptAssignment(tutorRequest.assignmentRequestId, tutorRequest.hourlyRate, tutorRequest.tutorId)}
+                                >
+                                  Accept
+                                </button>
+                                )}
+                                {tutorRequest.status === "EXPIRED" && (
+                                  <div className="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                    Expired
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          } catch (e) {
+                            console.error("Failed to parse tutor request content:", e);
+                            return <p>{message.content}</p>; // Fallback to plain text if parsing fails
+                          }
+                        })()
+                      ) : (
+                        <p>{message.content}</p>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 mt-1 flex justify-end">
                       {message.time}

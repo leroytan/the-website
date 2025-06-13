@@ -1,7 +1,7 @@
 import enum
 from typing import Generic, Optional, TypeVar
 
-from api.storage.models import AssignmentRequestStatus
+from api.storage.models import AssignmentRequestStatus, ChatMessageType
 from pydantic import BaseModel
 
 
@@ -20,10 +20,14 @@ class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photo_url: str | None
+    highest_education: str
     rate: str | None
     rating: float | None
+    about_me: str
     subjects_teachable: list[str]
     levels_teachable: list[str]
+    special_skills: list[str]
+    resume_url: str
     experience: str | None
     availability: str | None
 
@@ -97,6 +101,11 @@ class AssignmentSlotView(BaseModel):
     start_time: str
     end_time: str
 
+class NewAssignmentSlot(BaseModel):
+    day: str
+    start_time: str
+    end_time: str
+
 class AssignmentRequestView(BaseModel):
     id: int
     created_at: str
@@ -104,11 +113,16 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    requested_rate_hourly: int  # in dollars
+    requested_duration: int  # in minutes
     available_slots: list[AssignmentSlotView]
     status: str
 
+# TODO: Remove default values when frontend is ready to handle them
 class NewAssignmentRequest(BaseModel):
-    available_slots: list[AssignmentSlotView]  # List of slot IDs
+    requested_rate_hourly: int =35  # in dollars
+    requested_duration: int = 60  # in minutes
+    available_slots: list[NewAssignmentSlot]
 
 class AssignmentBaseView(BaseModel):
     id: int
@@ -117,6 +131,7 @@ class AssignmentBaseView(BaseModel):
     title: str
     owner_id: int
     estimated_rate_hourly: int  # in dollars
+    lesson_duration: int  # in minutes
     weekly_frequency: int
     available_slots: list[AssignmentSlotView]
     special_requests: str
@@ -133,14 +148,11 @@ class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
     requests: list[AssignmentRequestView]
 
-class NewAssignmentSlot(BaseModel):
-    day: str
-    start_time: str
-    end_time: str
-
-class NewAssignment(BaseModel):  # TODO: add location
+# TODO: Remove lesson_duration default when frontend is ready to handle it
+class NewAssignment(BaseModel):
     title: str
     estimated_rate_hourly: int # in dollars
+    lesson_duration: int = 90  # in minutes
     weekly_frequency: int
     available_slots: list[NewAssignmentSlot]
     special_requests: str | None
@@ -190,7 +202,17 @@ class SearchResult(BaseModel, Generic[T]):
 class NewChatMessage(BaseModel):
     chat_id: int
     content: str
+    message_type: ChatMessageType = ChatMessageType.TEXT_MESSAGE
 
+class ChatPreview(BaseModel):
+    id: int
+    name: str
+    last_message: str
+    last_update: str
+    last_message_type: str
+    has_unread: bool
+    is_locked: bool
+    has_messages: bool
 class UserView(BaseModel):
     id: int
     name: str
@@ -207,7 +229,6 @@ class PaymentRequest(BaseModel):
     mode: str  # 'payment' or 'subscription'
     success_url: str
     cancel_url: str
-    hourly_rate_cents: int # in cents
     assignment_request_id: int
     tutor_id: int  # To link to chat
     chat_id: int | None = None  # Optional, if chat is already created

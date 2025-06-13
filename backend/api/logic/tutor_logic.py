@@ -37,10 +37,14 @@ class TutorLogic:
             id=tutor.id,
             name=tutor.user.name,
             photo_url=UserLogic.get_profile_photo_url(tutor.id),
+            highest_education=tutor.highest_education,
             rate=tutor.rate,
             rating=tutor.rating,
+            about_me=tutor.about_me,
             subjects_teachable=subject_names,
             levels_teachable=level_names,
+            special_skills=[skill.name for skill in tutor.special_skills] if tutor.special_skills else [],
+            resume_url=tutor.resume_url,
             experience=tutor.experience,
             availability=tutor.availability
         )

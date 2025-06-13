@@ -39,4 +39,4 @@ frontend/next-env.d.ts
 **/__pycache__/
 backend/venv/
 
-.DS_Store
+ngrok_config.yml
