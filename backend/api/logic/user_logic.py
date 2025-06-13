@@ -87,4 +87,21 @@ class UserLogic:
             user = StorageService.find(session, {"id": user_id}, User, find_one=True)
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
-            return UserLogic.convert_user_to_view(user) 
+            return UserLogic.convert_user_to_view(user)
+        
+    @staticmethod
+    def update_user_details(user_id: int, name: str | None = None, intends_to_be_tutor: bool | None = None) -> UserView:
+        with Session(StorageService.engine) as session:
+            user = StorageService.find(session, {"id": user_id}, User, find_one=True)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            if name is not None:
+                user.name = name
+            if intends_to_be_tutor is not None:
+                user.intends_to_be_tutor = intends_to_be_tutor
+
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            return UserLogic.convert_user_to_view(user)
