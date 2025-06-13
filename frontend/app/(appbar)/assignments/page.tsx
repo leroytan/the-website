@@ -1,11 +1,16 @@
 import { Suspense } from "react";
 import { AssignmentList } from "./_components/assignmentList";
 import { AssignmentDetailServer } from "./_components/assignmentDetailServer";
-import { ListSkeleton, DetailSkeleton } from "./_components/skeletons";
+import {
+  AssignmentListSkeleton,
+  AssignmentDetailSkeleton,
+} from "./_components/skeletons";
 import { FilterSortBar } from "./_components/filterSort";
 import { BASE_URL } from "@/utils/constants";
 import { TuitionListing, TuitionListingFilters } from "@/components/types";
 import AddAssignmentOverlay from "./_components/addAssignmentOverlay";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface AssignmentsResponse {
   results: TuitionListing[];
@@ -92,25 +97,32 @@ export default async function AssignmentsPage({
             selectedId ? "hidden md:block" : "block"
           }`}
         >
-          <Suspense fallback={<ListSkeleton />}>
-            <AssignmentList
-              searchParams={searchParamsObj}
-              assignments={data.results}
-              totalPages={totalPages}
-            />
-          </Suspense>
+          <AssignmentList
+            searchParams={searchParamsObj}
+            assignments={data.results}
+            totalPages={totalPages}
+          />
         </div>
 
         {/* Right Panel */}
         {selectedId && (
-          <div className="md:w-1/2 w-full h-full bg-white p-6 overflow-y-auto border-t md:border-t-0 md:border-l">
-            <Suspense fallback={<DetailSkeleton />}>
+          <div className="md:block md:w-1/2 w-full h-full bg-white p-6 overflow-y-auto border-t md:border-t-0 md:border-l">
+            <Suspense fallback={<AssignmentDetailSkeleton />}>
+              <div className="flex items-center mb-4 md:hidden">
+                <Link
+                  href="/assignments"
+                  className="flex items-center gap-2 text-customDarkBlue font-semibold hover:text-customOrange transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                  Back to List
+                </Link>
+              </div>
               <AssignmentDetailServer id={selectedId} />
             </Suspense>
           </div>
         )}
         {!selectedId && (
-          <div className="md:w-1/2 w-full h-full bg-white p-6 flex items-center justify-center">
+          <div className="hidden md:flex md:w-1/2 w-full h-full bg-white p-6 items-center justify-center">
             <p className="text-gray-500">
               Select an assignment to view details
             </p>

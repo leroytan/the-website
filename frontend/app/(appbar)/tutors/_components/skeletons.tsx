@@ -85,7 +85,7 @@ export function FilterSortBarSkeleton() {
         </div>
         {/* Filter Button */}
         <Button
-          className="ml-2 px-6 py-2 bg-customYellow text-white rounded-full font-semibold hover:bg-customOrange transition-colors"
+          className="ml-2 px-6 py-2 bg-customYellow text-white rounded-full font-semibold hover:bg-customOrange hover:cursor-not-allowed transition-colors"
           onClick={() => {}}
           disabled={true}
         >
