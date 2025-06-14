@@ -6,7 +6,7 @@ import {
 
 const Loading = () => {
   return (
-    <div className="flex flex-col items-center bg-customLightYellow h-[calc(100vh-64px)]">
+    <div className="flex flex-col items-center bg-customLightYellow/50 h-[calc(100vh-64px)]">
       <FilterSortBarSkeleton />
       <div className="flex flex-col md:flex-row bg-white rounded-xl shadow-lg w-full max-w-7xl h-full overflow-hidden">
         {/* Left Panel */}

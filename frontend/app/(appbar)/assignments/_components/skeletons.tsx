@@ -127,7 +127,7 @@ export function FilterSortBarSkeleton() {
           onClick={() => {}}
           disabled={true}
         >
-          Filter
+          Clear All Filters
         </Button>
       </div>
     </div>

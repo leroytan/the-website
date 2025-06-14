@@ -2,15 +2,13 @@ import { Suspense } from "react";
 import { AssignmentList } from "./_components/assignmentList";
 import { AssignmentDetailServer } from "./_components/assignmentDetailServer";
 import {
-  AssignmentListSkeleton,
   AssignmentDetailSkeleton,
 } from "./_components/skeletons";
 import { FilterSortBar } from "./_components/filterSort";
 import { BASE_URL } from "@/utils/constants";
 import { TuitionListing, TuitionListingFilters } from "@/components/types";
 import AddAssignmentOverlay from "./_components/addAssignmentOverlay";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import BackButton from "./_components/BackButton";
 
 interface AssignmentsResponse {
   results: TuitionListing[];
@@ -84,7 +82,7 @@ export default async function AssignmentsPage({
   const totalPages = data.num_pages;
 
   return (
-    <div className="flex flex-col items-center bg-customLightYellow h-[calc(100vh-64px)]">
+    <div className="flex flex-col items-center bg-customLightYellow/50 h-[calc(100vh-56px)]">
       <FilterSortBar
         subjects={subjects}
         levels={levels}
@@ -98,7 +96,7 @@ export default async function AssignmentsPage({
           }`}
         >
           <AssignmentList
-            searchParams={searchParamsObj}
+            searchParams={await searchParamsObj}
             assignments={data.results}
             totalPages={totalPages}
           />
@@ -109,13 +107,7 @@ export default async function AssignmentsPage({
           <div className="md:block md:w-1/2 w-full h-full bg-white p-6 overflow-y-auto border-t md:border-t-0 md:border-l">
             <Suspense fallback={<AssignmentDetailSkeleton />}>
               <div className="flex items-center mb-4 md:hidden">
-                <Link
-                  href="/assignments"
-                  className="flex items-center gap-2 text-customDarkBlue font-semibold hover:text-customOrange transition-colors"
-                >
-                  <ArrowLeft size={20} />
-                  Back to List
-                </Link>
+                <BackButton />
               </div>
               <AssignmentDetailServer id={selectedId} />
             </Suspense>
