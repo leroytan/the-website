@@ -52,38 +52,77 @@ export function FilterSortBar({
     initialSelectedLevels
   );
   const [selectedSort, setSelectedSort] = useState<string>(
-    searchParams.get("sort") || ""
+    searchParams.get("sort_by") || ""
   );
 
   // Handlers update local state only
   const onSubjectsChange = (selected: string[]) =>
     setSelectedSubjects(selected);
   const onLevelsChange = (selected: string[]) => setSelectedLevels(selected);
-  const onChangeSort = (value: string) => setSelectedSort(value);
 
-  // Apply filters when button is clicked
-  const applyFilters = () => {
-    const params = new URLSearchParams();
+  const onSortChange = (option: { value: string; label: string }) => {
+    setSelectedSort(option.value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (option.value) {
+      params.set("sort_by", option.value);
+    }
+    else {
+      params.delete("sort_by");
+    }
+    params.delete("page_number"); // Clear page number on sort change
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  }
+  // Apply individual filter for a specific type
+  const applyIndividualFilter = (type: 'subjects' | 'levels') => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentFilters = params.get("filter_by")?.split(",").filter(Boolean) || [];
+    
+    // Remove existing filters of the same type
+    const otherFilters = currentFilters.filter(id => {
+      if (type === 'subjects') {
+        return !subjects.some(subject => subject.id === id);
+      } else {
+        return !levels.some(level => level.id === id);
+      }
+    });
 
-    // Remove filters params if they are empty
-    if (selectedSubjects.length + selectedLevels.length === 0) {
+    // Add new filters
+    const newFilters = type === 'subjects' ? selectedSubjects : selectedLevels;
+    const allFilters = [...otherFilters, ...newFilters];
+
+    if (allFilters.length === 0) {
       params.delete("filter_by");
     } else {
-      params.set(
-        "filter_by",
-        [...selectedSubjects, ...selectedLevels].join(",")
-      );
+      params.set("filter_by", allFilters.join(","));
     }
-    if (selectedSort) params.set("sort_by", selectedSort);
+    //remove page_number
+    params.delete("page_number");
 
-    // Use startTransition to defer the navigation
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
     });
   };
 
+  // Clear all filters
+  const clearAllFilters = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("filter_by");
+    params.delete("sort_by");
+    params.delete("page_number"); // Clear page number on filter reset
+    setSelectedSort("");
+    setSelectedSubjects([]);
+    setSelectedLevels([]);
+    
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
+
   return (
-    <div className="sticky top-14 z-10 bg-white px-6 pt-4 pb-3 shadow-md w-full">
+    <div className="sticky top-0 z-10 bg-white px-6 pt-4 pb-3 shadow-md w-full">
       <div className="flex flex-wrap gap-4 justify-start items-end">
         {/* MultiSelect for Subjects */}
         <div className="min-w-[180px]">
@@ -92,6 +131,7 @@ export function FilterSortBar({
             selected={selectedSubjects}
             onChange={onSubjectsChange}
             placeholder="All Subjects"
+            onApply={() => applyIndividualFilter('subjects')}
           />
         </div>
         {/* MultiSelect for Levels */}
@@ -101,6 +141,7 @@ export function FilterSortBar({
             selected={selectedLevels}
             onChange={onLevelsChange}
             placeholder="All Levels"
+            onApply={() => applyIndividualFilter('levels')}
           />
         </div>
         {/* Sort select with dropdown */}
@@ -110,18 +151,18 @@ export function FilterSortBar({
             stringOnDisplay={
               sortOptions.find((opt) => opt.value === selectedSort)?.label || ""
             }
-            stateController={(option) => onChangeSort(option.value)}
             iterable={sortOptions}
             renderItem={(option) => <span>{option.label}</span>}
+            onApply={onSortChange}
           />
         </div>
-        {/* Filter Button */}
+        {/* Clear All Filters Button */}
         <Button
           className="ml-2 px-6 py-2 bg-customYellow text-white rounded-full font-semibold hover:bg-customOrange transition-colors flex items-center"
-          onClick={applyFilters}
-          disabled={isPending} // Disable button while pending
+          onClick={clearAllFilters}
+          disabled={isPending}
         >
-          Filter
+          Clear All Filters
         </Button>
       </div>
 

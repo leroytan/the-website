@@ -1,11 +1,14 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
+import { Button } from "./button";
 
 interface MultiSelectProps {
   options: string[] | { value: string; label: string }[];
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
+  className?: string;
+  onApply?: () => void;
 }
 
 const MultiSelectButton: React.FC<MultiSelectProps> = ({
@@ -13,6 +16,8 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
   selected,
   onChange,
   placeholder = "Select...",
+  className = "",
+  onApply,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -44,26 +49,6 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
     }
   };
 
-  // Keyboard navigation for options
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
-    if (!isOpen) return;
-    const items = Array.from(
-      ref.current?.querySelectorAll("li[role=option]") ?? []
-    ) as HTMLLIElement[];
-    const currentIndex = items.findIndex(
-      (item) => item === document.activeElement
-    );
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = items[(currentIndex + 1) % items.length];
-      next?.focus();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const prev = items[(currentIndex - 1 + items.length) % items.length];
-      prev?.focus();
-    }
-  };
-
   // Normalize options to always be objects with value and label
   const normalizedOptions: { value: string; label: string }[] = Array.isArray(
     options
@@ -74,7 +59,7 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
     : [];
 
   return (
-    <div className="relative w-full" ref={ref}>
+    <div className={`relative w-full ${className}`} ref={ref}>
       <button
         type="button"
         className="px-4 py-2 border rounded-full bg-white text-customDarkBlue font-medium flex items-center justify-between w-full"
@@ -122,42 +107,60 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
         </svg>
       </button>
       {isOpen && (
-        <ul
-          className="absolute left-0 mt-2 w-full bg-white shadow-md rounded-lg border border-gray-300 z-50 max-h-60 overflow-y-auto animate-fade-in"
-          role="listbox"
-          tabIndex={-1}
-          onKeyDown={handleKeyDown}
-        >
-          {normalizedOptions.length === 0 ? (
-            <li className="px-4 py-2 text-gray-400">No options</li>
-          ) : (
-            normalizedOptions.map((option) => (
-              <li
-                key={option.value}
-                role="option"
-                aria-selected={selected.includes(option.value)}
-                tabIndex={0}
-                onClick={() => toggleOption(option.value)}
-                onKeyDown={(e) => {
-                  if (e.key === " " || e.key === "Enter") {
-                    e.preventDefault();
-                    toggleOption(option.value);
-                  }
-                }}
-                className={`px-4 py-2 cursor-pointer transition-colors flex items-center ${
-                  selected.includes(option.value)
-                    ? "bg-customYellow text-white font-semibold"
-                    : "hover:bg-gray-100 hover:text-customDarkBlue"
-                }`}
-              >
-                {option.label}
-                {selected.includes(option.value) && (
-                  <span className="ml-auto text-white font-bold">✔</span>
-                )}
-              </li>
-            ))
-          )}
-        </ul>
+        <div className="absolute left-0 mt-2 w-full bg-white shadow-md rounded-lg border border-gray-300 z-50">
+          <div className="flex flex-col max-h-60">
+            <ul
+              className="overflow-y-auto overflow-x-hidden"
+              role="listbox"
+              tabIndex={-1}
+            >
+              {normalizedOptions.length === 0 ? (
+                <li className="px-4 py-2 text-gray-400">No options</li>
+              ) : (
+                normalizedOptions.map((option) => (
+                  <li
+                    key={option.value}
+                    role="option"
+                    aria-selected={selected.includes(option.value)}
+                    tabIndex={0}
+                    onClick={() => toggleOption(option.value)}
+                    className={`px-4 py-2 cursor-pointer transition-colors flex items-center ${
+                      selected.includes(option.value)
+                        ? "bg-customYellow text-white font-semibold"
+                        : "hover:bg-gray-100 hover:text-customDarkBlue"
+                    }`}
+                  >
+                    {option.label}
+                    {selected.includes(option.value) && (
+                      <span className="ml-auto text-white font-bold">✔</span>
+                    )}
+                  </li>
+                ))
+              )}
+            </ul>
+            {onApply && (
+              <div className="sticky bottom-0 p-2 bg-white border-t border-gray-200 flex justify-between items-center">
+                <Button
+                  onClick={() => {
+                    onChange([]);
+                  }}
+                  className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-customDarkBlue transition-colors"
+                >
+                  Clear
+                </Button>
+                <Button
+                  onClick={() => {
+                    onApply();
+                    setIsOpen(false);
+                  }}
+                  className="px-3 py-1 text-sm font-medium bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors"
+                >
+                  Apply
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
