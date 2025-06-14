@@ -1,18 +1,13 @@
 "use client";
 import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import AssignmentCard from "@/components/assignmentCard";
-import { geistMono, geistSans } from "@/components/layout";
-import UserMenu from "@/components/UserMenu";
 import { BASE_URL } from "@/utils/constants";
 import { timeAgo, to12HourTime } from "@/utils/date";
-import { motion } from "framer-motion";
-import { ArrowLeftToLine, BookPlusIcon, PlusCircle } from "lucide-react";
-import Image from "next/image";
+import { ArrowLeftToLine, BookPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { ReactElement, useEffect, useRef, useState, useCallback } from "react";
+import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
-import { M_PLUS_1 } from "next/font/google";
 
 const ChatApp = () => {
 
@@ -333,24 +328,6 @@ const ChatApp = () => {
     }
   ];
 
-  const initialChatData: ChatData = {
-    1: (() => {
-      const thread = new ChatThread(1, false, "Alice");
-      thread.addHistoricalMessages(messageDTOsForAlice);
-      return thread;
-    })(),
-    2: (() => {
-      const thread = new ChatThread(2, false, "Bob");
-      thread.addHistoricalMessages(messageDTOsForBob);
-      return thread;
-    })(),
-    3: (() => {
-      const thread = new ChatThread(3, true, "Charlie");
-      thread.addHistoricalMessages(messageDTOsForCharlie);
-      return thread;
-    })(),
-  };
-
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState(1);
@@ -358,6 +335,7 @@ const ChatApp = () => {
   const [showChat, setShowChat] = useState(false);
   const [showDropup, setShowDropup] = useState(false);
 
+  const initialChatData: ChatData = {};
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
   const { setError } = useError();
 
@@ -651,46 +629,12 @@ const ChatApp = () => {
     }
   };
   return (
-    <div className="flex flex-col min-w-[320px] h-screen">
-      <div className="flex flex-1 overflow-hidden bg-customLightYellow">
+    <div className="flex flex-row bg-customLightYellow h-[calc(100vh-56px)]">
         {/* Sidebar - Shown on mobile */}
         <aside
           className={`w-full md:w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
             }`}
         >
-          <div
-            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          >
-            <header id="topbar" className="bg-white">
-              <div className="container mx-auto px-4 py-2 sm:py-3 flex items-center justify-between">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="text-customDarkBlue hover:text-customYellow"
-                >
-                  <ArrowLeftToLine onClick={() => router.back()} />
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link href="/" passHref>
-                    <Image
-                      src="/images/logo.png"
-                      alt="THE Logo"
-                      width={60}
-                      height={30}
-                    />
-                  </Link>
-                </motion.button>
-
-                <UserMenu />
-              </div>
-            </header>
-
-            {/* Main Content */}
-          </div>
           <div className="flex flex-col flex-grow h-full ">
             <div className="w-full flex"></div>
             <div className="mb-4 p-4 ">
@@ -781,7 +725,7 @@ const ChatApp = () => {
               <div className="ml-4">
                 <p className="text-lg font-semibold">{chatName}</p>
                 {/* <p className="text-sm text-gray-500">Online</p> */}
-                <button
+                {/* <button
                   onClick={async () => {
                     if (newMessage.trim() === "" || isNaN(+newMessage)) {
                       console.error("New message has to be a valid user ID");
@@ -815,7 +759,7 @@ const ChatApp = () => {
                   className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
                 >
                   Create Chat
-                </button>
+                </button> */}
               </div>
             </div>
             <div onClick={handleOverlayClick} className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
@@ -937,7 +881,6 @@ const ChatApp = () => {
             </div>
           </div>
         </main>
-      </div>
     </div>
   );
 };

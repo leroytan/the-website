@@ -37,7 +37,7 @@ const PaymentSuccess = () => {
 
   const handleStartChat = async () => {
     if (chatId) {
-      router.push(`/chat/tutee?chatId=${chatId}`);
+      router.push(`/chat?chatId=${chatId}`);
     }
     if (!tutorId) {
       console.error("Tutor ID is required to start a chat.");
@@ -59,7 +59,7 @@ const PaymentSuccess = () => {
     }
 
     const chatPreview = await response.json();
-    router.push(`/chat/tutee?chatId=${chatPreview.id}`);
+    router.push(`/chat?chatId=${chatPreview.id}`);
   };
 
   return (
