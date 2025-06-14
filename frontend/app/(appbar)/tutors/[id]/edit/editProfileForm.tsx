@@ -1,4 +1,5 @@
 "use client";
+import ProfilePictureUploader from "../ProfilePictureUploader";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -10,7 +11,9 @@ import {
   Clock,
   DollarSign,
   GraduationCap,
+  Pencil,
   Quote,
+  Save,
   School,
   Star,
 } from "lucide-react";
@@ -82,7 +85,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
   };
 
   return (
-    <motion.div className="min-h-screen bg-customLightYellow px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
+    <motion.div className="min-h-screen bg-customLightYellow/50 px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Top Profile Info */}
         <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10 flex flex-col sm:flex-row justify-center items-center gap-6 relative">
@@ -91,15 +94,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
               <span>Edit view</span>
             </div>
           </div>
-          <div>
-            <Image
-              src={tutor.photo_url || "/images/THE-girlprofilephoto.png"}
-              alt="Avatar"
-              width={140}
-              height={140}
-              className="rounded-full border-4 border-customYellow"
-            />
-          </div>
+          <ProfilePictureUploader photoUrl={tutor.photo_url} />
           <div className="flex flex-col justify-center text-center">
             <h2 className="text-lg sm:text-2xl font-semibold mt-3 text-customDarkBlue">
               {tutor.name}
@@ -255,6 +250,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
             type="submit"
             className="px-6 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors"
           >
+            <Save size={20} className="mr-2" />
             Save Changes
           </Button>
         </div>

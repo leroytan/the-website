@@ -40,7 +40,7 @@ export default async function TutorsPage({
 
   return (
     <>
-      <div className="flex flex-col items-center bg-customLightYellow min-h-[calc(100vh-64px)]">
+      <div className="flex flex-col items-center bg-customLightYellow/50 min-h-[calc(100vh-64px)]">
         <FilterSortBar
           subjects={data.filters.subjects}
           levels={data.filters.levels}

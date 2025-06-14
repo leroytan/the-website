@@ -4,26 +4,27 @@ import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import { Button } from "@/components/button";
 import { TuitionListing } from "@/components/types";
 import { loadStripe } from "@stripe/stripe-js";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MessageCircleMore } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AppliedTutorsModal from "./appliedTutorsModal";
+import AssignmentCard from "./assignmentCard";
 
 export default function ClientDashboard({
   assignments,
 }: {
-  assignments: TuitionListing[];
+  assignments: {
+    tutorAssignments: TuitionListing[];
+    clientAssignments: TuitionListing[];
+  };
 }) {
   const router = useRouter();
-  const [selectedRequests, setSelectedRequests] = useState<
-    TuitionListing["requests"] | null
-  >(null);
+  const [selectedRequests, setSelectedRequests] = useState<TuitionListing["requests"]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("open");
 
   const openApplicantsModal = async (assignment: TuitionListing) => {
-    
     const response = await fetch(`/api/assignments/${assignment.id}`, {
       method: "GET",
       credentials: "include",
@@ -34,18 +35,10 @@ export default function ClientDashboard({
     }
     console.log("Assignment details fetched successfully:", assignment.id);
     const updatedAssignment: TuitionListing = await response.json();
-    setSelectedRequests(updatedAssignment.requests || null);
+    setSelectedRequests(updatedAssignment.requests || []);
     setModalOpen(true);
   };
 
-  const filteredAssignments = Array.isArray(assignments)
-    ? assignments.filter((a) => {
-        if (activeTab === "filled") return a.status === "FILLED";
-        if (activeTab === "open") return a.status === "OPEN";
-        return false;
-      })
-    : [];
-  // const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID!;
   const handleAccept = async (requestId: number, hourlyRateCents: number, tutorId: number, chatId?: number) => {
     try {
       //Call the backend to create a checkout session
@@ -65,193 +58,103 @@ export default function ClientDashboard({
     }
   };
 
+  const handleChat = async (tutorId: number) => {
+    try {
+      const response = await fetch(`/api/chat/get-or-create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ other_user_id: tutorId }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Failed to create chat: ${error.message}`);
+      }
+
+      const chatPreview = await response.json();
+      router.push(`/chat?chatId=${chatPreview.id}`);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+    }
+  };
+
+  const filteredAssignments = Array.isArray(assignments.clientAssignments)
+    ? assignments.clientAssignments.filter((a) => {
+        if (activeTab === "filled") return a.status === "FILLED";
+        if (activeTab === "open") return a.status === "OPEN";
+        return false;
+      })
+    : [];
+  // const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID!;
+
   return (
-    <div className="min-h-screen bg-[#FFF3E9] flex flex-col md:flex-row p-6 gap-4">
-      <aside className="md:w-1/4 w-full md:pr-6">
-        <h2 className="text-2xl font-bold text-customDarkBlue mb-6">
-          My Dashboard
-        </h2>
-        <nav className="flex md:flex-col flex-row gap-2 overflow-x-auto whitespace-nowrap">
-          {["open", "filled"].map((key) => (
-            <button
-              key={key}
-              className={`text-left px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                activeTab === key
-                  ? "bg-customDarkBlue text-white"
-                  : "text-customDarkBlue hover:underline"
-              }`}
-              onClick={() => setActiveTab(key)}
-            >
-              {key === "open" ? "Open Assignments" : "Filled Assignments"}
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <section className="md:w-3/4 w-full">
-        {/* Desktop header */}
-        <div className="hidden md:grid grid-cols-5 bg-customDarkBlue text-white font-semibold rounded-t-xl p-4 text-sm">
-          <div>Level and Subject</div>
-          <div>Tuition Address</div>
-          <div>Rate</div>
-          <div>Schedule</div>
-          <div>Actions</div>
+    <div className="min-h-screen bg-customLightYellow/50 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-customDarkBlue mb-2">My Dashboard</h1>
+          <p className="text-gray-600">Manage your tuition assignments and tutor applications</p>
         </div>
-        <div className="space-y-4 bg-white rounded-b-xl p-4">
-          {filteredAssignments.length === 0 ? (
-            <div className="text-gray-500 text-center py-8">
-              No assignments found.
+
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="lg:w-1/4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm p-6 border border-customLightYellow/60">
+              <nav className="space-y-2">
+                {["open", "filled"].map((key) => (
+                  <button
+                    key={key}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                      activeTab === key
+                        ? "bg-customDarkBlue text-white shadow-sm"
+                        : "text-customDarkBlue hover:bg-customLightYellow/30"
+                    }`}
+                    onClick={() => setActiveTab(key)}
+                  >
+                    {key === "open" ? "Open Assignments" : "Filled Assignments"}
+                  </button>
+                ))}
+              </nav>
             </div>
-          ) : (
-            filteredAssignments.map((assignment) => (
-              <div
-                key={assignment.id}
-                className="md:grid md:grid-cols-5 flex flex-col gap-4 bg-orange-50 p-4 rounded-xl text-customDarkBlue text-sm"
-              >
-                {/* Level and Subject */}
-                <div className="md:col-span-1">
-                  <span className="block md:hidden font-semibold">
-                    Level & Subject:
-                  </span>
-                  {assignment.subjects.join(", ")}
-                  <br />
-                  {assignment.level}
-                </div>
-                {/* Tuition Address */}
-                <div className="md:col-span-1">
-                  <span className="block md:hidden font-semibold">
-                    Tuition Address:
-                  </span>
-                  {assignment.location}
-                </div>
-                {/* Rate */}
-                <div className="md:col-span-1">
-                  <span className="block md:hidden font-semibold">Rate:</span>
-                  {assignment.estimated_rate_hourly}
-                </div>
-                {/* Schedule */}
-                <div className="md:col-span-1">
-                  <span className="block md:hidden font-semibold">
-                    Schedule:
-                  </span>
-                  {assignment.available_slots
-                    .slice(0, 5)
-                    .map((slot: TuitionListing["available_slots"][number]) => (
-                      <div key={slot.id}>
-                        {slot.day} {slot.start_time}-{slot.end_time}
-                      </div>
-                    ))}
-                  {assignment.available_slots.length > 5 && (
-                    <div className="text-customDarkBlue font-semibold">
-                      +{assignment.available_slots.length - 5} More
-                    </div>
-                  )}
-                </div>
-                {/* Actions */}
-                <div className="flex md:flex-col flex-row gap-2 md:col-span-1 items-center">
-                  {assignment.status === "OPEN" ? (
-                    <OpenAssignmentActions
-                      assignment={assignment}
-                      openApplicantsModal={openApplicantsModal}
-                    />
-                  ) : (
-                    <FilledAssignmentActions assignment={assignment} />
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+          </aside>
 
-      {modalOpen && selectedRequests && (
+          {/* Assignments List */}
+          <section className="lg:w-3/4">
+            {filteredAssignments.length === 0 ? (
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm p-8 text-center border border-customLightYellow/60">
+                <p className="text-gray-500 mb-4">No assignments found</p>
+                <p className="text-sm text-gray-400">Your {activeTab} assignments will appear here</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6">
+                {filteredAssignments.map((assignment) => (
+                  <AssignmentCard
+                    key={assignment.id}
+                    assignment={assignment}
+                    view="client"
+                    onChat={handleChat}
+                    onViewApplicants={openApplicantsModal}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {modalOpen && (
         <AppliedTutorsModal
           requests={selectedRequests}
           onClose={() => setModalOpen(false)}
           onAccept={handleAccept}
-          onChat={async (id) => {
-            const response = await fetch(`/api/chat/get-or-create`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ other_user_id: id }),
-              credentials: "include",
-            });
-
-            if (!response.ok) {
-              const error = await response.json();
-              throw new Error(`Failed to create chat: ${error.message}`);
-            }
-
-            const chatPreview = await response.json();
-            router.push(`/chat/tutee?chatId=${chatPreview.id}`);
-          }}
-          onProfile={(id) => console.log("Profile", id)}
+          onChat={handleChat}
+          onProfile={(id) => router.push(`/tutors/${id}`)}
         />
       )}
     </div>
-  );
-}
-
-// Show Applicants and Open for open assignments
-function OpenAssignmentActions({
-  assignment,
-  openApplicantsModal,
-}: {
-  assignment: TuitionListing;
-  openApplicantsModal: (assignment: TuitionListing) => void; //requests: TuitionListing["requests"]) => void;
-}) {
-  return (
-    <>
-      <Button
-        className="px-4 py-2 flex justify-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm w-full"
-        onClick={() => openApplicantsModal(assignment)}
-      >
-        Applicants
-      </Button>
-      <Button
-        className="px-4 py-2 flex justify-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm w-full"
-        onClick={function (): void {
-          throw new Error("Function not implemented.");
-        }}
-      >
-        Open
-        <ExternalLink className="ml-2" size={16} color="white" />
-      </Button>
-    </>
-  );
-}
-
-// Show Tutor and Chat for filled assignments
-function FilledAssignmentActions({ assignment }: { assignment: TuitionListing }) {
-  // Find the accepted tutor's name from requests
-  const acceptedTutor = assignment.requests?.find(
-    (r) => r.status === "ACCEPTED"
-  );
-  return (
-    <>
-      <div className="flex flex-row justify-center items-center gap-2">
-        <Image
-          src={
-            acceptedTutor?.tutor_profile_photo_url ||
-            "/default-avatar.png"
-          }
-          alt={acceptedTutor?.tutor_name || "Not Assigned"}
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
-        <span>{acceptedTutor?.tutor_name || "Not Assigned"}</span>
-      </div>
-      <Button
-        className="px-4 py-2 flex justify-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm w-full"
-        onClick={() => {
-          throw new Error("Function not implemented.");
-        }}
-      >
-        Chat
-      </Button>
-    </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "../../../../components/button";
+import { useAuth } from "../../../../context/authContext";
 
 const ApplyAssignmentButton = ({ assignmentId, appliedStatus, status }: { assignmentId: number, appliedStatus: boolean, status: "OPEN" | "FILLED" }) => {
   const [isApplied, setIsApplied] = useState<boolean>(appliedStatus);
@@ -34,20 +35,24 @@ const ApplyAssignmentButton = ({ assignmentId, appliedStatus, status }: { assign
     }
   }
 
+  const {tutor } = useAuth();
+
   return (
-    <Button
-      disabled={isApplied || isFilled}
-      className={`${
-        isApplied || isFilled
-          ? "bg-gray-300 text-gray-500 mt-2 cursor-not-allowed "
-          : "px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
-      } rounded-md px-4 py-2`}
-      onClick={() => {
-        handleSubmit();
-      }}
-    >
-      {isFilled ? "Filled" : isApplied ? "Applied" : "Apply"}
-    </Button>
+    tutor? (
+      <Button
+        disabled={isApplied || isFilled}
+        className={`${
+          isApplied || isFilled
+            ? "bg-gray-300 text-gray-500 mt-2 cursor-not-allowed "
+            : "px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
+        } rounded-md px-4 py-2`}
+        onClick={() => {
+          handleSubmit();
+        }}
+      >
+        {isFilled ? "Filled" : isApplied ? "Applied" : "Apply"}
+      </Button>
+    ) : null
   );
 };
 

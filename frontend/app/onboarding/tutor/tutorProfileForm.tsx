@@ -5,7 +5,7 @@ import DropDown from "@/components/dropdown";
 import Input from "@/components/input";
 import MultiSelectButton from "@/components/multiSelectButton";
 import Modal from "./_components/modal";
-import { CloudUpload, Save } from "lucide-react";
+import { CloudUpload, Save, X } from "lucide-react";
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useError } from "@/context/errorContext";
@@ -103,7 +103,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
       return;
     }
     const payload = {
-      photo_url: avatarUrl,//remove later
+      photo_url: avatarUrl, //remove later
       highest_education: formData.education,
       availability: formData.availability,
       resume_url: formData.resumeUrl,
@@ -140,12 +140,48 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
     }
   };
 
+  const handleCancel = async () => {
+    try {
+      // Update backend to indicate user no longer intends to be a tutor
+      const response = await fetch("/api/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          intends_to_be_tutor: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update user status");
+      }
+
+      // Clear cookies
+      document.cookie =
+        "tutor_profile_complete=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure";
+      document.cookie =
+        "intends_to_be_tutor=false; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax; Secure";
+      
+      router.push("/");
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      // Still clear cookies and redirect even if the backend update fails
+      document.cookie =
+        "tutor_profile_complete=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure";
+      document.cookie =
+        "intends_to_be_tutor=false; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax; Secure";
+      router.push("/");
+    }
+  };
+
   return (
     <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-3xl shadow-md py-10 px-28 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -203,6 +239,10 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
           <label className="font-semibold text-customDarkBlue">
             <span className="text-customOrange">* </span>
             <span>Availability</span>
+            <br />
+            <span className="text-xs text-gray-500">
+              (Provide a clear and concise schedule)
+            </span>
           </label>
           <Input
             name="availability"
@@ -225,7 +265,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
 
           <label className="font-semibold text-customDarkBlue">
             <span className="text-customOrange">* </span>
-            <span>Experience</span>
+            <span>Teaching/Tuition Experience</span>
           </label>
           <DropDown
             placeholder="- Select One -"
@@ -255,6 +295,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
             <span>Subjects Teachable</span>
           </label>
           <MultiSelectButton
+            placeholder="- Select Multiple -"
             options={[
               "English",
               "Math",
@@ -272,6 +313,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
             <span>Levels Teachable</span>
           </label>
           <MultiSelectButton
+            placeholder="- Select Multiple -"
             options={[
               "Primary 1",
               "Primary 2",
@@ -300,24 +342,31 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
             <span>Rate</span>
           </label>
           <div className="flex items-center">
-  <span className="px-3 py-2 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md text-gray-500">
-    S$
-  </span>
-  <Input
-    name="rate"
-    type="text"
-    placeholder=""
-    value={formData.rate}
-    onChange={handleChange}
-    className="rounded-l-none rounded-r-none mx-0.5"
-  />
-  <span className="px-3 py-2 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
-    /hour
-  </span>
-</div>
+            <span className="px-3 py-2 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md text-gray-500">
+              S$
+            </span>
+            <Input
+              name="rate"
+              type="text"
+              placeholder=""
+              value={formData.rate}
+              onChange={handleChange}
+              className="rounded-l-none rounded-r-none mx-0.5"
+            />
+            <span className="px-3 py-2 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
+              /hour
+            </span>
+          </div>
         </div>
 
         <div className="col-span-full flex justify-end gap-4">
+          <Button
+            className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-customOrange transition-colors duration-200 flex items-center"
+            onClick={handleCancel}
+          >
+            <X className="w-5 h-5 mr-1" />
+            <span>I do not wish to be a tutor</span>
+          </Button>
           <Button
             className="px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200 flex items-center"
             onClick={handleSubmit}
