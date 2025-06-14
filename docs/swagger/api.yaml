@@ -26,8 +26,10 @@ tags:
     description: Course-specific operations
   - name: reviews
     description: Course reviews operations
-paths:
+  - name: onboarding
+    description: Onboarding process operations
 
+paths:
   /api/auth/login:
     $ref: './api/auth/login.yaml'
   /api/auth/signup:
@@ -40,8 +42,6 @@ paths:
     $ref: './api/auth/logout.yaml'
   /api/auth/refresh:
     $ref: './api/auth/refresh.yaml'
-  /api/auth/verify-email:
-    $ref: './api/auth/verify-email.yaml'
   /api/me/upload-profile-photo:  # Uploads a profile photo. User authorization required
     $ref: './api/me/upload-profile-photo.yaml'
   /api/user/{user-id}/:  # Retireves user profile information (name, profile photo url, etc.)
@@ -90,3 +90,24 @@ paths:
     $ref: './api/nus-course-reviews.yaml'
   /api/nus-course-reviews/{nus-course-id}:
     $ref: './api/nus-course-reviews/{nus-course-id}.yaml'
+  /api/auth/verify/phone/send:
+    $ref: './api/auth/verify/phone/send.yaml'
+  /api/auth/verify/phone/confirm:
+    $ref: './api/auth/verify/phone/confirm.yaml'
+  /api/onboarding/university/verify:
+    $ref: './api/onboarding/university/verify.yaml'
+  /api/onboarding/university/confirm:
+    $ref: './api/onboarding/university/confirm.yaml'
+  /api/onboarding/documents/upload:
+    $ref: './api/onboarding/documents-upload.yaml'
+  /api/onboarding/status:
+    $ref: './api/onboarding/status.yaml'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    $ref: './api/common.yaml#/components/schemas'

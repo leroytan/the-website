@@ -1,0 +1,55 @@
+post:
+  tags:
+    - onboarding
+  summary: Upload verification document
+  description: Upload a document for user verification
+  security:
+    - bearerAuth: []
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          $ref: '#/components/schemas/DocumentUploadRequest'
+  responses:
+    '200':
+      description: Document uploaded successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DocumentUploadResponse'
+    '400':
+      description: Invalid document upload
+
+components:
+  schemas:
+    DocumentUploadRequest:
+      type: object
+      required:
+        - documentType
+        - file
+      properties:
+        documentType:
+          type: string
+          enum: [ID_CARD, PASSPORT, DRIVER_LICENSE, STUDENT_ID]
+          example: "ID_CARD"
+        file:
+          type: string
+          format: binary
+
+    DocumentUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Document uploaded successfully"
+        documentId:
+          type: string
+          example: "doc_123456789"
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+          example: "PENDING"

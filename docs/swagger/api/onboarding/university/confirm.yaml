@@ -1,0 +1,37 @@
+post:
+  tags:
+    - onboarding
+  summary: Confirm university email
+  description: Confirm university email verification
+  security:
+    - bearerAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/UniversityEmailConfirmRequest'
+  responses:
+    '200':
+      description: University email verified successfully
+      content:
+        application/json:
+          schema:
+            $ref: './../../common.yaml#/components/schemas/VerificationSuccessResponse'
+    '400':
+      description: Invalid verification code
+      content:
+        application/json:
+          schema:
+            $ref: './../../common.yaml#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    UniversityEmailConfirmRequest:
+      type: object
+      required:
+        - verificationCode
+      properties:
+        verificationCode:
+          type: string
+          description: Verification code sent to the university email

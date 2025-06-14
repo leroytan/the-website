@@ -7,21 +7,29 @@ post:
     content:
       application/json:
         schema:
-          $ref: '#/LoginRequest'
+          $ref: '#/components/schemas/LoginRequest'
   responses:
     '200':
       description: Successful login. Both refresh and access tokens are stored as http cookies in the browser.
     '401':
       description: Invalid credentials
-LoginRequest:
-  type: object
-  required:
-    - email
-    - password
-  properties:
-    email:
-      type: string
-      format: email
-    password:
-      type: string
-      format: password
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "SecurePass123!"
+        remember_me:
+          type: boolean
+          description: "If true, the session will persist longer than the default duration."
+          default: true
+          example: true

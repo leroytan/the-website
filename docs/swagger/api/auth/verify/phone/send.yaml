@@ -1,0 +1,36 @@
+post:
+  summary: Send phone verification code
+  description: Send SMS verification code to user's phone
+  tags:
+    - auth
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/PhoneVerificationRequest'
+  responses:
+    '200':
+      description: Verification code sent successfully
+      content:
+        application/json:
+          schema:
+            $ref: '../verify.yaml#/components/schemas/VerificationSentResponse'
+    '400':
+      description: Invalid phone number
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common.yaml#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    PhoneVerificationRequest:
+      type: object
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          pattern: '^\+[1-9]\d{1,14}$'
+          example: "+1234567890"

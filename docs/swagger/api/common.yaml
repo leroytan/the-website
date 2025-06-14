@@ -1,0 +1,28 @@
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Additional error details
+        code:
+          type: string
+          description: Error code for specific error identification
+
+    VerificationSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Verification successful"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of verification
