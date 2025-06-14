@@ -10,4 +10,4 @@ get:
           schema:
             type: array
             items:
-              $ref: '../assignments/assignment.yaml/#/AssignmentOwnerView'
+              $ref: '../assignments/assignment.yaml#/AssignmentOwnerView'

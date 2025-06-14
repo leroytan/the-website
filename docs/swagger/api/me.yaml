@@ -27,7 +27,7 @@ get:
                     type: string
                     format: date-time
               tutor:
-                $ref: './tutors/{id}.yaml/#/TutorProfile'
+                $ref: './tutors/{id}.yaml#/TutorProfile'
 put:
   tags:
     - me
