@@ -64,7 +64,6 @@ export default async function DashboardPage() {
 
   // Get assignments based on user role
   const assignments = await getAssignments(!!tutor, accessToken)
-  console.log(assignments)
   // Render appropriate dashboard based on user role
   if (tutor) {
     return <TutorDashboard assignments={assignments} />

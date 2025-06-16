@@ -8,7 +8,7 @@ import { TuitionListingFilters } from "../../../../components/types";
 import { Dialog } from "../../../../components/dialog";
 import Input from "../../../../components/input";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, CheckCircle2 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 type Direction = "left" | "right";
@@ -21,6 +21,8 @@ const AddAssignmentOverlay = ({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [showOverlay, setShowOverlay] = useState(true);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -175,8 +177,9 @@ const AddAssignmentOverlay = ({
       if (!data.ok) {
         throw new Error("Failed to create assignment");
       }
-      // Close overlay after successful add
-      handleClose();
+      // Show success dialog after successful creation
+      setShowOverlay(false);
+      setShowSuccessDialog(true);
     } catch (error) {
       console.log(error);
       alert(error);
@@ -187,144 +190,150 @@ const AddAssignmentOverlay = ({
   const feeOptions = ["25", "30", "35", "40", "45"];
 
   return (
-    <Dialog className="p-0">
-          <div className="overflow-y-auto max-h-[80vh] p-4 sm:p-6">
-            <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-              Add Assignment
-            </h2>
-            <form className="gap-6 flex flex-col" onSubmit={handleSubmit}>
-              {/* Title Field */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Title
-                </h3>
-                <Input
-                  type="text"
-                  name="title"
-                  placeholder="(optional, auto-generated if left blank)"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
-                />
-              </div>
+    <>
+      {showOverlay && <Dialog>
+        <div className="overflow-y-auto max-h-[80vh]">
+          <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
+            Add Assignment
+          </h2>
+          <form className="gap-6 flex flex-col" onSubmit={handleSubmit}>
+            {/* Title Field */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Title
+              </h3>
+              <Input
+                type="text"
+                name="title"
+                placeholder="(optional, auto-generated if left blank)"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
+              />
+            </div>
 
-              {/* Level Dropdown */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Level <span className="text-red-500">*</span>
-                </h3>
-                <DropDown
-                  placeholder="- Select One -"
-                  stringOnDisplay={formData.level}
-                  stateController={(value) => {
-                    setFormData({ ...formData, level: value });
-                  }}
-                  iterable={filters.levels.map((level) => level.name)}
-                  className="w-full rounded-md text-sm"/>
-              </div>
+            {/* Level Dropdown */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Level <span className="text-red-500">*</span>
+              </h3>
+              <DropDown
+                placeholder="- Select One -"
+                stringOnDisplay={formData.level}
+                stateController={(value) => {
+                  setFormData({ ...formData, level: value });
+                }}
+                iterable={filters.levels.map((level) => level.name)}
+                className="w-full rounded-md text-sm"/>
+            </div>
 
-              {/* Subjects Multi-Select */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Subjects <span className="text-red-500">*</span>
-                </h3>
-                <MultiSelectButton
-                  options={filters.subjects.map((subject) => subject.name)}
-                  selected={formData.subjects}
-                  onChange={(selected) =>
-                    setFormData({ ...formData, subjects: selected })
-                  }
-                  placeholder="- Select Multiple -"
-                  className="w-full rounded-md text-sm"/>
-              </div>
+            {/* Subjects Multi-Select */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Subjects <span className="text-red-500">*</span>
+              </h3>
+              <MultiSelectButton
+                options={filters.subjects.map((subject) => subject.name)}
+                selected={formData.subjects}
+                onChange={(selected) =>
+                  setFormData({ ...formData, subjects: selected })
+                }
+                placeholder="- Select Multiple -"
+                className="w-full rounded-md text-sm"/>
+            </div>
 
-              {/* Location Field */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Location <span className="text-red-500">*</span>
-                </h3>
-                <Input
-                  type="text"
-                  name="location"
-                  placeholder="Location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
-                />
-              </div>
+            {/* Location Field */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Location <span className="text-red-500">*</span>
+              </h3>
+              <Input
+                type="text"
+                name="location"
+                placeholder="Location"
+                value={formData.location}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
+              />
+            </div>
 
-              {/* Slots Section */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Available Slots <span className="text-red-500">*</span>
-                </h3>
-                <div className="flex flex-row items-center justify-center">
-                  {/* Shift left button (hide if first slot) */}
-                  {currentSlot > 0 && (
-                    <Button
-                      type="button"
-                      onClick={goToPrevSlot}
-                      className="mr-2 text-customDarkBlue hover:text-customOrange"
-                      aria-label="Previous Slot"
+            {/* Slots Section */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Available Slots <span className="text-red-500">*</span>
+              </h3>
+              <div className="flex flex-row items-center justify-center">
+                {/* Shift left button (hide if first slot) */}
+                {currentSlot > 0 && (
+                  <Button
+                    type="button"
+                    onClick={goToPrevSlot}
+                    className="mr-2 text-customDarkBlue hover:text-customOrange"
+                    aria-label="Previous Slot"
+                  >
+                    <ChevronLeft />
+                  </Button>
+                )}
+
+                <div className="relative w-full min-h-[230px]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={`slot-${currentSlot}`}
+                      initial={{
+                        x: directionRef.current === "right" ? 300 : -300,
+                        opacity: 0,
+                      }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full"
                     >
-                      <ChevronLeft />
-                    </Button>
-                  )}
-
-                  <div className="relative w-full min-h-[230px]">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={`slot-${currentSlot}`}
-                        initial={{
-                          x: directionRef.current === "right" ? 300 : -300,
-                          opacity: 0,
-                        }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="absolute top-0 left-0 w-full"
-                      >
-                        <div className="w-full gap-4 flex flex-col border-customDarkBlue bg-customLightYellow border-2 rounded-md p-4 shadow">
-                          <div className="absolute top-0 right-0 p-4">
-                            {formData.slots.length > 1 && (
-                              <Button
-                                type="button"
-                                onClick={handleRemoveSlot}
-                                aria-label="Remove Slot"
-                                className="text-customOrange"
-                              >
-                                <X />
-                              </Button>
-                            )}
-                          </div>
-                          <span className="text-customDarkBlue text-lg font-semibold mb-2">
-                            Slot {currentSlot + 1} / {formData.slots.length}
-                          </span>
-                          <DropDown
-                            placeholder="Select Day"
-                            stringOnDisplay={formData.slots[currentSlot].day}
-                            stateController={(value) => {
-                              const newSlots = [...formData.slots];
-                              newSlots[currentSlot].day = value;
-                              setFormData({ ...formData, slots: newSlots });
-                            }}
-                            iterable={[
-                              "Monday",
-                              "Tuesday",
-                              "Wednesday",
-                              "Thursday",
-                              "Friday",
-                              "Saturday",
-                              "Sunday",
-                            ]}
-                            className="w-full rounded-md text-sm"
-                          />
-                          <div className="flex flex-row space-x-4 items-center w-full">
+                      <div className="w-full gap-4 flex flex-col border-customDarkBlue bg-customLightYellow border-2 rounded-md p-4 shadow">
+                        <div className="absolute top-0 right-0 p-4">
+                          {formData.slots.length > 1 && (
+                            <Button
+                              type="button"
+                              onClick={handleRemoveSlot}
+                              aria-label="Remove Slot"
+                              className="text-customOrange"
+                            >
+                              <X />
+                            </Button>
+                          )}
+                        </div>
+                        <span className="text-customDarkBlue text-lg font-semibold mb-2">
+                          Slot {currentSlot + 1} / {formData.slots.length}
+                        </span>
+                        <label className="block text-sm font-medium text-customDarkBlue mb-1">
+                          Day <span className="text-red-500">*</span>
+                        </label>
+                        <DropDown
+                          placeholder="Select Day"
+                          stringOnDisplay={formData.slots[currentSlot].day}
+                          stateController={(value) => {
+                            const newSlots = [...formData.slots];
+                            newSlots[currentSlot].day = value;
+                            setFormData({ ...formData, slots: newSlots });
+                          }}
+                          iterable={[
+                            "Monday",
+                            "Tuesday",
+                            "Wednesday",
+                            "Thursday",
+                            "Friday",
+                            "Saturday",
+                            "Sunday",
+                          ]}
+                          className="w-full rounded-md text-sm"
+                        />
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-customDarkBlue mb-1">
+                            Start Time <span className="text-red-500">*</span>
+                          </label>
+                          <div className="flex items-center gap-2">
                             <DropDown
                               placeholder="Hour"
-                              stringOnDisplay={
-                                formData.slots[currentSlot].hours
-                              }
+                              stringOnDisplay={formData.slots[currentSlot].hours}
                               iterable={Array.from({ length: 24 }, (_, i) =>
                                 i.toString().padStart(2, "0")
                               )}
@@ -333,13 +342,12 @@ const AddAssignmentOverlay = ({
                                 newSlots[currentSlot].hours = value;
                                 setFormData({ ...formData, slots: newSlots });
                               }}
-                              className="w-full rounded-md text-sm"/>
-                            <p>:</p>
+                              className="w-full rounded-md text-sm"
+                            />
+                            <span className="text-customDarkBlue font-medium">:</span>
                             <DropDown
                               placeholder="Minute"
-                              stringOnDisplay={
-                                formData.slots[currentSlot].minutes
-                              }
+                              stringOnDisplay={formData.slots[currentSlot].minutes}
                               iterable={Array.from({ length: 60 }, (_, i) =>
                                 i.toString().padStart(2, "0")
                               )}
@@ -348,13 +356,17 @@ const AddAssignmentOverlay = ({
                                 newSlots[currentSlot].minutes = value;
                                 setFormData({ ...formData, slots: newSlots });
                               }}
-                              className="w-full rounded-md text-sm"/>
+                              className="w-full rounded-md text-sm"
+                            />
                           </div>
+                        </div>
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-customDarkBlue mb-1">
+                            Duration <span className="text-red-500">*</span>
+                          </label>
                           <DropDown
-                            placeholder="Duration"
-                            stringOnDisplay={
-                              formData.slots[currentSlot].duration
-                            }
+                            placeholder="Select Duration"
+                            stringOnDisplay={formData.slots[currentSlot].duration}
                             iterable={[
                               "1 hour",
                               "1.5 hours",
@@ -367,86 +379,120 @@ const AddAssignmentOverlay = ({
                               newSlots[currentSlot].duration = value;
                               setFormData({ ...formData, slots: newSlots });
                             }}
-                            className="w-full rounded-md text-sm"/>
+                            className="w-full rounded-md text-sm"
+                          />
                         </div>
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Shift right button (hide if last slot) */}
-                  {currentSlot < formData.slots.length - 1 && (
-                    <Button
-                      type="button"
-                      onClick={goToNextSlot}
-                      className="ml-2 text-customDarkBlue hover:text-customOrange"
-                      aria-label="Next Slot"
-                    >
-                      <ChevronRight />
-                    </Button>
-                  )}
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
-                <div className="flex justify-end mt-2 space-x-4">
+
+                {/* Shift right button (hide if last slot) */}
+                {currentSlot < formData.slots.length - 1 && (
                   <Button
                     type="button"
-                    onClick={handleAddSlot}
-                    aria-label="Add Slot"
-                    className="flex items-center text-customDarkBlue hover:text-customOrange"
+                    onClick={goToNextSlot}
+                    className="ml-2 text-customDarkBlue hover:text-customOrange"
+                    aria-label="Next Slot"
                   >
-                    <Plus />
-                    <span>Add Slot</span>
+                    <ChevronRight />
                   </Button>
-                </div>
+                )}
               </div>
-
-              {/* Fees Dropdown */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Fees <span className="text-red-500">*</span>
-                </h3>
-                <DropDown
-                  stringOnDisplay={formData.fees}
-                  placeholder="- Select One -"
-                  iterable={feeOptions}
-                  stateController={(value) =>
-                    setFormData({ ...formData, fees: value })
-                  }
-                  className="w-full rounded-md text-sm"/>
-              </div>
-
-              {/* Special Requests */}
-              <div>
-                <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Special Requests
-                </h3>
-                <textarea
-                  name="special_requests"
-                  placeholder="(optional)"
-                  value={formData.special_requests}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
-                />
-              </div>
-
-              {/* Submit and Cancel Buttons */}
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end mt-2 space-x-4">
                 <Button
                   type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2 bg-gray-200 text-customDarkBlue rounded-md hover:bg-gray-300 transition-colors duration-200"
+                  onClick={handleAddSlot}
+                  aria-label="Add Slot"
+                  className="flex items-center text-customDarkBlue hover:text-customOrange"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  type="submit"
-                  className="px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
-                >
-                  Submit
+                  <Plus />
+                  <span>Add Slot</span>
                 </Button>
               </div>
-            </form>
+            </div>
+
+            {/* Fees Dropdown */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Fees <span className="text-red-500">*</span>
+              </h3>
+              <DropDown
+                stringOnDisplay={formData.fees}
+                placeholder="- Select One -"
+                iterable={feeOptions}
+                stateController={(value) =>
+                  setFormData({ ...formData, fees: value })
+                }
+                className="w-full rounded-md text-sm"/>
+            </div>
+
+            {/* Special Requests */}
+            <div>
+              <h3 className="text-base font-medium text-customDarkBlue mb-2">
+                Special Requests
+              </h3>
+              <textarea
+                name="special_requests"
+                placeholder="(optional)"
+                value={formData.special_requests}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
+              />
+            </div>
+
+            {/* Submit and Cancel Buttons */}
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 bg-gray-200 text-customDarkBlue rounded-md hover:bg-gray-300 transition-colors duration-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                type="submit"
+                className="px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
+              >
+                Submit
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Dialog>}
+
+      {/* Success Dialog */}
+      {showSuccessDialog && (
+        <Dialog
+          variant="success"
+          title="Assignment Created!"
+          message="Your assignment has been successfully created. You can now view it in your dashboard."
+        >
+          <div className="flex gap-3">
+            <Button
+              onClick={() => {
+                setShowSuccessDialog(false);
+                handleClose();
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors duration-200"
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                setShowSuccessDialog(false);
+                handleClose();
+                router.push('/dashboard');
+              }}
+              className="px-4 py-2 bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200"
+            >
+              Go to Dashboard
+            </Button>
           </div>
-    </Dialog>
+        </Dialog>
+      )}
+    </>
   );
 };
 export default AddAssignmentOverlay;
