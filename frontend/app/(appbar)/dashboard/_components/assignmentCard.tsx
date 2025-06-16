@@ -2,9 +2,10 @@
 
 import { TuitionListing } from "@/components/types"
 import { Button } from "@/components/button"
-import { ExternalLink, MessageCircleMore } from "lucide-react"
+import { ChevronDown, ChevronUp, ExternalLink, MessageCircleMore } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface AssignmentCardProps {
   assignment: TuitionListing
@@ -22,6 +23,7 @@ export default function AssignmentCard({
   onViewApplicants
 }: AssignmentCardProps) {
   const router = useRouter()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -43,62 +45,61 @@ export default function AssignmentCard({
               {assignment.title}
             </h3>
           </div>
-          <div className="flex gap-2">
-            {view === 'client' && assignment.status === "OPEN" && (
+          
+          {view === 'client' && assignment.status === "OPEN" && (
+            <Button
+              className="px-4 py-2 flex items-center bg-customYellow text-white rounded-xl hover:bg-customOrange transition-colors duration-200 text-sm shadow-sm"
+              onClick={() => onViewApplicants?.(assignment)}
+            >
+              <MessageCircleMore className="mr-2" size={16} />
+              View Applicants
+            </Button>
+          )}
+          {view === 'client' && assignment.status === "FILLED" && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-xl">
+                <Image
+                  src={assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_profile_photo_url || "/default-avatar.png"}
+                  alt={assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_name || "Not Assigned"}
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+                <span className="text-customDarkBlue font-medium">
+                  {assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_name || "Not Assigned"}
+                </span>
+              </div>
               <Button
                 className="px-4 py-2 flex items-center bg-customYellow text-white rounded-xl hover:bg-customOrange transition-colors duration-200 text-sm shadow-sm"
-                onClick={() => onViewApplicants?.(assignment)}
+                onClick={() => onChat?.(assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_id || 0)}
               >
                 <MessageCircleMore className="mr-2" size={16} />
-                View Applicants
+                Chat
               </Button>
-            )}
-            {view === 'client' && assignment.status === "FILLED" && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-xl">
-                  <Image
-                    src={assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_profile_photo_url || "/default-avatar.png"}
-                    alt={assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_name || "Not Assigned"}
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                  />
-                  <span className="text-customDarkBlue font-medium">
-                    {assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_name || "Not Assigned"}
-                  </span>
-                </div>
-                <Button
-                  className="px-4 py-2 flex items-center bg-customYellow text-white rounded-xl hover:bg-customOrange transition-colors duration-200 text-sm shadow-sm"
-                  onClick={() => onChat?.(assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_id || 0)}
-                >
-                  <MessageCircleMore className="mr-2" size={16} />
-                  Chat
-                </Button>
-              </div>
-            )}
-            {view === 'tutor' && (
-              <div className="flex gap-2">
-                <Button
-                  className="px-4 py-2 flex items-center bg-customYellow text-white rounded-xl hover:bg-customOrange transition-colors duration-200 text-sm shadow-sm"
-                  onClick={() => onChat && assignment.owner_id && onChat(assignment.owner_id)}
-                >
-                  <MessageCircleMore className="mr-2" size={16} />
-                  Chat
-                </Button>
-                <Button
-                  className="px-4 py-2 flex items-center bg-white text-customDarkBlue border border-customDarkBlue rounded-xl hover:bg-orange-50 transition-colors duration-200 text-sm shadow-sm"
-                  onClick={() => onViewDetails && assignment.id && onViewDetails(assignment.id)}
-                >
-                  <ExternalLink className="mr-2" size={16} />
-                  View Details
-                </Button>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+          {view === 'tutor' && (
+            <div className="flex gap-2">
+              <Button
+                className="px-4 py-2 flex items-center bg-customYellow text-white rounded-xl hover:bg-customOrange transition-colors duration-200 text-sm shadow-sm"
+                onClick={() => onChat && assignment.owner_id && onChat(assignment.owner_id)}
+              >
+                <MessageCircleMore className="mr-2" size={16} />
+                Chat
+              </Button>
+              <Button
+                className="px-4 py-2 flex items-center bg-white text-customDarkBlue border border-customDarkBlue rounded-xl hover:bg-orange-50 transition-colors duration-200 text-sm shadow-sm"
+                onClick={() => onViewDetails && assignment.id && onViewDetails(assignment.id)}
+              >
+                <ExternalLink className="mr-2" size={16} />
+                View Details
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Details */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Location */}
           <div className="flex items-start gap-3">
             <div className="p-2 bg-orange-50 rounded-lg">
@@ -138,15 +139,26 @@ export default function AssignmentCard({
             <div>
               <h4 className="text-sm font-medium text-gray-500 mb-1">Schedule</h4>
               <div className="space-y-1">
-                {assignment.available_slots.slice(0, 3).map((slot) => (
+                {(isExpanded ? assignment.available_slots : assignment.available_slots.slice(0, 3)).map((slot) => (
                   <div key={slot.id} className="text-sm text-customDarkBlue">
                     {slot.day} {slot.start_time}-{slot.end_time}
                   </div>
                 ))}
                 {assignment.available_slots.length > 3 && (
-                  <div className="text-customDarkBlue text-sm font-medium">
-                    +{assignment.available_slots.length - 3} More
-                  </div>
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-customDarkBlue text-sm font-medium hover:text-customOrange transition-colors duration-200 flex items-center gap-1"
+                  >
+                    {isExpanded ? (
+                      <>
+                        Show Less <ChevronUp size={16} />
+                      </>
+                    ) : (
+                      <>
+                        +{assignment.available_slots.length - 3} More <ChevronDown size={16} />
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>

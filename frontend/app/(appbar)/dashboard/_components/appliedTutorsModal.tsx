@@ -1,8 +1,9 @@
 import { Button } from "@/components/button";
 import { TuitionListing } from "@/components/types";
 import { timeAgo } from "@/utils/date";
-import { ExternalLink, MessageCircle, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, ExternalLink, Hourglass, MessageCircle, X } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function AppliedTutorsModal({
   requests,
@@ -17,13 +18,21 @@ export default function AppliedTutorsModal({
   onChat: (tutorId: number) => void;
   onProfile: (tutorId: number) => void;
 }) {
-  // Helper to compute "applied X days ago"
+  const [expandedTutors, setExpandedTutors] = useState<number[]>([]);
+
+  const toggleExpand = (tutorId: number) => {
+    setExpandedTutors(prev => 
+      prev.includes(tutorId) 
+        ? prev.filter(id => id !== tutorId)
+        : [...prev, tutorId]
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-xl md:mx-0 mx-4 rounded-lg shadow-lg relative">
+      <div className="bg-white w-full max-w-xl md:mx-0 mx-4 rounded-lg shadow-lg relative max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center px-4 md:px-6 py-4 border-b">
+        <div className="flex justify-between items-center px-4 md:px-6 py-4 border-b sticky top-0 bg-white">
           <h2 className="text-lg md:text-xl font-bold text-customDarkBlue">
             Applied Tutors
           </h2>
@@ -36,7 +45,7 @@ export default function AppliedTutorsModal({
         </div>
 
         {/* Request List */}
-        <div className="px-4 md:px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 space-y-4">
           {!requests || requests.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               No tutors have applied yet.
@@ -45,21 +54,19 @@ export default function AppliedTutorsModal({
             requests?.map((request) => (
               <div
                 key={request.id}
-                className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 border rounded-lg shadow-sm"
+                className="flex flex-col gap-4 p-4 border rounded-lg shadow-sm"
               >
+                {/* Tutor Info */}
                 <div className="flex items-center gap-3">
-                  {/* Tutor Profile Photo */}
                   <Image
-                    src={
-                      request.tutor_profile_photo_url || "/default-avatar.png"
-                    }
+                    src={request.tutor_profile_photo_url || "/default-avatar.png"}
                     alt={request.tutor_name}
                     width={40}
                     height={40}
                     className="w-10 h-10 rounded-full"
                   />
                   <div>
-                    <p className="font-semibold text-blue-800">
+                    <p className="font-semibold text-customDarkBlue">
                       {request.tutor_name}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -67,10 +74,70 @@ export default function AppliedTutorsModal({
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col md:flex-row md:items-center gap-2 md:ml-auto">
+
+                {/* Available Slots */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-customDarkBlue">
+                    Available Slots
+                  </h3>
+                  {request.available_slots && request.available_slots.length > 0 ? (
+                    <div className="space-y-2">
+                      {(expandedTutors.includes(request.tutor_id) 
+                        ? request.available_slots 
+                        : request.available_slots.slice(0, 3)
+                      ).map((slot, index) => {
+                        const start = slot.start_time;
+                        const end = slot.end_time;
+                        const [sh, sm] = start.split(":").map(Number);
+                        const [eh, em] = end.split(":").map(Number);
+                        const durationHours = eh + em / 60 - sh - sm / 60;
+
+                        return (
+                          <div
+                            key={`slot-${index}-${slot.day}-${start}-${end}`}
+                            className="flex justify-between items-center bg-customLightYellow px-4 py-2 rounded-xl"
+                          >
+                            <span className="font-bold text-customDarkBlue">{slot.day}</span>
+                            <div className="flex flex-col items-end text-customDarkBlue text-sm">
+                              <div className="flex items-center gap-1">
+                                <Clock size={14} /> {start} - {end}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Hourglass size={14} /> {durationHours.toFixed(1)} hours
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {request.available_slots.length > 3 && (
+                        <button
+                          onClick={() => toggleExpand(request.tutor_id)}
+                          className="w-full text-center text-sm text-customDarkBlue hover:text-customOrange transition-colors duration-200 flex items-center justify-center gap-1"
+                        >
+                          {expandedTutors.includes(request.tutor_id) ? (
+                            <>
+                              Show Less <ChevronUp size={16} />
+                            </>
+                          ) : (
+                            <>
+                              +{request.available_slots.length - 3} More Slots <ChevronDown size={16} />
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic bg-gray-50 px-4 py-2 rounded-xl">
+                      This tutor has not indicated any available slots yet.
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2 justify-end">
                   <Button
                     className="px-3 py-2 flex justify-center items-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm whitespace-nowrap"
-                    onClick={() => onAccept(request.id, 3500, request.tutor_id)}  // Replace 3500 with actual hourly rate if available
+                    onClick={() => onAccept(request.id, 3500, request.tutor_id)}
                   >
                     Accept & Pay
                   </Button>

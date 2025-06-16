@@ -6,6 +6,8 @@ import { TuitionListing } from "@/components/types";
 import { useRouter } from "next/navigation";
 import AssignmentCard from "./assignmentCard";
 import { Repeat } from "lucide-react";
+import AppliedTutorsModal from "./appliedTutorsModal";
+import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 
 export default function TutorDashboard({
   assignments,
@@ -18,7 +20,42 @@ export default function TutorDashboard({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("active");
   const [isTutorView, setIsTutorView] = useState(true);
+  const [selectedRequests, setSelectedRequests] = useState<
+    TuitionListing["requests"]
+  >([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const handleAccept = async (requestId: number, hourlyRateCents: number, tutorId: number, chatId?: number) => {
+    try {
+      //Call the backend to create a checkout session
+      const session: { id: string; url: string } = await createCheckoutSession({
+        mode: "payment",
+        success_url: window.location.origin + "/payment-success",
+        cancel_url: window.location.origin + "/payment-cancel",
+        assignment_request_id: requestId,
+        tutor_id: tutorId,
+        chat_id: chatId
+      });
 
+      router.push(session.url);
+    } catch (err) {
+      console.error("Stripe error:", err);
+      alert(err);
+    }
+  };
+  const openApplicantsModal = async (assignment: TuitionListing) => {
+    const response = await fetch(`/api/assignments/${assignment.id}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch assignment details");
+    }
+    console.log("Assignment details fetched successfully:", assignment.id);
+    const updatedAssignment: TuitionListing = await response.json();
+    setSelectedRequests(updatedAssignment.requests || []);
+    setModalOpen(true);
+  };
   const handleChat = async (tutorId: number) => {
     try {
       const response = await fetch(`/api/chat/get-or-create`, {
@@ -41,13 +78,18 @@ export default function TutorDashboard({
       console.error("Error creating chat:", error);
     }
   };
-  const filteredAssignments = Array.isArray(assignments.tutorAssignments) || Array.isArray(assignments.clientAssignments)
-    ? (isTutorView ? assignments.tutorAssignments : assignments.clientAssignments).filter((a) => {
-        if (activeTab === "active") return a.status === "FILLED";
-        if (activeTab === "pending") return a.status === "OPEN";
-        return false;
-      })
-    : [];
+  const filteredAssignments =
+    Array.isArray(assignments.tutorAssignments) ||
+    Array.isArray(assignments.clientAssignments)
+      ? (isTutorView
+          ? assignments.tutorAssignments
+          : assignments.clientAssignments
+        ).filter((a) => {
+          if (activeTab === "active") return a.status === "FILLED";
+          if (activeTab === "pending") return a.status === "OPEN";
+          return false;
+        })
+      : [];
 
   return (
     <div className="min-h-screen bg-customLightYellow/50 p-6 md:p-8">
@@ -55,8 +97,14 @@ export default function TutorDashboard({
         {/* Header Section with Switch Button */}
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-customDarkBlue mb-2">My Dashboard</h1>
-            <p className="text-gray-600">Manage your {isTutorView ? "tutoring assignments" : "client requests"} and applications</p>
+            <h1 className="text-3xl font-bold text-customDarkBlue mb-2">
+              My Dashboard
+            </h1>
+            <p className="text-gray-600">
+              Manage your{" "}
+              {isTutorView ? "tutoring assignments" : "client requests"} and
+              applications
+            </p>
           </div>
           <Button
             onClick={() => setIsTutorView(!isTutorView)}
@@ -83,7 +131,9 @@ export default function TutorDashboard({
                     }`}
                     onClick={() => setActiveTab(key)}
                   >
-                    {key === "active" ? "Active Assignments" : "Pending Applications"}
+                    {key === "active"
+                      ? "Active Assignments"
+                      : "Pending Applications"}
                   </button>
                 ))}
               </nav>
@@ -95,7 +145,9 @@ export default function TutorDashboard({
             {filteredAssignments.length === 0 ? (
               <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm p-8 text-center border border-customLightYellow/60">
                 <p className="text-gray-500 mb-4">No assignments found</p>
-                <p className="text-sm text-gray-400">Your {activeTab} assignments will appear here</p>
+                <p className="text-sm text-gray-400">
+                  Your {activeTab} assignments will appear here
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
@@ -103,9 +155,12 @@ export default function TutorDashboard({
                   <AssignmentCard
                     key={assignment.id}
                     assignment={assignment}
-                    view="tutor"
+                    view={isTutorView ? "tutor" : "client"}
                     onChat={handleChat}
-                    onViewDetails={() => router.push(`/assignments?selected=${assignment.id}`)}
+                    onViewApplicants={openApplicantsModal}
+                    onViewDetails={() =>
+                      router.push(`/assignments?selected=${assignment.id}`)
+                    }
                   />
                 ))}
               </div>
@@ -113,6 +168,15 @@ export default function TutorDashboard({
           </section>
         </div>
       </div>
+      {modalOpen && (
+        <AppliedTutorsModal
+          requests={selectedRequests}
+          onClose={() => setModalOpen(false)}
+          onAccept={handleAccept}
+          onChat={handleChat}
+          onProfile={(id) => router.push(`/tutors/${id}`)}
+        />
+      )}
     </div>
   );
 }

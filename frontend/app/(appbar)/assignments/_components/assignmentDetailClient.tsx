@@ -37,8 +37,12 @@ export function AssignmentDetailClient({
 
       {/* Apply Button */}
       <div className="mt-4">
-
-        <ApplyAssignmentButton assignmentId={assignment.id!} appliedStatus={assignment.applied!} status={assignment.status!}/>
+        <ApplyAssignmentButton 
+          assignmentId={assignment.id!} 
+          appliedStatus={assignment.applied!} 
+          status={assignment.status!}
+          availableSlots={assignment.available_slots || []}
+        />
       </div>
 
       {/* Special Request */}

@@ -27,6 +27,11 @@ export interface TuitionListing {
     status: string;
     created_at: string;
     updated_at: string;
+    available_slots: {
+      day: string;
+      start_time: string;
+      end_time: string;
+    }[];
   }[];
 }
 export interface TuitionListingFilters {
