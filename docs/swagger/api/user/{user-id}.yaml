@@ -34,5 +34,5 @@ get:
                     format: date-time
               tutor:
                 oneOf:
-                  - $ref: '../tutors/{id}.yaml/#/TutorProfile'
-                  # - $ref: '../tutors.yaml/#/TutorPublicSummary'
+                  - $ref: '../tutors/{id}.yaml#/TutorProfile'
+                  # - $ref: '../tutors.yaml#/TutorPublicSummary'

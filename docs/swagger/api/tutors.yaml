@@ -51,11 +51,11 @@ get:
                 type: object
                 properties:
                   subjects:
-                    $ref: './filter.yaml/#/FilterList'
+                    $ref: './filter.yaml#/FilterList'
                   levels:
-                    $ref: './filter.yaml/#/FilterList'
+                    $ref: './filter.yaml#/FilterList'
                   location:
-                    $ref: './filter.yaml/#/FilterList'
+                    $ref: './filter.yaml#/FilterList'
                 required:
                   - subjects
                   - levels

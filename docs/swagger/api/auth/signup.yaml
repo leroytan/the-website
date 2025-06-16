@@ -23,12 +23,18 @@ SignupRequest:
     email:
       type: string
       format: email
+      example: "user@example.com"
     password:
       type: string
-      format: password
-    name:
+      minLength: 8
+      example: "SecurePass123!"
+    phone:
       type: string
-    intends_to_be_tutor:
-      type: boolean
-      description: Indicates if the user intends to be a tutor. Defaults to false.
-      default: false
+      pattern: '^\+[1-9]\d{1,14}$'
+      example: "+1234567890"
+    firstName:
+      type: string
+      example: "John"
+    lastName:
+      type: string
+      example: "Doe"

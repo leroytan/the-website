@@ -1,0 +1,42 @@
+
+post:
+  summary: Verify phone number
+  description: Verify phone number with SMS code
+  tags:
+    - auth
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/PhoneVerificationConfirmRequest'
+  responses:
+    '200':
+      description: Phone verified successfully
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common.yaml#/components/schemas/VerificationSuccessResponse'
+    '400':
+      description: Invalid or expired code
+      content:
+        application/json:
+          schema:
+            $ref: '../../../common.yaml#/components/schemas/ErrorResponse'
+            
+components:
+  schemas:
+    PhoneVerificationConfirmRequest:
+      type: object
+      required:
+        - phone
+        - code
+      properties:
+        phone:
+          type: string
+          pattern: '^\+[1-9]\d{1,14}$'
+          example: "+1234567890"
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          example: "123456"

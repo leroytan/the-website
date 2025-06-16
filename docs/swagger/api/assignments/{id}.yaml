@@ -15,7 +15,7 @@ get:
       content:
         application/json:
           schema:
-            $ref: './assignment.yaml/#/Assignment'
+            $ref: './assignment.yaml#/Assignment'
 put:
   tags:
     - assignment
@@ -33,7 +33,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: './assignment.yaml/#/NewAssignment'
+          $ref: './assignment.yaml#/NewAssignment'
   responses:
     '200':
       description: confirmation of successful update
