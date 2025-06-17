@@ -34,7 +34,12 @@ class User(Base, SerializerMixin):
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     password_hash = Column(String, nullable=False)
+    token_version = Column(Integer, default=0)
     intends_to_be_tutor = Column(Boolean, default=False)
+    
+    # Password reset fields
+    password_reset_token = Column(String, nullable=True)
+    password_reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     tutor_role = relationship('Tutor', back_populates='user', uselist=False)
 

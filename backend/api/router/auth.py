@@ -1,8 +1,16 @@
-from api.router.models import LoginRequest, SignupRequest
+from api.router.models import (
+    LoginRequest,
+    SignupRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest
+)
 from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
+from fastapi import Depends
 from api.storage.models import User
-from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
+from api.storage.models import User
+from fastapi import APIRouter, Depends, Request, Response, HTTPException
+from fastapi.responses import RedirectResponse
 
 router = APIRouter()
 
@@ -69,9 +77,9 @@ async def logout(response: Response, _ = Depends(RouterAuthUtils.assert_not_logg
     return {"message": "Logged out successfully"}
 
 @router.get("/api/protected")
-async def protected_route(current_user: User = Depends(RouterAuthUtils.get_current_user)):
+async def protected_route(user: User = Depends(RouterAuthUtils.get_current_user)):
     # Test route for authentication
-    return {"message": "You are logged in as " + current_user.email}
+    return {"message": "This is a protected route", "user_id": user.id}
 
 @router.post("/api/auth/refresh")
 async def refresh(request: Request, response: Response):
@@ -86,10 +94,6 @@ async def refresh(request: Request, response: Response):
 async def check(_: User = Depends(RouterAuthUtils.get_current_user)):
     return {"message": "Valid token"}
 
-@router.get("/api/auth/idk")
-async def auth_idk():
-    return {"message": "Hello from FastAPI auth router"}
-
 @router.get("/api/auth/me")
 async def me(user: User = Depends(RouterAuthUtils.get_current_user)):
     return {
@@ -97,3 +101,38 @@ async def me(user: User = Depends(RouterAuthUtils.get_current_user)):
         "email": user.email,
         "name": user.name,
     }
+
+@router.post("/api/auth/forgot-password")
+async def forgot_password(
+    request: Request,
+    forgot_password_request: ForgotPasswordRequest,
+):
+    """
+    Initiate password reset process by sending a reset link to the user's email.
+    
+    Args:
+        forgot_password_request (ForgotPasswordRequest): Contains the email address
+        for password reset.
+    
+    Returns:
+        dict: A message indicating the status of the password reset request.
+    """
+    # Use the request's origin to generate the reset link
+    origin = request.headers.get("origin", "http://localhost:3000")
+    return Logic.forgot_password(origin, forgot_password_request)
+
+@router.post("/api/auth/reset-password")
+async def reset_password(
+    reset_password_request: ResetPasswordRequest,
+):
+    """
+    Complete password reset by validating the reset token and updating the password.
+    
+    Args:
+        reset_password_request (ResetPasswordRequest): Contains the reset token
+        and new password.
+    
+    Returns:
+        dict: A message indicating the success of the password reset.
+    """
+    return Logic.reset_password(reset_password_request)

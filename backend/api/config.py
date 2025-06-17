@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     r2_bucket_name: str
     r2_bucket_region: str = "auto"  # Default region for R2
     allowed_origins: str = "*"
+    gmail_credentials_json: str  # JSON string for Gmail credentials
+    gmail_startup_notification_email: str = ""
 
     # Dynamically determine which database URL to use
     @property

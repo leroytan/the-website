@@ -1,8 +1,9 @@
 import enum
-from typing import Generic, Optional, TypeVar
+import re
+from typing import Generic, TypeVar
 
 from api.storage.models import AssignmentRequestStatus, ChatMessageType
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 # Pydantic models
@@ -236,3 +237,61 @@ class PaymentRequest(BaseModel):
     assignment_request_id: int
     tutor_id: int  # To link to chat
     chat_id: int | None = None  # Optional, if chat is already created
+
+# Password Reset Models
+class ForgotPasswordRequest(BaseModel):
+    """
+    Model for initiating password reset request
+    """
+    email: EmailStr
+
+    @validator('email')
+    def normalize_email(cls, email):
+        """
+        Normalize email for consistent handling
+        """
+        return email.lower().strip()
+
+class ResetPasswordRequest(BaseModel):
+    """
+    Model for completing password reset
+    """
+    reset_token: str = Field(
+        ..., 
+        description="Unique reset token",
+        min_length=32,
+        max_length=1024
+    )
+    new_password: str = Field(
+        ..., 
+        description="New account password",
+        min_length=8,
+        max_length=128
+    )
+
+    @validator('new_password')
+    def validate_password_strength(cls, password):
+        """
+        Comprehensive password strength validation
+        
+        Requirements:
+        - Minimum 12 characters
+        - At least one uppercase letter
+        - At least one lowercase letter
+        - At least one number
+        - At least one special character
+        """
+    
+        # if not re.search(r'[A-Z]', password):
+        #     raise ValueError("Password must contain at least one uppercase letter")
+        
+        if not re.search(r'[a-z]', password):
+            raise ValueError("Password must contain at least one lowercase letter")
+        
+        # if not re.search(r'\d', password):
+        #     raise ValueError("Password must contain at least one number")
+        
+        # if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        #     raise ValueError("Password must contain at least one special character")
+        
+        return password

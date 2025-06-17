@@ -1,12 +1,15 @@
 from api.logic.tutor_logic import TutorLogic
 from api.logic.user_logic import UserLogic
 from api.router.auth_utils import RouterAuthUtils
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import Depends
+from api.storage.models import User
+from fastapi import APIRouter, HTTPException, Request, Response
+# Removed redundant import
 
 router = APIRouter()
 
 @router.get("/api/user/{id}")
-async def get_user(id: int, request: Request) -> dict:
+async def get_user(id: int, request: Request, response: Response) -> dict:
 
     is_self = False
 
