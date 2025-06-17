@@ -31,7 +31,7 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
   };
 
   return (
-    <motion.div className="min-h-screen bg-customLightYellow px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
+    <motion.div className="min-h-screen bg-customLightYellow/50 px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
       <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10 flex flex-col sm:flex-row justify-center gap-6 relative">
         <div className="absolute top-4 right-4">
           {isOwnProfile && (

@@ -53,7 +53,7 @@ export function Pagination({ totalPages }: PaginationProps) {
       ))}
       {/* Next Page Button */}
       {currentPage < totalPages && (
-        <Link href={createPageURL(currentPage + 1)} className="px-2 py-1 border rounded hover:bg-gray-100">
+        <Link href={createPageURL(currentPage + 1)} className="px-2 py-1 border rounded-lg hover:bg-gray-100">
           Next » 
         </Link>
       )}
