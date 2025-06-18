@@ -293,8 +293,8 @@ class AssignmentLogic:
                 assignment_req = AssignmentRequest(
                     assignment_id=assignment.id,
                     tutor_id=tutor_id,
-                    requested_rate_hourly=new_assignment_request.requested_rate_hourly,
-                    requested_duration=new_assignment_request.requested_duration,
+                    requested_rate_hourly=new_assignment_request.requested_rate_hourly or assignment.estimated_rate_hourly,
+                    requested_duration=new_assignment_request.requested_duration or assignment.lesson_duration,
                 )
 
                 session.add(assignment_req)
