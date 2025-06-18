@@ -236,6 +236,10 @@ class UserUpdateRequest(BaseModel):
 class ChatCreationInfo(BaseModel):
     other_user_id: int
 
+class MessagePacket(BaseModel):
+    to_user_id: int
+    content: str
+    message_type: ChatMessageType = ChatMessageType.TEXT_MESSAGE
 class PaymentRequest(BaseModel):
     mode: str  # 'payment' or 'subscription'
     success_url: str

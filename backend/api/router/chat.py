@@ -5,7 +5,7 @@ from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
 from fastapi import Depends
 from api.storage.models import User
-from api.router.models import ChatCreationInfo, NewChatMessage, ChatPreview
+from api.router.models import ChatCreationInfo, NewChatMessage, ChatPreview, MessagePacket
 from api.storage.models import User, ChatMessageType
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -103,6 +103,27 @@ async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> d
         dict: A dictionary containing the list of chats.
     """
     return ChatLogic.get_private_chats(user.id)
+
+@router.post("/api/chat/send-message-to-user")
+async def send_message_to_user(message_packet: MessagePacket, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+    """
+    Send a message to another user.
+
+    Args:
+        other_user_id (int): The ID of the user to send the message to.
+        content (str): The content of the message.
+        user (User): The current user.
+    Returns:
+        dict: A dictionary indicating success or failure.
+    """
+    chat_id = ChatLogic.get_or_create_private_chat(user.id, message_packet.to_user_id).id
+    message = NewChatMessage(
+        chat_id=chat_id,
+        content=message_packet.content,
+        message_type=message_packet.message_type
+    )
+    await ChatLogic.handle_private_message(message, user.id)
+    return {"status": "success", "message": "Message sent."}
 
 
 html = """
