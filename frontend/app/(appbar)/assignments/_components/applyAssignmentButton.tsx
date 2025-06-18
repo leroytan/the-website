@@ -41,12 +41,12 @@ const ApplyAssignmentButton = ({
   async function handleSubmit(slots: TimeSlot[]) {
     !isApplied && setIsApplied((x) => !x);
     try {
-      const data = await fetchWithTokenCheck(`/api/assignments/${assignmentId}/request`, {
+      const data = await fetchWithTokenCheck(`/api/assignment-requests/new`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ available_slots: slots }),
+        body: JSON.stringify({ assignment_id: assignmentId, available_slots: slots }),
         credentials: "include",
       });
       const res = await data.json();

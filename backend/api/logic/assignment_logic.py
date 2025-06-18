@@ -11,7 +11,7 @@ from api.logic.user_logic import UserLogic
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                AssignmentRequestView, AssignmentSlotView,
                                NewAssignment, NewAssignmentRequest,
-                               SearchQuery, NewChatMessage)
+                               SearchQuery, NewChatMessage, ModifiedAssignmentRequest)
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, Level, Subject, Tutor, User)
@@ -266,10 +266,10 @@ class AssignmentLogic:
             return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
         
     @staticmethod
-    def request_assignment(assignment_id: str | int, new_assignment_request: NewAssignmentRequest, tutor_id: str | int) -> None:
+    def request_assignment(new_assignment_request: NewAssignmentRequest, tutor_id: str | int) -> None:
         with Session(StorageService.engine) as session:
             # Find the assignment
-            assignment = session.query(Assignment).filter_by(id=assignment_id).first()
+            assignment = session.query(Assignment).filter_by(id=new_assignment_request.assignment_id).first()
             if not assignment:
                 raise HTTPException(
                     status_code=404,
@@ -517,7 +517,7 @@ class AssignmentLogic:
             )
         
     @staticmethod
-    def update_assignment_request_by_id(assignment_request_id: int, new_assignment_request: NewAssignmentRequest, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
+    def update_assignment_request_by_id(assignment_request_id: int, req: ModifiedAssignmentRequest, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
         with Session(StorageService.engine) as session:
             assignment_request = session.query(AssignmentRequest).filter_by(
                 id=assignment_request_id
@@ -532,13 +532,13 @@ class AssignmentLogic:
             assert_user_authorized(assignment_request.tutor_id)
 
             # Update the assignment request
-            assignment_request.requested_rate_hourly = new_assignment_request.requested_rate_hourly
-            assignment_request.requested_duration = new_assignment_request.requested_duration
+            assignment_request.requested_rate_hourly = req.requested_rate_hourly or assignment_request.requested_rate_hourly
+            assignment_request.requested_duration = req.requested_duration or assignment_request.requested_duration
 
             StorageService.delete(session, {"assignment_request_id": assignment_request.id}, AssignmentSlot)
 
             # Add new slots
-            for slot in new_assignment_request.available_slots:
+            for slot in req.available_slots:
                 assignment_slot = StorageService.insert(session, AssignmentSlot(
                     day=slot.day,
                     start_time=slot.start_time,

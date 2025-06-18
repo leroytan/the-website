@@ -121,10 +121,16 @@ class AssignmentRequestView(BaseModel):
 
 # TODO: Remove default values when frontend is ready to handle them
 class NewAssignmentRequest(BaseModel):
-    requested_rate_hourly: int =35  # in dollars
+    assignment_id: int
+    requested_rate_hourly: int = 35  # in dollars
     requested_duration: int = 60  # in minutes
     available_slots: list[NewAssignmentSlot]
 
+class ModifiedAssignmentRequest(BaseModel):
+    requested_rate_hourly: int | None = None  # in dollars
+    requested_duration: int | None = None  # in minutes
+    available_slots: list[NewAssignmentSlot] | None = None
+    
 class AssignmentBaseView(BaseModel):
     id: int
     created_at: str
