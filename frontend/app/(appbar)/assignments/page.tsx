@@ -75,6 +75,7 @@ export default async function AssignmentsPage({
   // Adjust destructuring to match TuitionListingFilters properties
   const subjects = data.filters?.subjects ?? [];
   const levels = data.filters?.levels ?? [];
+  const locations = data.filters?.locations ?? [];
   const sortOptions = (data.sorts ?? []).map((option) => ({
     value: option.id,
     label: option.name,
@@ -86,6 +87,7 @@ export default async function AssignmentsPage({
       <FilterSortBar
         subjects={subjects}
         levels={levels}
+        locations={locations}
         sortOptions={sortOptions}
       />
       <div className="flex flex-col md:flex-row bg-white rounded-xl shadow-lg w-full max-w-7xl h-full overflow-hidden">

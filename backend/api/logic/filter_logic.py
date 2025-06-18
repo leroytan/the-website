@@ -1,7 +1,7 @@
 from typing import Type
 
 from api.router.models import FilterChoice
-from api.storage.models import Assignment, Level, Subject, Tutor
+from api.storage.models import Assignment, Level, Subject, Tutor, Location
 from api.storage.storage_service import StorageService
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
@@ -20,10 +20,10 @@ class FilterLogic:
         """
         parsed_filters = {}
         for filter_str in filters:
-            filter_type, filter_value = filter_str.split("_", 1)
+            filter_type, _ = filter_str.split("_", 1)
             if filter_type not in parsed_filters:
                 parsed_filters[filter_type] = []
-            parsed_filters[filter_type].append(filter_value)
+            parsed_filters[filter_type].append(filter_str)
         return parsed_filters
 
     @staticmethod
@@ -40,7 +40,7 @@ class FilterLogic:
             )
             items = [
                 FilterChoice(
-                    id=getattr(row, "filterId"),
+                    id=getattr(row, "filter_id"),
                     name=getattr(row, "name")
                 )
                 for row in rows
@@ -56,12 +56,12 @@ class FilterLogic:
             return {
                 "subjects": FilterLogic.get_filter(Subject),
                 "levels": FilterLogic.get_filter(Level),
-                "locations": [],
             }
         elif TableClass == Assignment:
             return {
                 "subjects": FilterLogic.get_filter(Subject),
                 "levels": FilterLogic.get_filter(Level),
+                "locations": FilterLogic.get_filter(Location),
                 "courses": [],
             }
         

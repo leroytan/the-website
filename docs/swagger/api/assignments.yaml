@@ -50,11 +50,13 @@ get:
               filters:
                 type: object
                 properties:
-                  course:
+                  courses:
                     $ref: './filter.yaml#/FilterList'
-                  subject:
+                  subjects:
                     $ref: './filter.yaml#/FilterList'
-                  level:
+                  levels:
+                    $ref: './filter.yaml#/FilterList'
+                  locations:
                     $ref: './filter.yaml#/FilterList'
               num_pages:
                 type: integer

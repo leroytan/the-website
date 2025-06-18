@@ -14,7 +14,7 @@ from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                SearchQuery, NewChatMessage, ModifiedAssignmentRequest)
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
-                                AssignmentStatus, Level, Subject, Tutor, User)
+                                AssignmentStatus, Level, Subject, Tutor, User, Location)
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
@@ -56,7 +56,7 @@ class AssignmentLogic:
             "subjects": [subject.name for subject in assignment.subjects] if assignment.subjects else [],
             "level": assignment.level.name,
             "status": assignment.status,
-            "location": assignment.location,
+            "location": assignment.location.name,
         }
         
         if view_type == ViewType.OWNER:
@@ -110,6 +110,7 @@ class AssignmentLogic:
             statement = statement.outerjoin(user_alias, tutor_alias.user)
             statement = statement.outerjoin(owner_alias, Assignment.owner)
             statement = statement.outerjoin(Assignment.level)
+            statement = statement.outerjoin(Assignment.location)
 
             # General search (matching name, location, or about_me)
             if search_query.query:
@@ -126,11 +127,14 @@ class AssignmentLogic:
 
             # Filter by subjects
             if "subject" in parsed_filters:
-                filters.append(Assignment.subjects.any(Subject.id.in_(parsed_filters["subject"])))
+                filters.append(Assignment.subjects.any(Subject.filter_id.in_(parsed_filters["subject"])))
 
-            # Filter by level
+            # Filter by level using filter_id
             if "level" in parsed_filters:
-                filters.append(Assignment.level_id.in_(parsed_filters["level"]))
+                filters.append(Level.filter_id.in_(parsed_filters["level"]))
+
+            if "location" in parsed_filters:
+                filters.append(Location.filter_id.in_(parsed_filters["location"]))
 
             statement = statement.filter(and_(*filters))
             try:
@@ -162,6 +166,7 @@ class AssignmentLogic:
         with Session(StorageService.engine) as session:
 
             level_id = session.query(Level).filter_by(name=new_assignment.level).one().id
+            location_id = session.query(Location).filter_by(name=new_assignment.location).one().id
 
             # Create a new assignment
             assignment = Assignment(
@@ -173,7 +178,7 @@ class AssignmentLogic:
                 weekly_frequency=new_assignment.weekly_frequency,
                 special_requests=new_assignment.special_requests,
                 status=AssignmentStatus.OPEN,
-                location=new_assignment.location,
+                location_id=location_id,
             )
 
             try:
