@@ -14,8 +14,9 @@ from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                SearchQuery, NewChatMessage, ModifiedAssignmentRequest)
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
-                                AssignmentStatus, Level, Subject, Tutor, User, Location)
+                                AssignmentStatus, ChatMessage, Level, Location, Subject, Tutor, User)
 from api.storage.storage_service import StorageService
+from api.services.email_service import GmailEmailService
 from fastapi import HTTPException
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy import and_, or_
@@ -271,10 +272,14 @@ class AssignmentLogic:
             return AssignmentLogic.convert_assignment_to_view(session, assignment, ViewType.OWNER)
         
     @staticmethod
-    def request_assignment(new_assignment_request: NewAssignmentRequest, tutor_id: str | int) -> None:
+    def request_assignment(new_assignment_request: NewAssignmentRequest, tutor_id: str | int, origin: str) -> None:
         with Session(StorageService.engine) as session:
             # Find the assignment
-            assignment = session.query(Assignment).filter_by(id=new_assignment_request.assignment_id).first()
+            statement = session.query(Assignment).filter_by(id=new_assignment_request.assignment_id)
+            statement = statement.options(
+                joinedload(Assignment.owner),
+            )
+            assignment = statement.first()
             if not assignment:
                 raise HTTPException(
                     status_code=404,
@@ -295,14 +300,14 @@ class AssignmentLogic:
             
             # Create a request
             try:
-                assignment_req = AssignmentRequest(
+                assignment_request = AssignmentRequest(
                     assignment_id=assignment.id,
                     tutor_id=tutor_id,
                     requested_rate_hourly=new_assignment_request.requested_rate_hourly or assignment.estimated_rate_hourly,
                     requested_duration=new_assignment_request.requested_duration or assignment.lesson_duration,
                 )
 
-                session.add(assignment_req)
+                session.add(assignment_request)
                 session.flush()  # Ensure the assignment_req has an ID before adding slots
 
                 # Create assignment slots
@@ -311,10 +316,18 @@ class AssignmentLogic:
                         day=slot.day,
                         start_time=slot.start_time,
                         end_time=slot.end_time,
-                        assignment_request_id=assignment_req.id
+                        assignment_request_id=assignment_request.id
                     )
                     session.add(assignment_slot)
                 session.commit()
+
+                # Send an email notification to the assignment owner
+                GmailEmailService.notify_new_assignment_request(
+                    recipient_email=assignment.owner.email,
+                    assignment=assignment,
+                    origin=origin
+                )
+
             except IntegrityError as e:
                 if isinstance(e.orig, ForeignKeyViolation):
                     raise HTTPException(
@@ -553,42 +566,50 @@ class AssignmentLogic:
                 session.add(assignment_slot)
             
             session.commit()
-            session.refresh(assignment_request, ["assignment"])
+            session.refresh(assignment_request, ["assignment", "available_slots"])
 
-            # Send a chat message to the assignment owner
-            assignment = assignment_request.assignment
-            chat = ChatLogic.get_or_create_private_chat(assignment.owner_id, assignment_request.tutor_id)
-            chat_id = chat.id
-            
-            message_content = json.dumps({
-                "hourlyRate": assignment_request.requested_rate_hourly,
-                "lessonDuration": assignment_request.requested_duration,
-                "assignmentRequestId": assignment_request.id,
-                "assignmentId": assignment.id,
-                "tutorId": assignment_request.tutor_id,
-                "assignmentTitle": assignment.title,
-                "availableSlots": [
-                    {"day": s.day, "startTime": s.start_time, "endTime": s.end_time}
-                    for s in assignment_request.available_slots
-                ]
-            })
-            
-            new_chat_message = NewChatMessage(
-                chat_id=chat_id,
-                content=message_content,
-                message_type="tutor_request"
-            )
-
-            # Store the chat message and get the message ID
-            chat_message = ChatLogic.store_private_message(session, new_chat_message, assignment_request.tutor_id)
+            chat_message = AssignmentLogic.create_and_store_message(session, assignment_request)
             
             # Update the assigment request with the chat message ID
             assignment_request.chat_message_id = chat_message.id
             session.commit()
             session.refresh(chat_message, ["chat", "sender", "assignment_request"])
 
-            print("Sending chat message to assignment owner")
             # Handle the private message asynchronously
             asyncio.create_task(ChatLogic.send_private_message(chat_message=chat_message))
  
             return AssignmentLogic.get_assignment_request_by_id(assignment_request.id, assert_user_authorized)
+        
+    @staticmethod
+    def create_and_store_message(session: Session, assignment_request: AssignmentRequest) -> ChatMessage:
+        # Send a chat message to the assignment owner
+        assignment = assignment_request.assignment
+        chat = ChatLogic.get_or_create_private_chat(assignment.owner_id, assignment_request.tutor_id)
+        chat_id = chat.id
+        
+        message_content = json.dumps({
+            "hourlyRate": assignment_request.requested_rate_hourly,
+            "lessonDuration": assignment_request.requested_duration,
+            "assignmentRequestId": assignment_request.id,
+            "assignmentId": assignment.id,
+            "tutorId": assignment_request.tutor_id,
+            "assignmentTitle": assignment.title,
+            "availableSlots": [
+                {"day": s.day, "startTime": s.start_time, "endTime": s.end_time}
+                for s in assignment_request.available_slots
+            ]
+        })
+        
+        new_chat_message = NewChatMessage(
+            chat_id=chat_id,
+            content=message_content,
+            message_type="tutor_request"
+        )
+
+        # Store the chat message and get the message ID
+        chat_message = ChatLogic.store_private_message(session, new_chat_message, assignment_request.tutor_id)
+
+        return chat_message
+
+
+

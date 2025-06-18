@@ -78,11 +78,12 @@ async def update_assignment(id: int, assignment: NewAssignment, user: User = Dep
     return AssignmentLogic.update_assignment_by_id(id, assignment, assert_user_authorized)
 
 @router.post("/api/assignment-requests/new")
-async def request_assignment(assignment_request: NewAssignmentRequest, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
+async def request_assignment(assignment_request: NewAssignmentRequest, request: Request, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
     if settings.is_use_mock:
         return Response(200)
 
-    AssignmentLogic.request_assignment(assignment_request, user.id)
+    origin = request.headers.get("origin", "http://localhost:3000")
+    AssignmentLogic.request_assignment(assignment_request, user.id, origin)
     return {"message": "Assignment requested successfully."}
 
 @router.get("/api/assignment-requests/{id}")
