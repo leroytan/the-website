@@ -47,6 +47,10 @@ export interface TuitionListingFilters {
     name: string;
     id: string;
   }[];
+  locations: {
+    name: string;
+    id: string;
+  }[];
 }
 
 export interface User {

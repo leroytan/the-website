@@ -61,7 +61,7 @@ class PaymentLogic:
                     "url": checkout_session["url"]}
         except stripe.error.StripeError as e:
             # Handle Stripe-specific errors
-            raise HTTPException(status_code=503, detail=f"Payment processing error on stripe. {e.get('message', str(e))}")
+            raise HTTPException(status_code=503, detail=f"Payment processing error on stripe. {e.user_message}")
         except Exception as e:
             raise e
         

@@ -191,6 +191,69 @@ const AddAssignmentOverlay = ({
   // Example fee options
   const feeOptions = ["25", "30", "35", "40", "45"];
 
+  const locations = [
+    "Ang Mo Kio",
+    "Bedok North",
+    "Bedok South",
+    "Bishan",
+    "Bukit Batok",
+    "Bukit Merah",
+    "Bukit Panjang",
+    "Bukit Timah",
+    "Central Area",
+    "Changi",
+    "Changi Bay",
+    "Choa Chu Kang",
+    "Clementi",
+    "Geylang",
+    "Hougang",
+    "Jurong East",
+    "Jurong West",
+    "Kallang",
+    "Lim Chu Kang",
+    "Mandai",
+    "Marine Parade",
+    "Newton",
+    "Novena",
+    "Orchard",
+    "Outram",
+    "Pasir Ris",
+    "Paya Lebar",
+    "Pioneer",
+    "Punggol",
+    "Queenstown",
+    "River Valley",
+    "Rochor",
+    "Seletar",
+    "Sembawang",
+    "Sengkang",
+    "Serangoon",
+    "Simpang",
+    "Southern Islands",
+    "Straits View",
+    "Sungei Kadut",
+    "Tampines",
+    "Tanglin",
+    "Tengah",
+    "Thomson",
+    "Toa Payoh",
+    "Tuas",
+    "Western Islands",
+    "Western Water Catchment",
+    "Woodlands",
+    "Yishun",
+    "Boon Lay",
+    "Ghim Moh",
+    "Gul",
+    "Kent Ridge",
+    "Nanyang",
+    "Pasir Laba",
+    "Teban Gardens",
+    "Toh Tuck",
+    "Tuas South",
+    "West Coast",
+  ];
+
   return (
     <>
       {showOverlay && <Dialog>
@@ -244,19 +307,20 @@ const AddAssignmentOverlay = ({
                 className="w-full rounded-md text-sm"/>
             </div>
 
+
             {/* Location Field */}
             <div>
               <h3 className="text-base font-medium text-customDarkBlue mb-2">
                 Location <span className="text-red-500">*</span>
               </h3>
-              <Input
-                type="text"
-                name="location"
-                placeholder="Location"
-                value={formData.location}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-customYellow"
+              <DropDown
+                placeholder="- Select One -"
+                stringOnDisplay={formData.location}
+                stateController={(value) => {
+                  setFormData({ ...formData, location: value });
+                }}
+                iterable={locations}
+                className="w-full rounded-md text-sm"
               />
             </div>
 

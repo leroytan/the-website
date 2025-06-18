@@ -89,7 +89,7 @@ class Assignment(Base, SerializerMixin):
     lesson_duration = Column(Integer, nullable=False)  # Duration in minutes
     weekly_frequency = Column(Integer, nullable=False)
     special_requests = Column(String, nullable=True)
-    location = Column(String, nullable=False)
+    location_id = Column(Integer, ForeignKey('Location.id'), nullable=False)  # Foreign key to Location
     status = Column(ENUM(AssignmentStatus), default=AssignmentStatus.OPEN)
 
     # Relationships
@@ -97,6 +97,7 @@ class Assignment(Base, SerializerMixin):
     tutor = relationship('Tutor', foreign_keys=[tutor_id])
     subjects = relationship('Subject', secondary='AssignmentSubject', back_populates='assignments')
     level = relationship('Level', foreign_keys=[level_id], back_populates='assignments')
+    location = relationship('Location', foreign_keys=[location_id], back_populates='assignments')
     assignment_requests = relationship('AssignmentRequest', back_populates='assignment')
     available_slots = relationship('AssignmentSlot', back_populates='assignment', primaryjoin="Assignment.id == AssignmentSlot.assignment_id")
 
@@ -164,6 +165,15 @@ class SpecialSkill(Base):
     name = Column(String, unique=True, nullable=False)
     tutors = relationship('Tutor', secondary='TutorSpecialSkill', back_populates='special_skills')
 
+    @hybrid_property
+    def filter_id(self):
+        return f"special_skill_{self.name.lower().replace(' ', '_')}"
+    
+    @filter_id.expression
+    def filter_id(cls):
+        # This is used in SQL queries (e.g. SpecialSkill.filter_id == ...)
+        return func.concat("special_skill_", func.replace(func.lower(cls.name), " ", "_"))
+
 class TutorSpecialSkill(Base):
     __tablename__ = "TutorSpecialSkill"
 
@@ -185,11 +195,14 @@ class Subject(Base):
     assignments = relationship('Assignment', secondary='AssignmentSubject', back_populates='subjects')
 
     @hybrid_property
-    def filterId(self):
-        """
-        Returns the filter ID for the subject
-        """
-        return f"subject_{self.id}"
+    def filter_id(self):
+        return f"subject_{self.name.lower().replace(' ', '_')}"
+    
+    @filter_id.expression
+    def filter_id(cls):
+        # This is used in SQL queries (e.g. Subject.filter_id == ...)
+        return func.concat("subject_", func.replace(func.lower(cls.name), " ", "_"))
+
     
 class TutorSubject(Base):
     __tablename__ = "TutorSubject"
@@ -219,11 +232,13 @@ class Level(Base, SortableMixin):
     assignments = relationship('Assignment', back_populates='level')
 
     @hybrid_property
-    def filterId(self):
-        """
-        Returns the filter ID for the level
-        """
-        return f"level_{self.id}"
+    def filter_id(self):
+        return f"level_{self.name.lower().replace(' ', '_')}"
+    
+    @filter_id.expression
+    def filter_id(cls):
+        # This is used in SQL queries (e.g. Level.filter_id == ...)
+        return func.concat("level_", func.replace(func.lower(cls.name), " ", "_"))
     
 class TutorLevel(Base):
     __tablename__ = "TutorLevel"
@@ -232,6 +247,27 @@ class TutorLevel(Base):
     tutor_id = Column(Integer, ForeignKey('Tutor.id'))
     level_id = Column(Integer, ForeignKey('Level.id'))
     
+
+class Location(Base):
+    """
+    Location model
+    """
+    __tablename__ = 'Location'
+
+    # Columns
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+
+    assignments = relationship('Assignment', back_populates='location')
+
+    @hybrid_property
+    def filter_id(self):
+        return f"location_{self.name.lower().replace(' ', '_')}"
+    
+    @filter_id.expression
+    def filter_id(cls):
+        # This is used in SQL queries (e.g. Location.filter_id == ...)
+        return func.concat("location_", func.replace(func.lower(cls.name), " ", "_"))
 
 class PrivateChat(Base, SerializerMixin):
     __tablename__ = 'PrivateChat'

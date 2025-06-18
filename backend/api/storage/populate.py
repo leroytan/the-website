@@ -3,7 +3,7 @@ import datetime
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, AssignmentSubject,
-                                ChatMessage, Level, PrivateChat, SpecialSkill,
+                                ChatMessage, Level, Location, PrivateChat, SpecialSkill,
                                 Subject, Tutor, TutorLevel, TutorSpecialSkill,
                                 TutorSubject, User, ChatMessageType)
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ def utc_now():
 import random
 
 
-def generate_bulk_assignments(session: Session, users: list[User], tutors: list[Tutor], subjects: list[Subject], levels: list[Level], count=50, seed=42):
+def generate_bulk_assignments(session: Session, users: list[User], tutors: list[Tutor], subjects: list[Subject], levels: list[Level], locations: list[Location], count=50, seed=42):
     """
     Generate a batch of assignments with reproducible data using a random seed.
     
@@ -34,10 +34,6 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
     random.seed(seed)
 
     status_choices = [AssignmentStatus.OPEN, AssignmentStatus.FILLED]
-    locations = [
-        "Orchard", "Woodlands", "Clementi", "Pasir Ris", "Ang Mo Kio",
-        "Hougang", "Tampines", "Yishun", "Bukit Timah", "Sengkang"
-    ]
     time_slots = [("Monday", "16:00", "18:00"), ("Wednesday", "18:00", "20:00"), ("Saturday", "10:00", "12:00"),
                   ("Thursday", "14:00", "16:00"), ("Sunday", "11:00", "13:00")]
     
@@ -58,6 +54,7 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
         assigned_tutor = random.choice(tutors + [None])
         level = random.choice(levels)
         subject = random.choice(subjects)
+        location = random.choice(locations)
         title = f"{subject.name} Tutoring Session #{i+1}"
         rate = random.choice([30, 35, 40, 45, 50])
         status = random.choice(status_choices)
@@ -73,10 +70,10 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
             weekly_frequency=random.choice([1, 2, 3]),
             special_requests=random.choice(special_requests),
             status=status,
-            location=random.choice(locations) + ", Singapore"
+            location_id=location.id
         )
         session.add(assignment)
-        session.flush()  # Ensure assignment.id is available
+        session.flush()
 
         # Add 1–2 random time slots
         for day, start, end in random.sample(time_slots, k=random.choice([1, 2])):
@@ -356,7 +353,7 @@ def insert_test_data(engine: object) -> bool:
             weekly_frequency=2,
             special_requests="Need help preparing for calculus final exam",
             status=AssignmentStatus.OPEN,
-            location="Jurong East, Singapore"  # Example location
+            location_id=session.query(Location).filter_by(name="Jurong East").one().id
         ),
         Assignment(
             title="Essay-Writing Clinic",
@@ -368,7 +365,7 @@ def insert_test_data(engine: object) -> bool:
             weekly_frequency=1,
             special_requests="Essay writing assistance needed",
             status=AssignmentStatus.FILLED,
-            location="Bukit Batok, Singapore"  # Example location
+            location_id=session.query(Location).filter_by(name="Bukit Batok").one().id
         ),
         Assignment(
             title="Programming Coaching (Python)",
@@ -380,7 +377,7 @@ def insert_test_data(engine: object) -> bool:
             weekly_frequency=3,
             special_requests="Need help with Python programming project",
             status=AssignmentStatus.OPEN,
-            location="Bedok South, Singapore"  # Example location
+            location_id=session.query(Location).filter_by(name="Bedok South").one().id
         )
     ]
     session.add_all(assignments)
@@ -720,8 +717,9 @@ def insert_test_data(engine: object) -> bool:
 
     subjects = session.query(Subject).all()
     levels = session.query(Level).all()
+    locations = session.query(Location).all()
     
-    generate_bulk_assignments(session, users, tutors, subjects, levels, count=50, seed=42)
+    generate_bulk_assignments(session, users, tutors, subjects, levels, locations, count=50, seed=42)
     
     # Final commit
     session.commit()

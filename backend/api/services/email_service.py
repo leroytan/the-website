@@ -12,6 +12,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from api.config import settings
+from api.storage.models import Assignment, AssignmentRequest
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -276,3 +277,33 @@ class GmailEmailService:
                 'success': False,
                 'error': str(error)
             }
+        
+    @staticmethod
+    def notify_new_assignment_request(
+        recipient_email: str,
+        assignment: Assignment,
+        origin: str,
+    ) -> Dict[str, Any]:
+        
+        if recipient_email.endswith('@example.com'):
+            return {"success": False, "error": "Invalid recipient email address."}
+
+        """
+        Notify about a new assignment request via email
+        :param recipient_email: Email address of the recipient
+        :param assignment_details: Details of the assignment request
+        :return: Email sending result
+        """
+        subject = f"New Assignment Application: {assignment.title}"
+        content = f"""
+        You have a new assignment application for your posted assignment "{assignment.title}".
+
+        You may view pending applications at {origin}/dashboard 
+        """
+        
+        return GmailEmailService.send_email(
+            recipient_email=recipient_email,
+            subject=subject,
+            content=content,
+        )
+    

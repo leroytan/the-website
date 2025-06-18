@@ -10,7 +10,7 @@ from api.storage.models import User
 from fastapi import Response
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                AssignmentRequestView, NewAssignment,
-                               NewAssignmentRequest, SearchQuery, SearchResult)
+                               NewAssignmentRequest, SearchQuery, SearchResult, ModifiedAssignmentRequest)
 from api.storage.models import Assignment, User
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
@@ -77,12 +77,13 @@ async def update_assignment(id: int, assignment: NewAssignment, user: User = Dep
     
     return AssignmentLogic.update_assignment_by_id(id, assignment, assert_user_authorized)
 
-@router.post("/api/assignments/{id}/request")
-async def request_assignment(id: int, assignment_request: NewAssignmentRequest, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
+@router.post("/api/assignment-requests/new")
+async def request_assignment(assignment_request: NewAssignmentRequest, request: Request, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:
     if settings.is_use_mock:
         return Response(200)
 
-    AssignmentLogic.request_assignment(id, assignment_request, user.id)
+    origin = request.headers.get("origin", "http://localhost:3000")
+    AssignmentLogic.request_assignment(assignment_request, user.id, origin)
     return {"message": "Assignment requested successfully."}
 
 @router.get("/api/assignment-requests/{id}")
@@ -94,7 +95,7 @@ async def get_assignment_request(id: int, user: User = Depends(RouterAuthUtils.g
     return AssignmentLogic.get_assignment_request_by_id(id, assert_user_authorized)
 
 @router.put("/api/assignment-requests/{id}")
-async def update_assignment_request(id: int, assignment_request: NewAssignmentRequest, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentRequestView:
+async def update_assignment_request(id: int, assignment_request: ModifiedAssignmentRequest, user: User = Depends(RouterAuthUtils.get_current_user)) -> AssignmentRequestView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     

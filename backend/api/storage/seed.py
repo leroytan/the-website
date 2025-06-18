@@ -39,9 +39,79 @@ def seed_levels(db: Session):
     db.add_all(levels)
     db.commit()
 
+
+def seed_locations(db: Session):
+    locations = [
+        "Ang Mo Kio",
+        "Bedok North",
+        "Bedok South",
+        "Bishan",
+        "Bukit Batok",
+        "Bukit Merah",
+        "Bukit Panjang",
+        "Bukit Timah",
+        "Central Area",
+        "Changi",
+        "Changi Bay",
+        "Choa Chu Kang",
+        "Clementi",
+        "Geylang",
+        "Hougang",
+        "Jurong East",
+        "Jurong West",
+        "Kallang",
+        "Lim Chu Kang",
+        "Mandai",
+        "Marine Parade",
+        "Newton",
+        "Novena",
+        "Orchard",
+        "Outram",
+        "Pasir Ris",
+        "Paya Lebar",
+        "Pioneer",
+        "Punggol",
+        "Queenstown",
+        "River Valley",
+        "Rochor",
+        "Seletar",
+        "Sembawang",
+        "Sengkang",
+        "Serangoon",
+        "Simpang",
+        "Southern Islands",
+        "Straits View",
+        "Sungei Kadut",
+        "Tampines",
+        "Tanglin",
+        "Tengah",
+        "Thomson",
+        "Toa Payoh",
+        "Tuas",
+        "Western Islands",
+        "Western Water Catchment",
+        "Woodlands",
+        "Yishun",
+        "Boon Lay",
+        "Ghim Moh",
+        "Gul",
+        "Kent Ridge",
+        "Nanyang",
+        "Pasir Laba",
+        "Teban Gardens",
+        "Toh Tuck",
+        "Tuas South",
+        "West Coast",
+    ]
+
+    from api.storage.models import Location
+    db.add_all([Location(name=location) for location in locations])
+    db.commit()
+
 def seed_database(db: Session):
     seed_subjects(db)
     seed_levels(db)
+    seed_locations(db)
     
     # Optionally, you can log the seeding process
-    print(f"Database seeded with subjects and levels at {datetime.datetime.now()}.")
+    print(f"Database seeded with subjects, levels and locations at {datetime.datetime.now()}.")

@@ -72,8 +72,8 @@ paths:
     $ref: './api/assignments/new.yaml'
   /api/assignments/{id}:
     $ref: './api/assignments/{id}.yaml'
-  /api/assignments/{id}/request:
-    $ref: './api/assignments/{id}/request.yaml'
+  /api/assignment-requests/new:
+    $ref: './api/assignment-requests/new.yaml'
   /api/assignment-requests/{id}:
     $ref: './api/assignment-requests/{id}.yaml'
   /api/assignment-requests/{id}/change-status:
