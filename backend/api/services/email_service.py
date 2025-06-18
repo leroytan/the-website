@@ -1,7 +1,5 @@
 import base64
 import os
-import json
-import tempfile
 from typing import Optional, Dict, Any, List, Union
 
 from email.mime.text import MIMEText
@@ -9,7 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -32,46 +30,30 @@ class GmailEmailService:
     
     @staticmethod
     def _get_credentials(
-        credentials_json_str: str, 
-        token_path: Optional[str] = None
+        refresh_token: str,
+        client_id: str,
+        client_secret: str,
+        token_uri: str = 'https://oauth2.googleapis.com/token'
     ) -> Credentials:
         """
-        Obtain OAuth 2.0 credentials, refreshing or creating new if needed
+        Obtain OAuth 2.0 credentials using refresh token
         
-        :param credentials_json_str: JSON string of OAuth credentials
-        :param token_path: Path to store/load OAuth token
+        :param refresh_token: OAuth refresh token
+        :param client_id: OAuth client ID
+        :param client_secret: OAuth client secret
+        :param token_uri: Token endpoint URL
         :return: Google OAuth Credentials
         """
-        token_path = token_path or os.getenv('GMAIL_TOKEN_PATH', 'token.json')
-        credentials = None
+        credentials = Credentials(
+            None,
+            refresh_token=refresh_token,
+            token_uri=token_uri,
+            client_id=client_id,
+            client_secret=client_secret
+        )
         
-        # Try to load existing credentials
-        if os.path.exists(token_path):
-            credentials = Credentials.from_authorized_user_file(
-                token_path,
-                GmailEmailService.SCOPES
-            )
-        
-        # If no valid credentials, initiate OAuth flow
-        if not credentials or not credentials.valid:
-            # Create a temporary file with the credentials JSON
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_credentials_file:
-                temp_credentials_file.write(credentials_json_str)
-                temp_credentials_file_path = temp_credentials_file.name
-            
-            try:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    temp_credentials_file_path,
-                    GmailEmailService.SCOPES
-                )
-                credentials = flow.run_local_server(port=0)
-                
-                # Save the credentials for the next run
-                with open(token_path, 'w') as token:
-                    token.write(credentials.to_json())
-            finally:
-                # Clean up the temporary file
-                os.unlink(temp_credentials_file_path)
+        # Refresh the credentials to get a new access token
+        credentials.refresh(Request())
         
         return credentials
     
@@ -87,11 +69,12 @@ class GmailEmailService:
     
     @staticmethod
     def send_password_reset_email(
-        recipient_email: str, 
-        reset_link: str, 
+        recipient_email: str,
+        reset_link: str,
         sender_email: Optional[str] = None,
-        credentials_json_str: Optional[str] = None,
-        token_path: Optional[str] = None
+        refresh_token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Send a password reset email via Gmail API
@@ -99,21 +82,25 @@ class GmailEmailService:
         :param recipient_email: Email address of the recipient
         :param reset_link: Secure password reset link
         :param sender_email: Optional sender email (defaults to authenticated user)
-        :param credentials_json_str: Optional credentials JSON string (defaults to settings)
-        :param token_path: Optional path to store/load OAuth token
+        :param refresh_token: OAuth refresh token
+        :param client_id: OAuth client ID
+        :param client_secret: OAuth client secret
         :return: Email sending result
         """
         try:
             # Use settings credentials if not provided
-            credentials_json_str = credentials_json_str or settings.gmail_credentials_json
+            refresh_token = refresh_token or settings.gmail_refresh_token
+            client_id = client_id or settings.gmail_client_id
+            client_secret = client_secret or settings.gmail_client_secret
             
-            if not credentials_json_str:
-                raise ValueError("GMAIL_CREDENTIALS_JSON must be provided")
+            if not (refresh_token and client_id and client_secret):
+                raise ValueError("Gmail OAuth credentials must be provided")
             
             # Get credentials and service
             credentials = GmailEmailService._get_credentials(
-                credentials_json_str, 
-                token_path
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret
             )
             service = GmailEmailService._get_gmail_service(credentials)
             
@@ -180,8 +167,9 @@ class GmailEmailService:
         cc_emails: Optional[List[str]] = None,
         bcc_emails: Optional[List[str]] = None,
         attachments: Optional[List[Dict[str, Union[str, bytes]]]] = None,
-        credentials_json_str: Optional[str] = None,
-        token_path: Optional[str] = None
+        refresh_token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Send a generic email via Gmail API with advanced features
@@ -198,21 +186,25 @@ class GmailEmailService:
             - 'filename': Name of the file
             - 'content': File content as bytes or base64 encoded string
             - 'mimetype': MIME type of the file (optional, default based on filename)
-        :param credentials_json_str: Optional credentials JSON string (defaults to settings)
-        :param token_path: Optional path to store/load OAuth token
+        :param refresh_token: OAuth refresh token
+        :param client_id: OAuth client ID
+        :param client_secret: OAuth client secret
         :return: Email sending result
         """
         try:
             # Use settings credentials if not provided
-            credentials_json_str = credentials_json_str or settings.gmail_credentials_json
+            refresh_token = refresh_token or settings.gmail_refresh_token
+            client_id = client_id or settings.gmail_client_id
+            client_secret = client_secret or settings.gmail_client_secret
             
-            if not credentials_json_str:
-                raise ValueError("GMAIL_CREDENTIALS_JSON must be provided")
+            if not (refresh_token and client_id and client_secret):
+                raise ValueError("Gmail OAuth credentials must be provided")
             
             # Get credentials and service
             credentials = GmailEmailService._get_credentials(
-                credentials_json_str,
-                token_path
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret
             )
             service = GmailEmailService._get_gmail_service(credentials)
             

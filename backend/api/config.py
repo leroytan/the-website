@@ -40,7 +40,9 @@ class Settings(BaseSettings):
     r2_bucket_name: str
     r2_bucket_region: str = "auto"  # Default region for R2
     allowed_origins: str = "*"
-    gmail_credentials_json: str  # JSON string for Gmail credentials
+    gmail_refresh_token: str  # OAuth refresh token for Gmail
+    gmail_client_id: str  # OAuth client ID for Gmail
+    gmail_client_secret: str  # OAuth client secret for Gmail
     gmail_startup_notification_email: str = ""
 
     @property
