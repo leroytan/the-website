@@ -1,6 +1,12 @@
 import base64
+import os
+import json
+import tempfile
+from typing import Optional, Dict, Any, List, Union
+
 from email.mime.text import MIMEText
-from typing import Optional, Dict, Any
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -8,9 +14,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from api.config import settings
-import os
-import json
-import tempfile
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -166,3 +169,118 @@ class GmailEmailService:
         :return: Complete reset link
         """
         return f"{base_url}?token={reset_token}"
+    
+    @staticmethod
+    def send_email(
+        recipient_email: str,
+        subject: str,
+        content: str,
+        content_type: str = 'plain',
+        sender_email: Optional[str] = None,
+        cc_emails: Optional[List[str]] = None,
+        bcc_emails: Optional[List[str]] = None,
+        attachments: Optional[List[Dict[str, Union[str, bytes]]]] = None,
+        credentials_json_str: Optional[str] = None,
+        token_path: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Send a generic email via Gmail API with advanced features
+
+        :param recipient_email: Primary recipient email address
+        :param subject: Email subject line
+        :param content: Email body content
+        :param content_type: Content type (default: 'plain', can be 'html')
+        :param sender_email: Optional sender email (defaults to authenticated user)
+        :param cc_emails: Optional list of CC email addresses
+        :param bcc_emails: Optional list of BCC email addresses
+        :param attachments: Optional list of attachments
+            Each attachment is a dict with keys:
+            - 'filename': Name of the file
+            - 'content': File content as bytes or base64 encoded string
+            - 'mimetype': MIME type of the file (optional, default based on filename)
+        :param credentials_json_str: Optional credentials JSON string (defaults to settings)
+        :param token_path: Optional path to store/load OAuth token
+        :return: Email sending result
+        """
+        try:
+            # Use settings credentials if not provided
+            credentials_json_str = credentials_json_str or settings.gmail_credentials_json
+            
+            if not credentials_json_str:
+                raise ValueError("GMAIL_CREDENTIALS_JSON must be provided")
+            
+            # Get credentials and service
+            credentials = GmailEmailService._get_credentials(
+                credentials_json_str,
+                token_path
+            )
+            service = GmailEmailService._get_gmail_service(credentials)
+            
+            # Prepare multipart message
+            message = MIMEMultipart()
+            sender = sender_email or 'me'  # 'me' refers to authenticated user
+            
+            # Set basic message headers
+            message['to'] = recipient_email
+            if cc_emails:
+                message['cc'] = ', '.join(cc_emails)
+            if bcc_emails:
+                message['bcc'] = ', '.join(bcc_emails)
+            message['subject'] = subject
+            
+            # Add message body
+            body = MIMEText(content, content_type)
+            message.attach(body)
+            
+            # Handle attachments
+            if attachments:
+                for attachment in attachments:
+                    # Ensure required keys are present
+                    if 'filename' not in attachment or 'content' not in attachment:
+                        raise ValueError("Each attachment must have 'filename' and 'content'")
+                    
+                    # Determine content and mimetype
+                    file_content = attachment['content']
+                    filename = attachment['filename']
+                    mimetype = attachment.get('mimetype')
+                    
+                    # Convert string content to bytes if needed
+                    if isinstance(file_content, str):
+                        # Check if it's base64 encoded
+                        try:
+                            file_content = base64.b64decode(file_content)
+                        except:
+                            file_content = file_content.encode('utf-8')
+                    
+                    # Create attachment part
+                    part = MIMEApplication(file_content, _subtype=mimetype or 'octet-stream')
+                    part.add_header('Content-Disposition', 'attachment', filename=filename)
+                    message.attach(part)
+            
+            # Encode message
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            
+            # Send message
+            result = service.users().messages().send(
+                userId=sender,
+                body={'raw': raw_message}
+            ).execute()
+            
+            return {
+                'success': True,
+                'message_id': result.get('id'),
+                'thread_id': result.get('threadId')
+            }
+        
+        except HttpError as error:
+            print(f'An HTTP error occurred: {error}')
+            return {
+                'success': False,
+                'error': str(error)
+            }
+        except Exception as error:
+            print(f'An error occurred: {error}')
+            return {
+                'success': False,
+                'error': str(error)
+            }

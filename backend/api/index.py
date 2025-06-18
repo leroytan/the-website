@@ -18,7 +18,7 @@ async def startup_event():
     """
     Perform startup tasks, including sending a notification email.
     """
-    # send_startup_notification_email()
+    send_startup_notification_email()
     pass
 
 for router in routers:
