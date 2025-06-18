@@ -2,6 +2,7 @@
 
 import { Tutor, User } from "@/components/types";
 import { createContext, useContext, useEffect, useState } from "react";
+import { fetchWithTokenCheck } from "../utils/tokenVersionMismatch";
 
 interface AuthContextType {
   user: User | null;
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchAuth = async () => {
     try {
-      const res = await fetch("/api/me", {
+      const res = await fetchWithTokenCheck(`/api/me`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Not authenticated");

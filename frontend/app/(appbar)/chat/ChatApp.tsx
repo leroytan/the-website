@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 const ChatApp = () => {
 
@@ -368,7 +369,7 @@ const ChatApp = () => {
 
   const fetchChats = async () => {
     try {
-      const response = await fetch(`/api/chats`, {
+      const response = await fetchWithTokenCheck(`/api/chats`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -408,7 +409,7 @@ const ChatApp = () => {
         params.append("created_before", createdBefore);
       }
 
-      const response = await fetch(`/api/chat/${chatId}?${params}`, {
+      const response = await fetchWithTokenCheck(`/api/chat/${chatId}?${params}`, {
         method: "GET",
         credentials: "include",
       });
@@ -498,7 +499,7 @@ const ChatApp = () => {
   }, [chatData, selectedChat]);
 
   const initWebSocket = async () => {
-    const response = await fetch(`/api/chat/jwt`, {
+    const response = await fetchWithTokenCheck(`/api/chat/jwt`, {
       credentials: "include",
     });
     if (!response.ok) {
@@ -554,7 +555,7 @@ const ChatApp = () => {
     if (chatMessages.length < 10) {
       fetchHistoricalMessages(chatId);
     }
-    const response = await fetch(`/api/chat/${chatId}/read`, {
+    const response = await fetchWithTokenCheck(`/api/chat/${chatId}/read`, {
       method: "POST",
       credentials: "include",
     });
@@ -731,7 +732,7 @@ const ChatApp = () => {
                       console.error("New message has to be a valid user ID");
                       return;
                     }
-                    const response = await fetch(`/api/chat/get-or-create`, {
+                    const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",

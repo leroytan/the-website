@@ -10,6 +10,7 @@ import Input from "../../../../components/input";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Plus, X, CheckCircle2 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 type Direction = "left" | "right";
 
@@ -167,12 +168,13 @@ const AddAssignmentOverlay = ({
     };
 
     try {
-      const data = await fetch("/api/assignments/new", {
+      const data = await fetchWithTokenCheck(`/api/assignments/new`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(listingToAdd),
+        credentials: "include",
       });
       if (!data.ok) {
         throw new Error("Failed to create assignment");

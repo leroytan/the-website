@@ -33,9 +33,8 @@ async def search_assignments(request: Request, response: Response, query: str = 
         page_number=page_number
     )
 
-    user = RouterAuthUtils.get_current_user(request)
     try:
-        pass
+        user = RouterAuthUtils.get_current_user(request)
     except HTTPException:
         user = None
 
@@ -62,9 +61,8 @@ async def get_assignment(id: int, request: Request, response: Response) -> Assig
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    user = RouterAuthUtils.get_current_user(request)
     try:
-        pass
+        user = RouterAuthUtils.get_current_user(request)
     except HTTPException:
         user = None
     

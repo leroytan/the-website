@@ -23,6 +23,7 @@ import { Button } from "./button";
 import { usePathname, useRouter } from "next/navigation";
 import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssignmentButton";
 import { useError } from "@/context/errorContext";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -107,7 +108,7 @@ const UserMenu = () => {
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch("/api/me", {
+                    const response = await fetchWithTokenCheck(`/api/me`, {
                       method: "PUT",
                       headers: {
                         "Content-Type": "application/json",

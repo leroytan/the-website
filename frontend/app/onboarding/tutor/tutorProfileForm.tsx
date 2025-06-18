@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useError } from "@/context/errorContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 type TutorProfileFormData = {
   bio: string;
@@ -47,7 +48,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
 
     // Upload to your API
     try {
-      const response = await fetch("/api/me/upload-profile-photo/", {
+      const response = await fetchWithTokenCheck(`/api/me/upload-profile-photo/`, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -122,7 +123,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
       rating: 0, //remove later
     };
     try {
-      const response = await fetch("/api/tutors/new", {
+      const response = await fetchWithTokenCheck(`/api/tutors/new`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -143,7 +144,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
   const handleCancel = async () => {
     try {
       // Update backend to indicate user no longer intends to be a tutor
-      const response = await fetch("/api/me", {
+      const response = await fetchWithTokenCheck(`/api/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

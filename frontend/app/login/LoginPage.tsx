@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import LoginForm from "./LoginForm";
 import { useAuth } from "@/context/authContext";
 import { Tutor, User } from "@/components/types";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LoginPage() {
   useEffect(() => {
     const tryRefresh = async () => {
       try {
-        const res = await fetch("/api/auth/refresh", {
+        const res = await fetch(`/api/auth/refresh`, {
           method: "POST",
           credentials: "include",
         });
@@ -25,7 +26,7 @@ export default function LoginPage() {
         if (res.ok) {
           await refetch(); // refresh user and tutor data for authcontext
           // Fetch user state and set cookies
-          const meRes = await fetch("/api/me");
+          const meRes = await fetchWithTokenCheck(`/api/me"`);
           const { user, tutor }: { user: User; tutor: Tutor | null } =
             await meRes.json();
 
