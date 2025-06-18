@@ -434,6 +434,24 @@ class AssignmentLogic:
             return (assignment.owner_id, assignment_request.tutor_id)
         
     @staticmethod
+    def get_assignment_owner_id(assignment_request_id: int) -> User:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).options(joinedload(AssignmentRequest.assignment)).filter_by(id=assignment_request_id).first()
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+            assignment = assignment_request.assignment
+            if not assignment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found for the given request"
+                )
+            return assignment.owner_id
+        
+        
+    @staticmethod
     def get_lesson_duration(assignment_request_id: int) -> int:
         with Session(StorageService.engine) as session:
             assignment_request = session.query(AssignmentRequest).options(joinedload(AssignmentRequest.assignment)).filter(
@@ -530,7 +548,7 @@ class AssignmentLogic:
                 session.add(assignment_slot)
             
             session.commit()
-            session.refresh(assignment_request)
+            session.refresh(assignment_request, ["assignment"])
 
             # Send a chat message to the assignment owner
             assignment = assignment_request.assignment
