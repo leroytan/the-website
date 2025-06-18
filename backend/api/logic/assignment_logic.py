@@ -328,15 +328,22 @@ class AssignmentLogic:
     @staticmethod
     def change_assignment_request_status(assignment_request_id: str | int, status: str, assert_user_authorized: Callable[[int], None]) -> None:
         with Session(StorageService.engine) as session:
+            status = getattr(AssignmentRequestStatus, status, None)
+            if status != AssignmentRequestStatus.REJECTED:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid status. Only 'REJECTED' is allowed."
+                )
+
             # Find the assignment request
-            assignment_request = StorageService.find(session, {"id": assignment_request_id}, AssignmentRequest, find_one=True)
+            assignment_request = session.query(AssignmentRequest).options(
+                joinedload(AssignmentRequest.assignment)
+            ).filter_by(id=assignment_request_id).first()
             if not assignment_request:
                 raise HTTPException(
                     status_code=404,
                     detail="Assignment request not found"
                 )
-
-            session.add(assignment_request)
 
             # TODO: Determine if owner should be allowed to reopen request once it is rejected or accepted
             # if assignment_request.status != AssignmentRequestStatus.PENDING:
@@ -349,17 +356,29 @@ class AssignmentLogic:
             assert_user_authorized(assignment_request.assignment.owner_id)
 
             # Update the assignment with the tutor_id
-            assignment = StorageService.update(session, {"id": assignment_request.assignment_id},
-                                               {"tutor_id": assignment_request.tutor_id, "status": AssignmentStatus.FILLED},
-                                                 Assignment)
+            assignment = assignment_request.assignment
             if not assignment:
                 raise HTTPException(
                     status_code=404,
                     detail="Assignment not found"
                 )
+            if assignment.status != AssignmentStatus.OPEN:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Assignment is not open for requests"
+                )
+            if assignment.tutor_id is not None:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Assignment already has a tutor assigned"
+                )
             
-            # Directly access the enum member using getattr
-            assignment_request.status = getattr(AssignmentRequestStatus, status, None)
+            if status == AssignmentRequestStatus.ACCEPTED:
+                # If the status is ACCEPTED, we need to accept the assignment request
+                AssignmentLogic.accept_assignment_request(assignment_request_id)
+            
+            # Update the assignment request status
+            assignment_request.status = status
 
             # Optionally handle invalid status
             if assignment_request.status is None:
@@ -413,6 +432,24 @@ class AssignmentLogic:
             session.commit()
 
             return (assignment.owner_id, assignment_request.tutor_id)
+        
+    @staticmethod
+    def get_assignment_owner_id(assignment_request_id: int) -> User:
+        with Session(StorageService.engine) as session:
+            assignment_request = session.query(AssignmentRequest).options(joinedload(AssignmentRequest.assignment)).filter_by(id=assignment_request_id).first()
+            if not assignment_request:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment request not found"
+                )
+            assignment = assignment_request.assignment
+            if not assignment:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Assignment not found for the given request"
+                )
+            return assignment.owner_id
+        
         
     @staticmethod
     def get_lesson_duration(assignment_request_id: int) -> int:
@@ -511,7 +548,7 @@ class AssignmentLogic:
                 session.add(assignment_slot)
             
             session.commit()
-            session.refresh(assignment_request)
+            session.refresh(assignment_request, ["assignment"])
 
             # Send a chat message to the assignment owner
             assignment = assignment_request.assignment

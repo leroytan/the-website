@@ -29,19 +29,27 @@ class AuthService(AuthInterface):
         return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
     
     @staticmethod
-    def create_access_token(token_data: TokenData, expires_delta: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)) -> str:
+    def create_access_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)) -> str:
         Utils.validate_non_empty(token_data=token_data)
         to_encode = token_data.model_dump()
         expire = datetime.now(timezone.utc) + expires_delta
-        to_encode.update({"exp": expire, "type": "access"})
+        to_encode.update({
+            "exp": expire,
+            "type": "access",
+            "token_version": token_version
+        })
         return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
     @staticmethod
-    def create_refresh_token(token_data: TokenData, expires_delta: timedelta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)) -> str:
+    def create_refresh_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)) -> str:
         Utils.validate_non_empty(token_data=token_data)
         to_encode = token_data.model_dump()
         expire = datetime.now(timezone.utc) + expires_delta
-        to_encode.update({"exp": expire, "type": "refresh"})
+        to_encode.update({
+            "exp": expire,
+            "type": "refresh",
+            "token_version": token_version
+        })
         return jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
     @staticmethod
@@ -56,10 +64,18 @@ class AuthService(AuthInterface):
         if not is_refresh and payload.get("type") != "access":
             raise ValueError("Invalid access token")
         
-        payload.pop("exp")
-        payload.pop("type")
+        # Create a copy of the payload to modify
+        token_payload = payload.copy()
         
-        return TokenData(**payload)
+        # Remove time-related fields
+        token_payload.pop("exp")
+        token_payload.pop("type")
+        
+        # Ensure token_version is preserved
+        if "token_version" in payload:
+            token_payload["token_version"] = payload["token_version"]
+        
+        return TokenData(**token_payload)
 
     @staticmethod
     def refresh_tokens(refresh_token: str) -> TokenPair:
@@ -74,3 +90,43 @@ class AuthService(AuthInterface):
             access_token=new_access_token,
             refresh_token=new_refresh_token
         )
+
+    @staticmethod
+    def create_password_reset_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(hours=1)) -> str:
+        """
+        Create a password reset token with a specific expiration time
+        """
+        Utils.validate_non_empty(token_data=token_data)
+        to_encode = token_data.model_dump()
+        expire = datetime.now(timezone.utc) + expires_delta
+        to_encode.update({
+            "exp": expire,
+            "type": "password_reset",
+            "token_version": token_version
+        })
+        return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+    @staticmethod
+    def verify_password_reset_token(token: str) -> TokenData:
+        """
+        Verify a password reset token and return the token data
+        """
+        Utils.validate_non_empty(token=token)
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            
+            # Validate token type
+            if payload.get("type") != "password_reset":
+                raise ValueError("Invalid password reset token")
+            
+            # Create a copy of the payload to modify
+            token_payload = payload.copy()
+            
+            # Remove time-related fields
+            token_payload.pop("exp")
+            token_payload.pop("type")
+            
+            # Preserve any additional fields like token_version if present
+            return TokenData(**token_payload)
+        except jwt.JWTError as e:
+            raise ValueError("Invalid or expired password reset token")

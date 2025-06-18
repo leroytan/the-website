@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Home, Search } from 'react-feather'; // Assuming you're using React Feather icons
+import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatchClient';
 
 const PaymentSuccess = () => {
   const router = useRouter();
@@ -44,7 +45,7 @@ const PaymentSuccess = () => {
       return;
     }
     // Fetching the chat creation or retrieval
-    const response = await fetch(`/api/chat/get-or-create`, {
+    const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

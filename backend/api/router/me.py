@@ -2,6 +2,8 @@ from api.logic.assignment_logic import AssignmentLogic
 from api.logic.tutor_logic import TutorLogic
 from api.logic.user_logic import UserLogic
 from api.router.auth_utils import RouterAuthUtils
+from fastapi import Depends, File, UploadFile
+from api.storage.models import User
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                 UserView, UserUpdateRequest)
 from api.storage.models import User

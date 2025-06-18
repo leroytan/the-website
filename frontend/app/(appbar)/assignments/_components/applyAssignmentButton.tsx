@@ -5,6 +5,7 @@ import { useAuth } from "../../../../context/authContext";
 import { AvailableSlotsDialog } from "./AvailableSlotsDialog";
 import { Dialog } from "../../../../components/dialog";
 import { useRouter } from "next/navigation";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 interface TimeSlot {
   day: string;
@@ -40,7 +41,7 @@ const ApplyAssignmentButton = ({
   async function handleSubmit(slots: TimeSlot[]) {
     !isApplied && setIsApplied((x) => !x);
     try {
-      const data = await fetch(`/api/assignments/${assignmentId}/request`, {
+      const data = await fetchWithTokenCheck(`/api/assignments/${assignmentId}/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

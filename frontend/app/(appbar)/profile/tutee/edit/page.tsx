@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, GraduationCap, School, Upload, Save } from "lucide-rea
 import Image from "next/image"
 import Link from "next/link"
 import ProfilePictureUploader from "@/app/(appbar)/tutors/[id]/ProfilePictureUploader"
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 interface UserProfile {
   id: number
@@ -35,7 +36,7 @@ export default function TuteeProfileEditPage() {
       // Fetch user profile data
       const fetchProfile = async () => {
         try {
-          const response = await fetch('/api/me')
+          const response = await fetchWithTokenCheck(`/api/me`)
           if (!response.ok) throw new Error('Failed to fetch profile')
           const data = await response.json()
           setProfile(data.user)
@@ -69,7 +70,7 @@ export default function TuteeProfileEditPage() {
       const formData = new FormData()
       if (newImage) {
         formData.append('file', newImage)
-        const uploadResponse = await fetch('/api/me/upload-profile-photo', {
+        const uploadResponse = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
           method: 'POST',
           body: formData,
         })
@@ -77,7 +78,7 @@ export default function TuteeProfileEditPage() {
       }
       
       // Update profile data
-      const response = await fetch('/api/me', {
+      const response = await fetchWithTokenCheck(`/api/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Mail, Phone, GraduationCap, BookOpen, School, MapPin, Edit, Pencil } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 interface UserProfile {
   id: number
@@ -33,7 +34,7 @@ export default function TuteeProfilePage() {
       // Fetch user profile data
       const fetchProfile = async () => {
         try {
-          const response = await fetch('/api/me')
+          const response = await fetchWithTokenCheck(`/api/me`)
           if (!response.ok) throw new Error('Failed to fetch profile')
           const data = await response.json()
           setProfile(data.user)

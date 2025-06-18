@@ -5,6 +5,9 @@ from api.logic.filter_logic import FilterLogic
 from api.logic.logic import Logic
 from api.logic.sort_logic import SortLogic
 from api.router.auth_utils import RouterAuthUtils
+from fastapi import Depends
+from api.storage.models import User
+from fastapi import Response
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
                                AssignmentRequestView, NewAssignment,
                                NewAssignmentRequest, SearchQuery, SearchResult)
@@ -14,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 router = APIRouter()
 
 @router.get("/api/assignments")
-async def search_assignments(request: Request, query: str = "", filter_by: str = "", sort_by: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[AssignmentPublicView]:
+async def search_assignments(request: Request, response: Response, query: str = "", filter_by: str = "", sort_by: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[AssignmentPublicView]:
     if settings.is_use_mock:
         return mock.get_assignments()
     
@@ -30,12 +33,10 @@ async def search_assignments(request: Request, query: str = "", filter_by: str =
         page_number=page_number
     )
 
-    user = None
     try:
         user = RouterAuthUtils.get_current_user(request)
-    except HTTPException as e:
-        if e.status_code != 401:
-            raise e
+    except HTTPException:
+        user = None
 
     res = AssignmentLogic.search_assignments(search_query, user.id if user else None)
 
@@ -56,16 +57,14 @@ async def new_assignment(new_assignment: NewAssignment, user: User = Depends(Rou
     return AssignmentLogic.new_assignment(new_assignment, user.id)
 
 @router.get("/api/assignments/{id}")
-async def get_assignment(id: int, request: Request) -> AssignmentOwnerView | AssignmentPublicView:
+async def get_assignment(id: int, request: Request, response: Response) -> AssignmentOwnerView | AssignmentPublicView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
     
-    user = None
     try:
         user = RouterAuthUtils.get_current_user(request)
-    except HTTPException as e:
-        if e.status_code != 401:
-            raise e
+    except HTTPException:
+        user = None
     
     return AssignmentLogic.get_assignment_by_id(id, user.id if user else None)
 

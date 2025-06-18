@@ -23,6 +23,7 @@ import DropDown from "@/components/dropdown";
 import MultiSelectButton from "@/components/multiSelectButton";
 import { Tutor } from "@/components/types";
 import TagInput from "@/components/tagInput";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
   const router = useRouter();
@@ -69,7 +70,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
 
     console.log("Submitting form data:", payload);
 
-    const res = await fetch(`/api/tutors/${tutor.id}`, {
+    const res = await fetchWithTokenCheck(`/api/tutors/${tutor.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

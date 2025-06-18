@@ -5,13 +5,14 @@ from api.logic.chat_logic import ChatLogic
 from api.router.models import PaymentRequest
 from api.storage.models import User
 from fastapi import HTTPException
+from typing import Callable
 
 stripe.api_key = settings.stripe_api_key
 
 class PaymentLogic:
 
     @staticmethod
-    def handle_payment_request(payment_request: PaymentRequest, user: User) -> dict:
+    def handle_payment_request(payment_request: PaymentRequest, assert_user_authorized: Callable[[int], None]) -> dict:
         """
         Handles the payment request logic.
         
@@ -23,6 +24,8 @@ class PaymentLogic:
         """
 
         try:
+            assert_user_authorized(AssignmentLogic.get_assignment_owner_id(payment_request.assignment_request_id)) 
+
             lesson_duration = AssignmentLogic.get_lesson_duration(
                 payment_request.assignment_request_id
             )
@@ -47,7 +50,6 @@ class PaymentLogic:
                 }],
                 payment_intent_data={
                     'metadata': {
-                        'user_id': user.id,  # Store user ID in metadata
                         'assignment_request_id': payment_request.assignment_request_id,
                     }
                 },
@@ -59,8 +61,7 @@ class PaymentLogic:
                     "url": checkout_session["url"]}
         except stripe.error.StripeError as e:
             # Handle Stripe-specific errors
-            print(f"Stripe error: {e}")
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=503, detail=f"Payment processing error on stripe. {e.get('message', str(e))}")
         except Exception as e:
             raise e
         

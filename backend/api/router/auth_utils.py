@@ -2,11 +2,11 @@ from api.auth.models import TokenPair
 from api.config import settings
 from api.logic.logic import Logic
 from api.storage.models import User
-from fastapi import HTTPException, Request, Response, WebSocket
+from fastapi import HTTPException, Request, WebSocket, Response
+from typing import Optional
 
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = settings.refresh_token_expire_minutes
-
 
 class RouterAuthUtils:
 
@@ -14,9 +14,9 @@ class RouterAuthUtils:
     def assert_logged_out(request: Request) -> None:
         """
         Check if the user is logged out by verifying the presence of access and refresh tokens.
-        This method checks if both tokens are missing from the response cookies.
+        This method checks if the user is logged out by attempting to retrieve the current user
         Args:
-            response (Response): The response object to check for tokens.
+            reqest (Request): The request object to check for tokens.
         Returns:
             bool: True if the user is logged out (both tokens are missing), False otherwise.
         """
@@ -102,9 +102,8 @@ class RouterAuthUtils:
 
     @staticmethod
     def get_current_user(request: Request) -> User:
-        token = request.cookies.get("access_token")
-        user = Logic.get_current_user(token)
-        return user
+        access_token = RouterAuthUtils.get_jwt(request)
+        return RouterAuthUtils.get_user_from_jwt(access_token)
     
     @staticmethod
     def get_user_from_jwt(token: str) -> User:
@@ -116,7 +115,13 @@ class RouterAuthUtils:
         Returns:
             User: The user object extracted from the token.
         """
-        return Logic.get_current_user(token)
+        credentials_exception = HTTPException(
+            status_code=401,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+        return Logic.get_current_user(token, credentials_exception)
     
     @staticmethod
     def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:

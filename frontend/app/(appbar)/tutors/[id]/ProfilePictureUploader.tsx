@@ -17,6 +17,7 @@ import ReactCrop, {
   makeAspectCrop,
   type PercentCrop,
 } from "react-image-crop";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 const ASPECT_RATIO = 1;
 const MIN_DIMENSION = 150;
@@ -50,7 +51,7 @@ const ProfilePictureUploader = ({ photoUrl }: ProfilePictureUploaderProps) => {
 
     // Upload to your API
     try {
-      const response = await fetch(`/api/me/upload-profile-photo/`, {
+      const response = await fetchWithTokenCheck(`/api/me/upload-profile-photo/`, {
         method: "POST",
         body: formData,
         credentials: "include",

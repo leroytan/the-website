@@ -3,6 +3,8 @@ import json
 
 from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
+from fastapi import Depends
+from api.storage.models import User
 from api.router.models import ChatCreationInfo, NewChatMessage, ChatPreview
 from api.storage.models import User, ChatMessageType
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
@@ -17,7 +19,7 @@ router = APIRouter()
 
 # Route for getting jwt for websocket purposes
 @router.get("/api/chat/jwt")
-async def get_jwt(request: Request, _: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def get_jwt(request: Request, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     """
     Get JWT for websocket authentication.
 

@@ -12,6 +12,7 @@ import { BASE_URL } from "@/utils/constants";
 import { useAuth } from "@/context/authContext";
 import { User, Tutor } from "@/components/types";
 import ErrorMessage from "@/components/ErrorMessage";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,7 +41,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     if (res.ok) {
       await refetch(); // refresh user and tutor data for authcontext
       // Fetch user state and set cookies
-      const meRes = await fetch("/api/me");
+      const meRes = await fetchWithTokenCheck(`/api/me`);
       const { user, tutor }: { user: User; tutor: Tutor | null } =
         await meRes.json();
 
