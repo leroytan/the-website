@@ -131,6 +131,7 @@ export function FilterSortBar({
     setSelectedSort("");
     setSelectedSubjects([]);
     setSelectedLevels([]);
+    setSelectedLocations([]);
     
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);

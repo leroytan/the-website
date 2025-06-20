@@ -41,7 +41,7 @@ export function AssignmentList({
           const isSelected = assign.id == Number(selectedId);
           return (
             <Link
-              prefetch={true}
+              prefetch={false}
               key={assign.id}
               href={createSelectedURL(searchParams, assign.id!.toString())}
               className={`relative block px-10 py-5 border transition-colors ${

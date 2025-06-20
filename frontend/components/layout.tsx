@@ -77,7 +77,7 @@ const UserMenu = () => {
             className="object-cover w-full h-full"
           />
         </div>
-        <span className="hidden md:block text-sm font-medium text-gray-700">
+        <span className="hidden lg:block text-sm font-medium text-gray-700">
           {user?.name}
         </span>
         <ChevronDown
@@ -195,7 +195,7 @@ export default function ComponentLayout({
   ];
 
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <div className={`${geistSans.variable} ${geistMono.variable} antialiased `}>
       <header
         id="appbar"
         className="bg-white shadow-sm sticky top-0 left-0 right-0 z-20 h-14"
@@ -203,7 +203,7 @@ export default function ComponentLayout({
         {loading ? (
           <LoadingSkeleton />
         ) : (
-          <div className="flex flex-row items-center justify-between px-4 h-full">
+          <div className="flex flex-row items-center justify-between px-4 h-full w-full">
             {/* Mobile Menu Button */}
             <div className="md:hidden">
               <BurgerMenu togglesideBar={toggleSideBar} />
@@ -223,14 +223,14 @@ export default function ComponentLayout({
                   height={2480}
                   className="h-10 md:h-14 w-auto"
                 />
-                <div className="hidden md:block pl-4">
-                  <span className="text-customDarkBlue font-semibold text-xl">
+                <div className="block md:hidden lg:block pl-2 sm:pl-4">
+                  <span className="text-customDarkBlue font-semibold text-sm sm:text-xl">
                     Teach. &nbsp;
                   </span>
-                  <span className="text-customOrange font-semibold text-xl">
+                  <span className="text-customOrange font-semibold text-sm sm:text-xl">
                     Honour. &nbsp;
                   </span>
-                  <span className="text-customDarkBlue font-semibold text-xl">
+                  <span className="text-customDarkBlue font-semibold text-sm sm:text-xl">
                     Excel.
                   </span>
                 </div>
@@ -278,43 +278,7 @@ export default function ComponentLayout({
               </div>
             )}
 
-            {/* Mobile Navigation Icons */}
-            {user && (
-              <div className="flex md:hidden items-center gap-4 ml-auto">
-                {!tutor && (
-                  <Button
-                    onClick={() => {
-                      const params = new URLSearchParams(
-                        window.location.search
-                      );
-                      params.set("add", "true");
-                      router.push(`/assignments?${params.toString()}`);
-                    }}
-                    className="p-2 bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200"
-                  >
-                    <Plus size={24} />
-                  </Button>
-                )}
-                <Button
-                  onClick={() => router.push("/chat")}
-                  className={`p-2 ${
-                    pathname === "/chat" ? "text-[#4a58b5]" : "text-gray-500"
-                  }`}
-                >
-                  <MessageCircle size={24} />
-                </Button>
-                <Button
-                  onClick={() => router.push("/notifications")}
-                  className={`p-2 ${
-                    pathname === "/notifications"
-                      ? "text-[#4a58b5]"
-                      : "text-gray-500"
-                  }`}
-                >
-                  <Bell size={24} />
-                </Button>
-              </div>
-            )}
+            
 
             {/* Right-aligned items */}
             <div className="flex items-center gap-3 ml-4">
@@ -345,7 +309,7 @@ export default function ComponentLayout({
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSideBar} />
 
       {/* Main Content */}
-      <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
+      <main className="min-h-[calc(100vh-3.5rem)] w-full max-w-screen">{children}</main>
     </div>
   );
 }
