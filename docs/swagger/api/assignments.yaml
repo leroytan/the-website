@@ -46,16 +46,18 @@ get:
               results:
                 type: array
                 items:
-                  $ref: './assignments/assignment.yaml/#/AppliedAssignment'
+                  $ref: './assignments/assignment.yaml#/AppliedAssignment'
               filters:
                 type: object
                 properties:
-                  course:
-                    $ref: './filter.yaml/#/FilterList'
-                  subject:
-                    $ref: './filter.yaml/#/FilterList'
-                  level:
-                    $ref: './filter.yaml/#/FilterList'
+                  courses:
+                    $ref: './filter.yaml#/FilterList'
+                  subjects:
+                    $ref: './filter.yaml#/FilterList'
+                  levels:
+                    $ref: './filter.yaml#/FilterList'
+                  locations:
+                    $ref: './filter.yaml#/FilterList'
               num_pages:
                 type: integer
                 description: Total number of pages available

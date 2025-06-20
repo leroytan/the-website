@@ -1,0 +1,41 @@
+post:
+  tags:
+    - assignment
+  summary: creates a request for an assignment. tutor authorization required
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            assignment_id:
+              type: integer
+              description: the id of the assignment to request
+            requested_rate_hourly:
+              type: integer
+              description: requested hourly rate in dollars
+              default: 35
+            requested_duration:
+              type: integer
+              description: requested duration in minutes
+              default: 60
+            available_slots:
+              type: array
+              items:
+                $ref: '../assignments/assignment.yaml#/AssignmentSlot'
+          required:
+            - assignment_id
+            - available_slots
+  responses:
+    '200':
+      description: confirmation of successful creation
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+  security:
+    - cookieAuth: []

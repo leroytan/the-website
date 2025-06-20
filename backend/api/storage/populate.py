@@ -3,9 +3,9 @@ import datetime
 from api.storage.models import (Assignment, AssignmentRequest,
                                 AssignmentRequestStatus, AssignmentSlot,
                                 AssignmentStatus, AssignmentSubject,
-                                ChatMessage, Level, PrivateChat, SpecialSkill,
+                                ChatMessage, Level, Location, PrivateChat, SpecialSkill,
                                 Subject, Tutor, TutorLevel, TutorSpecialSkill,
-                                TutorSubject, User)
+                                TutorSubject, User, ChatMessageType)
 from sqlalchemy.orm import Session
 
 
@@ -18,7 +18,7 @@ def utc_now():
 import random
 
 
-def generate_bulk_assignments(session: Session, users: list[User], tutors: list[Tutor], subjects: list[Subject], levels: list[Level], count=50, seed=42):
+def generate_bulk_assignments(session: Session, users: list[User], tutors: list[Tutor], subjects: list[Subject], levels: list[Level], locations: list[Location], count=50, seed=42):
     """
     Generate a batch of assignments with reproducible data using a random seed.
     
@@ -34,10 +34,6 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
     random.seed(seed)
 
     status_choices = [AssignmentStatus.OPEN, AssignmentStatus.FILLED]
-    locations = [
-        "Orchard", "Woodlands", "Clementi", "Pasir Ris", "Ang Mo Kio",
-        "Hougang", "Tampines", "Yishun", "Bukit Timah", "Sengkang"
-    ]
     time_slots = [("Monday", "16:00", "18:00"), ("Wednesday", "18:00", "20:00"), ("Saturday", "10:00", "12:00"),
                   ("Thursday", "14:00", "16:00"), ("Sunday", "11:00", "13:00")]
     
@@ -58,6 +54,7 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
         assigned_tutor = random.choice(tutors + [None])
         level = random.choice(levels)
         subject = random.choice(subjects)
+        location = random.choice(locations)
         title = f"{subject.name} Tutoring Session #{i+1}"
         rate = random.choice([30, 35, 40, 45, 50])
         status = random.choice(status_choices)
@@ -69,13 +66,14 @@ def generate_bulk_assignments(session: Session, users: list[User], tutors: list[
             tutor_id=assigned_tutor.id if assigned_tutor else None,
             level_id=level.id,
             estimated_rate_hourly=rate,
+            lesson_duration=random.choice([60, 90, 120]),  # Random lesson duration
             weekly_frequency=random.choice([1, 2, 3]),
             special_requests=random.choice(special_requests),
             status=status,
-            location=random.choice(locations) + ", Singapore"
+            location_id=location.id
         )
         session.add(assignment)
-        session.flush()  # Ensure assignment.id is available
+        session.flush()
 
         # Add 1–2 random time slots
         for day, start, end in random.sample(time_slots, k=random.choice([1, 2])):
@@ -351,10 +349,11 @@ def insert_test_data(engine: object) -> bool:
             tutor_id=None,  # No tutor assigned yet
             level_id=4,
             estimated_rate_hourly=45,
+            lesson_duration=90,  # in minutes
             weekly_frequency=2,
             special_requests="Need help preparing for calculus final exam",
             status=AssignmentStatus.OPEN,
-            location="Jurong East, Singapore"  # Example location
+            location_id=session.query(Location).filter_by(name="Jurong East").one().id
         ),
         Assignment(
             title="Essay-Writing Clinic",
@@ -362,10 +361,11 @@ def insert_test_data(engine: object) -> bool:
             tutor_id=tutors[2].id,     # Carol as tutor
             level_id=3,
             estimated_rate_hourly=35,
+            lesson_duration=60,  # in minutes
             weekly_frequency=1,
             special_requests="Essay writing assistance needed",
             status=AssignmentStatus.FILLED,
-            location="Bukit Batok, Singapore"  # Example location
+            location_id=session.query(Location).filter_by(name="Bukit Batok").one().id
         ),
         Assignment(
             title="Programming Coaching (Python)",
@@ -373,10 +373,11 @@ def insert_test_data(engine: object) -> bool:
             tutor_id=None,  # No tutor assigned yet
             level_id=4,
             estimated_rate_hourly=50,
+            lesson_duration=90,  # in minutes
             weekly_frequency=3,
             special_requests="Need help with Python programming project",
             status=AssignmentStatus.OPEN,
-            location="Bedok South, Singapore"  # Example location
+            location_id=session.query(Location).filter_by(name="Bedok South").one().id
         )
     ]
     session.add_all(assignments)
@@ -447,22 +448,65 @@ def insert_test_data(engine: object) -> bool:
             created_at=utc_now() - datetime.timedelta(days=1),
             tutor_id=tutors[1].id,  # Bob requesting assignment
             status=AssignmentRequestStatus.PENDING,
-            assignment_id=assignments[0].id  # For the first assignment
+            assignment_id=assignments[0].id,  # For the first assignment
+            requested_rate_hourly=40,  # Example rate
+            requested_duration=90,  # Example duration in minutes
         ),
         AssignmentRequest(
             created_at=utc_now() - datetime.timedelta(days=3),
             tutor_id=tutors[2].id,  # Carol requesting assignment
             status=AssignmentRequestStatus.ACCEPTED,
-            assignment_id=assignments[1].id  # For the second assignment
+            assignment_id=assignments[1].id,  # For the second assignment
+            requested_rate_hourly=35,  # Example rate
+            requested_duration=60,  # Example duration in minutes
         ),
         AssignmentRequest(
             created_at=utc_now() - datetime.timedelta(days=4),
             tutor_id=tutors[5].id,  # Frank requesting assignment
             status=AssignmentRequestStatus.REJECTED,
-            assignment_id=assignments[0].id  # For the first assignment
+            assignment_id=assignments[0].id,  # For the first assignment
+            requested_rate_hourly=45,  # Example rate
+            requested_duration=120,  # Example duration in minutes
         )
     ]
     session.add_all(assignment_requests)
+    session.flush()  # Ensure IDs are available for slots
+
+    # add available slots for assignment requests
+    assignment_request_slots = [
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[0].id,
+            day="Monday",
+            start_time="16:00",
+            end_time="18:00"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[0].id,
+            day="Wednesday",
+            start_time="16:00",
+            end_time="18:00"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[1].id,
+            day="Saturday",
+            start_time="10:00",
+            end_time="12:00"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[2].id,
+            day="Tuesday",
+            start_time="18:00",
+            end_time="19:30"
+        ),
+        AssignmentSlot(
+            assignment_request_id=assignment_requests[2].id,
+            day="Thursday",
+            start_time="18:00",
+            end_time="19:30"
+        ),
+    ]
+
+    session.add_all(assignment_request_slots)
 
     # Create private chatrooms
     private_chats = [
@@ -488,148 +532,194 @@ def insert_test_data(engine: object) -> bool:
     # for chat in private_chats:
     #     session.refresh(chat)
 
+    # Create a new private chat for tutor requests
+    tutor_request_chat = PrivateChat(
+        user1_id=users[0].id,  # John Doe
+        user2_id=users[2].id,  # Alice Johnson (a tutor)
+        is_locked=False
+    )
+    session.add(tutor_request_chat)
+    session.flush()
+
     # Create chat messages
     chat_messages = [
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Hi Jane, I need help with my calculus finals.",
-            created_at=utc_now() - datetime.timedelta(hours=2)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=2)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Sure John, I can help you with that!",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Awesome! I'm struggling with integration by parts.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Let's go through an example. Do you have a problem in mind?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Yes! ∫x·e^x dx. I don't know where to start.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Perfect example. You'll want to set u = x and dv = e^x dx.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[0].id,
             content="Ah, got it. So du = dx and v = e^x?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=15)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=15)),
         ChatMessage(
             chat_id=private_chats[0].id,
             sender_id=users[1].id,
             content="Exactly! Now use the formula: ∫u·dv = uv - ∫v·du.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=10)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=10)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Bob, are you available for a study session?",
-            created_at=utc_now() - datetime.timedelta(hours=2)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=2)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Yes Alice, let's meet this weekend.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Saturday afternoon works for me. Maybe 2 PM?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Perfect. Should we meet at the library?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Yes, third floor study room. I’ll reserve it.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[3].id,
             content="Great! Let’s cover chapters 5 to 7?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
         ChatMessage(
             chat_id=private_chats[1].id,
             sender_id=users[2].id,
             content="Sounds good. I’ll bring my notes and problem sets.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="David, I have some questions about the assignment.",
-            created_at=utc_now() - datetime.timedelta(hours=2)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=2)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Sure Carol, feel free to ask me anytime.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=50)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="I'm stuck on question 3. What's the best approach?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=40)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Start by identifying the variables. It's mostly substitution.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=35)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="Got it. And question 5? The logic section confused me.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[5].id,
             content="Focus on truth tables. Want me to walk through one?",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
         ChatMessage(
             chat_id=private_chats[2].id,
             sender_id=users[4].id,
             content="Yes, please! That would help a lot.",
-            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)
-        ),
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
+        ChatMessage(
+            chat_id=tutor_request_chat.id,
+            sender_id=users[0].id, # John Doe (tutee)
+            content="Got it. And question 5? The logic section confused me.",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=30)),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[5].id,
+            content="Focus on truth tables. Want me to walk through one?",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=25)),
+        ChatMessage(
+            chat_id=private_chats[2].id,
+            sender_id=users[4].id,
+            content="Yes, please! That would help a lot.",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
+        ChatMessage(
+            chat_id=tutor_request_chat.id,
+            sender_id=users[0].id, # John Doe (tutee)
+            content='{"hourlyRate": 50, "lessonDuration": 90}',
+            message_type=ChatMessageType.TUTOR_REQUEST,
+            created_at=utc_now() - datetime.timedelta(minutes=10)),
+        ChatMessage(
+            chat_id=tutor_request_chat.id,
+            sender_id=users[2].id, # Alice Johnson (tutor)
+            content="I've received your request. Let me know if you have any questions.",
+            message_type=ChatMessageType.TEXT_MESSAGE,
+            created_at=utc_now() - datetime.timedelta(minutes=5)),
+        ChatMessage(
+            chat_id=tutor_request_chat.id,
+            sender_id=users[0].id, # John Doe (tutee)
+            content='{"hourlyRate": 60, "lessonDuration": 120}',
+            message_type=ChatMessageType.TUTOR_REQUEST,
+            created_at=utc_now() - datetime.timedelta(minutes=0)),
     ]
 
     session.add_all(chat_messages)
 
     subjects = session.query(Subject).all()
     levels = session.query(Level).all()
+    locations = session.query(Location).all()
     
-    generate_bulk_assignments(session, users, tutors, subjects, levels, count=50, seed=42)
+    generate_bulk_assignments(session, users, tutors, subjects, levels, locations, count=50, seed=42)
     
     # Final commit
     session.commit()

@@ -1,0 +1,1 @@
+ngrok start --config ngrok_config.yml the-backend

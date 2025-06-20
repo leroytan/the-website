@@ -14,7 +14,7 @@ export default function Logout() {
 
   const logout = async () => {
     
-    const response = await fetch('/api/auth/logout', { method: 'POST' })
+    const response = await fetch(`/api/auth/logout`, { method: 'POST' })
     if (!response.ok) {
     }
     await logoutAuth()

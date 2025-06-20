@@ -8,7 +8,7 @@ post:
     content:
       application/json:
         schema:
-          $ref: './assignment.yaml/#/NewAssignment'
+          $ref: './assignment.yaml#/NewAssignment'
   responses:
     '200':
       description: confirmation of successful creation

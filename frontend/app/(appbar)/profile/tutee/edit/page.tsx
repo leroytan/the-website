@@ -1,35 +1,59 @@
 'use client'
 
-import { useState } from 'react'
-import { Inter } from 'next/font/google'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ArrowLeft, School, GraduationCap, Book, Mail, Phone, MapPin, Upload, Save } from 'lucide-react'
+import { useAuth } from "@/context/authContext"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
+import { ArrowLeft, Mail, GraduationCap, School, Upload, Save } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import ProfilePictureUploader from "@/app/(appbar)/tutors/[id]/ProfilePictureUploader"
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
-const inter = Inter({ subsets: ['latin'] })
-
-// Mock data for a tutee's profile
-const initialTuteeData = {
-  id: 1,
-  name: 'Jane Smith',
-  email: 'jane.smith@example.com',
-  phoneNumber: '+1234567890',
-  school: 'Springfield High School',
-  level: 'Secondary 3',
-  subjects: 'Mathematics, Physics, Chemistry',
-  imageUrl: '/placeholder.svg?height=200&width=200',
-  address: '123 Tutee St, Studyville, SG 12345',
+interface UserProfile {
+  id: number
+  name: string
+  email: string
+  profile_photo_url: string | null
+  intends_to_be_tutor: boolean
+  created_at: string
+  updated_at: string
 }
 
 export default function TuteeProfileEditPage() {
+  const { user, loading } = useAuth()
   const router = useRouter()
-  const [tuteeData, setTuteeData] = useState(initialTuteeData)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [newImage, setNewImage] = useState<File | null>(null)
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push('/login?redirectTo=/profile/tutee/edit')
+        return
+      }
+      
+      // Fetch user profile data
+      const fetchProfile = async () => {
+        try {
+          const response = await fetchWithTokenCheck(`/api/me`)
+          if (!response.ok) throw new Error('Failed to fetch profile')
+          const data = await response.json()
+          setProfile(data.user)
+        } catch (error) {
+          console.error('Error fetching profile:', error)
+        }
+      }
+      
+      fetchProfile()
+    }
+  }, [user, loading, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setTuteeData(prev => ({ ...prev, [name]: value }))
+    if (profile) {
+      setProfile(prev => ({ ...prev!, [name]: value }))
+    }
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,159 +62,118 @@ export default function TuteeProfileEditPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the updated data to your backend
-    console.log('Updated tutee data:', tuteeData)
-    console.log('New image:', newImage)
-    // After successful update, redirect to the profile view page
-    router.push('/profile/tutee')
+    if (!profile) return
+
+    try {
+      const formData = new FormData()
+      if (newImage) {
+        formData.append('file', newImage)
+        const uploadResponse = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
+          method: 'POST',
+          body: formData,
+        })
+        if (!uploadResponse.ok) throw new Error('Failed to upload photo')
+      }
+      
+      // Update profile data
+      const response = await fetchWithTokenCheck(`/api/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: profile.name,
+          intends_to_be_tutor: profile.intends_to_be_tutor,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update profile')
+
+      router.push('/profile/tutee')
+    } catch (error) {
+      console.error('Error updating profile:', error)
+    }
   }
 
   const handleBack = () => {
     router.back()
   }
 
+  if (loading || !profile) {
+    return <div>Loading...</div>
+  }
+
   return (
-    <div className={`min-h-screen bg-[#fff2de] py-12 px-4 sm:px-6 lg:px-8 ${inter.className}`}>
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-customLightYellow/50 px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
+      <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10 flex flex-col sm:flex-row justify-center gap-6 relative">
+        <div className="absolute top-4 right-4">
+          <div className="flex items-center text-customOrange border-2 rounded-lg p-2 border-customOrange">
+            <span>Edit view</span>
+          </div>
+        </div>
+        <div className="relative">
+          <ProfilePictureUploader photoUrl={profile.profile_photo_url || "/images/THE-guyprofilephoto.png"} />
+        </div>
+
+        <div className="flex-1">
+          <input
+            type="text"
+            name="name"
+            value={profile.name}
+            onChange={handleChange}
+            className="text-2xl font-semibold text-customDarkBlue w-full bg-transparent border-b-2 border-customDarkBlue focus:outline-none focus:border-customOrange mb-2"
+          />
+          <div className="space-y-2 mt-4">
+            <div className="flex items-center text-customDarkBlue">
+              <Mail className="w-5 h-5 mr-2 text-customOrange" />
+              <span>{profile.email}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1 bg-white shadow-lg rounded-xl p-6">
+          
+        </div>
+
+        <div className="md:col-span-2 bg-white shadow-lg rounded-xl p-6">
+          <h3 className="text-customDarkBlue font-semibold text-lg mb-4">Account Information</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <div className="flex items-center text-customDarkBlue mb-2">
+                <School className="w-5 h-5 mr-2 text-customOrange" />
+                <h4 className="font-semibold">Member Since</h4>
+              </div>
+              <p className="text-gray-600">
+                {new Date(profile.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center text-customDarkBlue mb-2">
+                <GraduationCap className="w-5 h-5 mr-2 text-customOrange" />
+                <h4 className="font-semibold">Last Updated</h4>
+              </div>
+              <p className="text-gray-600">
+                {new Date(profile.updated_at).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-6">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={handleBack}
-          className="mb-6 flex items-center text-[#4a58b5] hover:text-[#fabb84]"
+          onClick={handleSubmit}
+          className="flex px-6 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors"
         >
-          <ArrowLeft size={20} className="mr-2" />
-          Back to Profile
+          <Save size={20} className="mr-2" />
+          Save Changes
         </motion.button>
-
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 mb-6">
-
-          <div className="mb-6">
-            <label htmlFor="imageUpload" className="block text-sm font-medium text-[#4a58b5] mb-2">Profile Picture</label>
-            <div className="flex items-center">
-              <Image
-                src={newImage ? URL.createObjectURL(newImage) : tuteeData.imageUrl}
-                alt={tuteeData.name}
-                width={100}
-                height={100}
-                className="rounded-full mr-4 border-2 border-[#fabb84]"
-              />
-              <input
-                type="file"
-                id="imageUpload"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-              <label htmlFor="imageUpload" className="cursor-pointer bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200">
-                <Upload size={20} className="inline mr-2" />
-                Upload New Picture
-              </label>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-sm font-medium text-[#4a58b5] mb-1">Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={tuteeData.name}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-[#4a58b5] mb-1">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={tuteeData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-[#4a58b5] mb-1">Phone Number</label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={tuteeData.phoneNumber}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="school" className="block text-sm font-medium text-[#4a58b5] mb-1">School</label>
-            <input
-              type="text"
-              id="school"
-              name="school"
-              value={tuteeData.school}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="level" className="block text-sm font-medium text-[#4a58b5] mb-1">Level</label>
-            <input
-              type="text"
-              id="level"
-              name="level"
-              value={tuteeData.level}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="subjects" className="block text-sm font-medium text-[#4a58b5] mb-1">Subjects</label>
-            <input
-              type="text"
-              id="subjects"
-              name="subjects"
-              value={tuteeData.subjects}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="address" className="block text-sm font-medium text-[#4a58b5] mb-1">Address</label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              value={tuteeData.address}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              required
-            />
-          </div>
-
-          <motion.button
-            type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200 flex items-center justify-center"
-          >
-            <Save size={20} className="mr-2" />
-            Save Changes
-          </motion.button>
-        </form>
       </div>
     </div>
   )

@@ -27,6 +27,11 @@ export interface TuitionListing {
     status: string;
     created_at: string;
     updated_at: string;
+    available_slots: {
+      day: string;
+      start_time: string;
+      end_time: string;
+    }[];
   }[];
 }
 export interface TuitionListingFilters {
@@ -39,6 +44,10 @@ export interface TuitionListingFilters {
     id: string;
   }[];
   levels: {
+    name: string;
+    id: string;
+  }[];
+  locations: {
     name: string;
     id: string;
   }[];

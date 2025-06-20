@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Home, Search } from 'react-feather'; // Assuming you're using React Feather icons
+import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatchClient';
 
 const PaymentSuccess = () => {
   const router = useRouter();
@@ -37,14 +38,14 @@ const PaymentSuccess = () => {
 
   const handleStartChat = async () => {
     if (chatId) {
-      router.push(`/chat/tutee?chatId=${chatId}`);
+      router.push(`/chat?chatId=${chatId}`);
     }
     if (!tutorId) {
       console.error("Tutor ID is required to start a chat.");
       return;
     }
     // Fetching the chat creation or retrieval
-    const response = await fetch(`/api/chat/get-or-create`, {
+    const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ const PaymentSuccess = () => {
     }
 
     const chatPreview = await response.json();
-    router.push(`/chat/tutee?chatId=${chatPreview.id}`);
+    router.push(`/chat?chatId=${chatPreview.id}`);
   };
 
   return (

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useAuth } from "@/context/authContext";
+import ErrorMessage from "@/components/ErrorMessage";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,15 +32,19 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      setErrorMessage("Passwords do not match.");
+    //check payload
+    if (!userType) {
+      setErrorMessage("Please select a user type.");
       return;
     }
-
-    console.log("Sign up attempted with:", { name, email, password, userType });
-
-    const res = await fetch(`api/auth/signup`, {
+    if (!name || !email || !password || !confirmPassword) {
+      setErrorMessage("Please fill in all fields.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      return;
+    }
+    const res = await fetch(`/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -55,11 +60,16 @@ export default function SignupPage() {
       return;
     }
     if (res.ok) {
+      if (userType === "Tutor") {
+            document.cookie = `intends_to_be_tutor=${userType === "Tutor"}; path=/; SameSite=Lax; Secure`;
+            document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
+          }
       await refetch(); // refresh user and tutor data for authcontext
       router.push("/login");
       router.refresh();
     } else {
-      setErrorMessage("Error signing up. Please try again later.");
+      const resData = await res.json();
+      setErrorMessage(resData.message || "Sign up failed");
     }
   };
 
@@ -86,6 +96,13 @@ export default function SignupPage() {
           Sign Up for T.H.E.
         </h2>
         <form onSubmit={handleSubmit}>
+          <DropDown
+            placeholder="Sign up as a..."
+            stringOnDisplay={userType}
+            stateController={setUserType}
+            iterable={[...ROLES]}
+            className="mb-4"
+          />
           <div className="mb-4">
             <label
               htmlFor="name"
@@ -134,9 +151,6 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  if (password !== confirmPassword) {
-                    setShowPassword(true);
-                  }
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
                 required
@@ -197,15 +211,9 @@ export default function SignupPage() {
               </p>
             )}
           </div>
-          <DropDown
-            placeholder="Sign up as a..."
-            stringOnDisplay={userType}
-            stateController={setUserType}
-            iterable={[...ROLES]}
-          />
-          <br />
+          
           {errorMessage && (
-            <p className="text-sm text-red-500 mb-4">{errorMessage}</p>
+            <ErrorMessage message={errorMessage} />
           )}
 
           <motion.button

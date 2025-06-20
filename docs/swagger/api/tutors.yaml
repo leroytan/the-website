@@ -51,11 +51,11 @@ get:
                 type: object
                 properties:
                   subjects:
-                    $ref: './filter.yaml/#/FilterList'
+                    $ref: './filter.yaml#/FilterList'
                   levels:
-                    $ref: './filter.yaml/#/FilterList'
+                    $ref: './filter.yaml#/FilterList'
                   location:
-                    $ref: './filter.yaml/#/FilterList'
+                    $ref: './filter.yaml#/FilterList'
                 required:
                   - subjects
                   - levels
@@ -76,6 +76,8 @@ TutorPublicSummary:
         photo_url:
           type: string
           nullable: true
+        highest_education:
+          type: string
         rate:
           type: string
           nullable: true
@@ -83,6 +85,8 @@ TutorPublicSummary:
           type: number
           format: float
           nullable: true
+        about_me:
+          type: string
         subjects_teachable:
           type: array
           items:
@@ -91,6 +95,12 @@ TutorPublicSummary:
           type: array
           items:
             type: string
+        special_skills:
+          type: array
+          items:
+            type: string
+        resume_url:
+          type: string
         experience:
           type: string
           nullable: true
@@ -100,5 +110,9 @@ TutorPublicSummary:
       required:
         - id
         - name
+        - highest_education
+        - about_me
         - subjects_teachable
         - levels_teachable
+        - special_skills
+        - resume_url

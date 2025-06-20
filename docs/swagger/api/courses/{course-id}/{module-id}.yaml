@@ -22,4 +22,4 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../{course-id}.yaml/#/CourseModule'
+            $ref: '../{course-id}.yaml#/CourseModule'

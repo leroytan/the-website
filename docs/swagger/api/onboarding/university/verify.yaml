@@ -1,0 +1,30 @@
+post:
+  tags:
+    - onboarding
+  summary: Verify university email
+  description: Verify university email for student verification
+  security:
+    - bearerAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/UniversityEmailRequest'
+  responses:
+    '200':
+      description: University email verification initiated
+    '400':
+      description: Invalid university email
+
+components:
+  schemas:
+    UniversityEmailRequest:
+      type: object
+      required:
+        - universityEmail
+      properties:
+        universityEmail:
+          type: string
+          format: email
+          example: "student@university.edu"

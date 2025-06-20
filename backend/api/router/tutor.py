@@ -3,6 +3,8 @@ from api.config import settings
 from api.logic.filter_logic import FilterLogic
 from api.logic.tutor_logic import TutorLogic
 from api.router.auth_utils import RouterAuthUtils
+from fastapi import Depends
+from api.storage.models import User
 from api.router.models import (NewTutorProfile, SearchQuery, SearchResult,
                                TutorProfile, TutorPublicSummary)
 from api.storage.models import Tutor, User
@@ -54,6 +56,7 @@ async def new_tutor(
     user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:
     # Returns the newly created tutor profile
+    
 
     if settings.is_use_mock:
         return mock.new_tutor()
@@ -61,14 +64,14 @@ async def new_tutor(
     return TutorLogic.new_tutor(tutorProfile, user.id)
 
 @router.get("/api/tutors/{id}")
-async def get_tutor_profile(id: int, request: Request) -> TutorPublicSummary | TutorProfile | None:
+async def get_tutor_profile(id: int, request: Request, response: Response) -> TutorPublicSummary | TutorProfile | None:
     
     if settings.is_use_mock:
         return mock.get_tutor_profile()
     
     try:
         user = RouterAuthUtils.get_current_user(request)
-        is_self = user and user.id == id
+        is_self = user.id == id
     except HTTPException:
         is_self = False
     return TutorLogic.find_profile_by_id(id, is_self=is_self)
@@ -78,9 +81,10 @@ async def get_tutor_profile(id: int, request: Request) -> TutorPublicSummary | T
 async def update_tutor_profile(
     tutorProfile: NewTutorProfile,
     id: int,
-    user: User = Depends(RouterAuthUtils.get_current_user)
+    get_user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:
     # Returns the updated private profile
+    
 
     if settings.is_use_mock:
         return mock.update_tutor_profile()

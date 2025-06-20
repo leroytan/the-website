@@ -18,14 +18,18 @@ tags:
     description: Tutor-specific operations
   - name: assignment
     description: Assignment-specific operations
+  - name: assignment-request
+    description: Assignment request operations
   - name: payment
     description: Payment operations
   - name: course
     description: Course-specific operations
   - name: reviews
     description: Course reviews operations
-paths:
+  - name: onboarding
+    description: Onboarding process operations
 
+paths:
   /api/auth/login:
     $ref: './api/auth/login.yaml'
   /api/auth/signup:
@@ -38,8 +42,6 @@ paths:
     $ref: './api/auth/logout.yaml'
   /api/auth/refresh:
     $ref: './api/auth/refresh.yaml'
-  /api/auth/verify-email:
-    $ref: './api/auth/verify-email.yaml'
   /api/me/upload-profile-photo:  # Uploads a profile photo. User authorization required
     $ref: './api/me/upload-profile-photo.yaml'
   /api/user/{user-id}/:  # Retireves user profile information (name, profile photo url, etc.)
@@ -70,8 +72,10 @@ paths:
     $ref: './api/assignments/new.yaml'
   /api/assignments/{id}:
     $ref: './api/assignments/{id}.yaml'
-  /api/assignments/{id}/request:
-    $ref: './api/assignments/{id}/request.yaml'
+  /api/assignment-requests/new:
+    $ref: './api/assignment-requests/new.yaml'
+  /api/assignment-requests/{id}:
+    $ref: './api/assignment-requests/{id}.yaml'
   /api/assignment-requests/{id}/change-status:
     $ref: './api/assignment-requests/{id}/change-status.yaml'
   /api/payment/create-checkout-session:
@@ -86,3 +90,24 @@ paths:
     $ref: './api/nus-course-reviews.yaml'
   /api/nus-course-reviews/{nus-course-id}:
     $ref: './api/nus-course-reviews/{nus-course-id}.yaml'
+  /api/auth/verify/phone/send:
+    $ref: './api/auth/verify/phone/send.yaml'
+  /api/auth/verify/phone/confirm:
+    $ref: './api/auth/verify/phone/confirm.yaml'
+  /api/onboarding/university/verify:
+    $ref: './api/onboarding/university/verify.yaml'
+  /api/onboarding/university/confirm:
+    $ref: './api/onboarding/university/confirm.yaml'
+  /api/onboarding/documents/upload:
+    $ref: './api/onboarding/documents-upload.yaml'
+  /api/onboarding/status:
+    $ref: './api/onboarding/status.yaml'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    $ref: './api/common.yaml#/components/schemas'

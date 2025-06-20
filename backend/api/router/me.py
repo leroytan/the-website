@@ -2,8 +2,10 @@ from api.logic.assignment_logic import AssignmentLogic
 from api.logic.tutor_logic import TutorLogic
 from api.logic.user_logic import UserLogic
 from api.router.auth_utils import RouterAuthUtils
+from fastapi import Depends, File, UploadFile
+from api.storage.models import User
 from api.router.models import (AssignmentOwnerView, AssignmentPublicView,
-                               UserView)
+                                UserView, UserUpdateRequest)
 from api.storage.models import User
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
@@ -41,3 +43,7 @@ async def get_user_info(user: User = Depends(RouterAuthUtils.get_current_user)) 
         "user": UserLogic.get_user_by_id(user.id),
         "tutor": tutor,
     }
+
+@router.put("/api/me")
+async def update_user_info(user_update_request: UserUpdateRequest, user: User = Depends(RouterAuthUtils.get_current_user)) -> UserView:
+    return UserLogic.update_user_details(user.id, user_update_request.name, user_update_request.intends_to_be_tutor)

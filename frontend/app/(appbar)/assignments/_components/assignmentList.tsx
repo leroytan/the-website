@@ -29,7 +29,9 @@ export function AssignmentList({
   // Determine currently selected assignment ID (to highlight it in the list, if needed)
   const selectedId = searchParams.selected;
   // Determine the current page number
-  const currentPage = searchParams.page_number ? parseInt(searchParams.page_number as string) : 1;
+  const currentPage = searchParams.page_number
+    ? parseInt(searchParams.page_number as string)
+    : 1;
 
   return (
     <div className="space-y-4">
@@ -39,6 +41,7 @@ export function AssignmentList({
           const isSelected = assign.id == Number(selectedId);
           return (
             <Link
+              prefetch={false}
               key={assign.id}
               href={createSelectedURL(searchParams, assign.id!.toString())}
               className={`relative block px-10 py-5 border transition-colors ${

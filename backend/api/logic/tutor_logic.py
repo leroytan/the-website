@@ -37,10 +37,14 @@ class TutorLogic:
             id=tutor.id,
             name=tutor.user.name,
             photo_url=UserLogic.get_profile_photo_url(tutor.id),
+            highest_education=tutor.highest_education,
             rate=tutor.rate,
             rating=tutor.rating,
+            about_me=tutor.about_me,
             subjects_teachable=subject_names,
             levels_teachable=level_names,
+            special_skills=[skill.name for skill in tutor.special_skills] if tutor.special_skills else [],
+            resume_url=tutor.resume_url,
             experience=tutor.experience,
             availability=tutor.availability
         )
@@ -89,7 +93,8 @@ class TutorLogic:
             filters = []
 
             user_alias = aliased(User)  # You'll need to import your User model
-            statement = session.query(Tutor).join(user_alias, Tutor.user)
+            statement = session.query(Tutor)
+            statement = statement.join(user_alias, Tutor.user)
 
             # General search (matching name, location, or about_me)
             if search_query.query:
@@ -105,15 +110,15 @@ class TutorLogic:
 
             # Filter by subjects
             if "subject" in parsed_filters:
-                filters.append(Tutor.subjects.any(Subject.id.in_(parsed_filters["subject"])))
+                filters.append(Tutor.subjects.any(Subject.filter_id.in_(parsed_filters["subject"])))
 
             # Filter by special skills
             if "specialSkill" in parsed_filters:
-                filters.append(Tutor.special_skills.any(SpecialSkill.id.in_(parsed_filters["specialSkill"])))
+                filters.append(Tutor.subjects.any(SpecialSkill.filter_id.in_(parsed_filters["special_skill"])))
 
             # Filter by levels
             if "level" in parsed_filters:
-                filters.append(Tutor.levels.any(Level.id.in_(parsed_filters["level"])))
+                filters.append(Tutor.levels.any(Level.filter_id.in_(parsed_filters["level"])))
 
             statement = statement.filter(and_(*filters))
             # Default ordering by rating and name

@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { BASE_URL } from "@/utils/constants";
 import { useAuth } from "@/context/authContext";
 import { User, Tutor } from "@/components/types";
+import ErrorMessage from "@/components/ErrorMessage";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,27 +22,26 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState("tutee");
 
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Login attempted with:", { email, password, userType });
+    console.log("Login attempted with:", { email, password });
 
     console.log("Sending login request...");
 
     const res = await fetch(`/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, userType }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (res.ok) {
       await refetch(); // refresh user and tutor data for authcontext
       // Fetch user state and set cookies
-      const meRes = await fetch("/api/me");
+      const meRes = await fetchWithTokenCheck(`/api/me`);
       const { user, tutor }: { user: User; tutor: Tutor | null } =
         await meRes.json();
 
@@ -52,7 +53,8 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       router.replace(redirectTo);
       router.refresh();
     } else {
-      alert("Login failed");
+      const errorData = await res.json();
+      setErrorMessage(errorData.message || "Login failed");
     }
   };
 
@@ -79,35 +81,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
           Login to THE
         </h2>
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-[#4a58b5] mb-2">
-              I am logging in as:
-            </label>
-            <div className="flex space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-[#fabb84]"
-                  name="userType"
-                  value="tutee"
-                  checked={userType === "tutee"}
-                  onChange={(e) => setUserType(e.target.value)}
-                />
-                <span className="ml-2 text-[#4a58b5]">Tutee/Parent</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  className="form-radio text-[#fabb84]"
-                  name="userType"
-                  value="tutor"
-                  checked={userType === "tutor"}
-                  onChange={(e) => setUserType(e.target.value)}
-                />
-                <span className="ml-2 text-[#4a58b5]">Tutor</span>
-              </label>
-            </div>
-          </div>
+          
           <div className="mb-4">
             <label
               htmlFor="email"
@@ -157,7 +131,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
             </div>
           </div>
           {errorMessage && (
-            <p className="text-sm text-red-500 mb-4">{errorMessage}</p>
+            <ErrorMessage message={errorMessage} />
           )}
           <motion.button
             type="submit"

@@ -1,52 +1,68 @@
 export default function SkeletonAssignments() {
   return (
-    <div className="min-h-screen bg-[#FFF3E9] flex flex-col md:flex-row p-6 gap-4">
-      {/* Sidebar (static to maintain layout structure) */}
-      <aside className="md:w-1/4 w-full md:pr-6">
-        <h2 className="text-2xl font-bold text-customDarkBlue mb-6">
-          My Dashboard
-        </h2>
-        <nav className="flex md:flex-col flex-row gap-2 overflow-x-auto whitespace-nowrap">
-          {["Active Assignments", "Pending Assignments"].map((label, i) => (
-            <div
-              key={i}
-              className="h-10 bg-gray-300 animate-pulse rounded-md"
-            />
-          ))}
-        </nav>
-      </aside>
-
-      {/* Assignment list skeleton */}
-      <section className="md:w-3/4 w-full">
-        <div className="hidden md:grid grid-cols-5 bg-customDarkBlue text-white font-semibold rounded-t-xl p-4 text-sm">
-          <div>Level and Subject</div>
-          <div>Tuition Address</div>
-          <div>Rate</div>
-          <div>Schedule</div>
-          <div>Actions</div>
+    <div className="min-h-screen bg-customLightYellow/45 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-64 animate-pulse"></div>
         </div>
 
-        <div className="space-y-4 bg-white rounded-b-xl p-4">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="md:grid md:grid-cols-5 flex flex-col gap-4 bg-orange-100 p-4 rounded-xl animate-pulse"
-            >
-              <div className="h-4 w-full bg-gray-300 rounded" />
-              <div className="h-4 w-full bg-gray-300 rounded" />
-              <div className="h-4 w-full bg-gray-300 rounded" />
-              <div className="space-y-1">
-                <div className="h-3 w-3/4 bg-gray-300 rounded" />
-                <div className="h-3 w-2/3 bg-gray-300 rounded" />
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="h-8 bg-gray-300 rounded-full" />
-                <div className="h-8 bg-gray-300 rounded-full" />
-              </div>
+        {/* Main Content */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="lg:w-1/4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm p-6 border border-customLightYellow/60">
+              <nav className="space-y-2">
+                {["Active Assignments", "Pending Applications"].map((label, i) => (
+                  <div
+                    key={i}
+                    className="h-12 bg-gray-200 animate-pulse rounded-lg"
+                  />
+                ))}
+              </nav>
             </div>
-          ))}
+          </aside>
+
+          {/* Assignment list skeleton */}
+          <section className="lg:w-3/4">
+            <div className="grid grid-cols-1 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm p-6 border border-customLightYellow/60 animate-pulse"
+                >
+                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <div className="flex-1 space-y-3">
+                      {/* Title skeleton */}
+                      <div className="h-6 bg-gray-200 rounded-lg w-3/4"></div>
+                      
+                      {/* Description skeleton */}
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-full"></div>
+                        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                      </div>
+                      
+                      {/* Tags skeleton */}
+                      <div className="flex gap-2">
+                        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                        <div className="h-6 bg-gray-200 rounded-full w-24"></div>
+                        <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                      </div>
+                    </div>
+                    
+                    {/* Action buttons skeleton */}
+                    <div className="flex gap-2">
+                      <div className="h-10 bg-gray-200 rounded-lg w-24"></div>
+                      <div className="h-10 bg-gray-200 rounded-lg w-24"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

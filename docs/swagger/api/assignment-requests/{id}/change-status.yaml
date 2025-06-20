@@ -1,6 +1,6 @@
 put:
   tags:
-    - assignment
+    - assignment-request
   summary: Owner accepts a tutor for the specified assignment, requiring tutor authorization
   parameters:
     - name: id
@@ -12,11 +12,10 @@ put:
     - name: status
       in: path
       required: true
-      description: The status to be set for the assignment request
+      description: The status to be set for the assignment request. To accept a tutor, use /payment/create-checkout-session.
       schema:
         type: string
         enum:
-          - accepted
           - rejected
     - name: access_token
       in: cookie

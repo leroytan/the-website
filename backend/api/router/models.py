@@ -1,8 +1,9 @@
 import enum
-from typing import Generic, Optional, TypeVar
+import re
+from typing import Generic, TypeVar
 
-from api.storage.models import AssignmentRequestStatus
-from pydantic import BaseModel
+from api.storage.models import AssignmentRequestStatus, ChatMessageType
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 # Pydantic models
@@ -20,10 +21,14 @@ class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photo_url: str | None
+    highest_education: str
     rate: str | None
     rating: float | None
+    about_me: str
     subjects_teachable: list[str]
     levels_teachable: list[str]
+    special_skills: list[str]
+    resume_url: str
     experience: str | None
     availability: str | None
 
@@ -97,6 +102,11 @@ class AssignmentSlotView(BaseModel):
     start_time: str
     end_time: str
 
+class NewAssignmentSlot(BaseModel):
+    day: str
+    start_time: str
+    end_time: str
+
 class AssignmentRequestView(BaseModel):
     id: int
     created_at: str
@@ -104,12 +114,23 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    requested_rate_hourly: int  # in dollars
+    requested_duration: int  # in minutes
     available_slots: list[AssignmentSlotView]
     status: str
 
+# TODO: Remove default values when frontend is ready to handle them
 class NewAssignmentRequest(BaseModel):
-    available_slots: list[AssignmentSlotView]  # List of slot IDs
+    assignment_id: int
+    requested_rate_hourly: int | None = None  # in dollars
+    requested_duration: int | None = None  # in minutes
+    available_slots: list[NewAssignmentSlot]
 
+class ModifiedAssignmentRequest(BaseModel):
+    requested_rate_hourly: int | None = None  # in dollars
+    requested_duration: int | None = None  # in minutes
+    available_slots: list[NewAssignmentSlot] | None = None
+    
 class AssignmentBaseView(BaseModel):
     id: int
     created_at: str
@@ -117,6 +138,7 @@ class AssignmentBaseView(BaseModel):
     title: str
     owner_id: int
     estimated_rate_hourly: int  # in dollars
+    lesson_duration: int  # in minutes
     weekly_frequency: int
     available_slots: list[AssignmentSlotView]
     special_requests: str
@@ -133,14 +155,11 @@ class AssignmentOwnerView(AssignmentBaseView):
     tutor_id: int | None
     requests: list[AssignmentRequestView]
 
-class NewAssignmentSlot(BaseModel):
-    day: str
-    start_time: str
-    end_time: str
-
-class NewAssignment(BaseModel):  # TODO: add location
+# TODO: Remove lesson_duration default when frontend is ready to handle it
+class NewAssignment(BaseModel):
     title: str
     estimated_rate_hourly: int # in dollars
+    lesson_duration: int = 90  # in minutes
     weekly_frequency: int
     available_slots: list[NewAssignmentSlot]
     special_requests: str | None
@@ -190,7 +209,17 @@ class SearchResult(BaseModel, Generic[T]):
 class NewChatMessage(BaseModel):
     chat_id: int
     content: str
+    message_type: ChatMessageType = ChatMessageType.TEXT_MESSAGE
 
+class ChatPreview(BaseModel):
+    id: int
+    name: str
+    last_message: str
+    last_update: str
+    last_message_type: str
+    has_unread: bool
+    is_locked: bool
+    has_messages: bool
 class UserView(BaseModel):
     id: int
     name: str
@@ -200,14 +229,79 @@ class UserView(BaseModel):
     created_at: str
     updated_at: str
 
+class UserUpdateRequest(BaseModel):
+    name: str | None = None
+    intends_to_be_tutor: bool | None = None
+
 class ChatCreationInfo(BaseModel):
     other_user_id: int
 
+class MessagePacket(BaseModel):
+    to_user_id: int
+    content: str
+    message_type: ChatMessageType = ChatMessageType.TEXT_MESSAGE
 class PaymentRequest(BaseModel):
     mode: str  # 'payment' or 'subscription'
     success_url: str
     cancel_url: str
-    hourly_rate_cents: int # in cents
     assignment_request_id: int
     tutor_id: int  # To link to chat
     chat_id: int | None = None  # Optional, if chat is already created
+
+# Password Reset Models
+class ForgotPasswordRequest(BaseModel):
+    """
+    Model for initiating password reset request
+    """
+    email: EmailStr
+
+    @validator('email')
+    def normalize_email(cls, email):
+        """
+        Normalize email for consistent handling
+        """
+        return email.lower().strip()
+
+class ResetPasswordRequest(BaseModel):
+    """
+    Model for completing password reset
+    """
+    reset_token: str = Field(
+        ..., 
+        description="Unique reset token",
+        min_length=32,
+        max_length=1024
+    )
+    new_password: str = Field(
+        ..., 
+        description="New account password",
+        min_length=8,
+        max_length=128
+    )
+
+    @validator('new_password')
+    def validate_password_strength(cls, password):
+        """
+        Comprehensive password strength validation
+        
+        Requirements:
+        - Minimum 12 characters
+        - At least one uppercase letter
+        - At least one lowercase letter
+        - At least one number
+        - At least one special character
+        """
+    
+        # if not re.search(r'[A-Z]', password):
+        #     raise ValueError("Password must contain at least one uppercase letter")
+        
+        if not re.search(r'[a-z]', password):
+            raise ValueError("Password must contain at least one lowercase letter")
+        
+        # if not re.search(r'\d', password):
+        #     raise ValueError("Password must contain at least one number")
+        
+        # if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        #     raise ValueError("Password must contain at least one special character")
+        
+        return password

@@ -5,13 +5,14 @@ from api.logic.chat_logic import ChatLogic
 from api.router.models import PaymentRequest
 from api.storage.models import User
 from fastapi import HTTPException
+from typing import Callable
 
 stripe.api_key = settings.stripe_api_key
 
 class PaymentLogic:
 
     @staticmethod
-    def handle_payment_request(payment_request: PaymentRequest, user: User) -> dict:
+    def handle_payment_request(payment_request: PaymentRequest, assert_user_authorized: Callable[[int], None]) -> dict:
         """
         Handles the payment request logic.
         
@@ -22,9 +23,20 @@ class PaymentLogic:
             dict: Response indicating success or failure.
         """
 
-        deposit = payment_request.hourly_rate_cents / 2  # Assuming the deposit is half of the hourly rate
-
         try:
+            assert_user_authorized(AssignmentLogic.get_assignment_owner_id(payment_request.assignment_request_id)) 
+
+            lesson_duration = AssignmentLogic.get_lesson_duration(
+                payment_request.assignment_request_id
+            )
+
+            hourly_rate = AssignmentLogic.get_request_hourly_rate(
+                payment_request.assignment_request_id
+            )
+
+            num_hours = lesson_duration / 60  # Convert minutes to hours
+            hourly_rate_cents = hourly_rate * 100  # Convert dollars to cents
+            fee = num_hours * hourly_rate_cents  # Total fee in cents
             checkout_session = stripe.checkout.Session.create(
                 line_items=[{
                     'price_data': {
@@ -32,13 +44,12 @@ class PaymentLogic:
                         'product_data': {
                             'name': settings.stripe_product_name,  # Product name from settings
                         },
-                        'unit_amount': int(deposit),  # Final price in cents
+                        'unit_amount': int(fee),  # Final price in cents
                     },
                     'quantity': 1,
                 }],
                 payment_intent_data={
                     'metadata': {
-                        'user_id': user.id,  # Store user ID in metadata
                         'assignment_request_id': payment_request.assignment_request_id,
                     }
                 },
@@ -50,9 +61,9 @@ class PaymentLogic:
                     "url": checkout_session["url"]}
         except stripe.error.StripeError as e:
             # Handle Stripe-specific errors
-            raise HTTPException(status_code=400, detail=str(e))
+            raise HTTPException(status_code=503, detail=f"Payment processing error on stripe. {e.user_message}")
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            raise e
         
     @staticmethod
     def handle_stripe_webhook(payload, sig_header: str) -> dict:
@@ -70,16 +81,14 @@ class PaymentLogic:
                 payment_intent = event['data']['object']  # contains a stripe.PaymentIntent
 
                 # Example: extract details
-                customer_id = payment_intent.get('customer')
-                amount_received = payment_intent['amount_received']
                 metadata = payment_intent.get('metadata', {})
 
                 # Change status of assignment request to accepted
-                owner_id, requester_id = AssignmentLogic.accept_assignment_request(metadata['assignment_request_id'])
+                owner_id, requester_id = AssignmentLogic.accept_assignment_request(int(metadata['assignment_request_id']))
                 
                 preview = ChatLogic.get_or_create_private_chat(owner_id, requester_id)
 
-                ChatLogic.unlock_chat(preview["id"], owner_id)
+                ChatLogic.unlock_chat(preview.id, owner_id)
 
                 return {"status": "success"}
 

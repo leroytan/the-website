@@ -3,6 +3,7 @@ from api.router.auth_utils import RouterAuthUtils
 from api.router.routers import routers
 from api.storage.models import User
 from api.storage.storage_service import StorageService
+from api.startup_email import send_startup_notification_email
 from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,6 +12,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 StorageService.init_db()
 
 app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Perform startup tasks, including sending a notification email.
+    """
+    send_startup_notification_email()
+    pass
 
 for router in routers:
     app.include_router(router)

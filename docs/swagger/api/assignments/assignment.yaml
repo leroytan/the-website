@@ -11,6 +11,9 @@ Assignment:
       type: number
       format: int64
       description: Estimated hourly rate for the assignment in dollars.
+    lesson_duration:
+      type: integer
+      description: Duration of each lesson in minutes.
     weekly_frequency:
       type: integer
     available_slots:
@@ -40,6 +43,7 @@ Assignment:
     - title
     - owner_id
     - estimated_rate_hourly
+    - lesson_duration
     - weekly_frequency
     - available_slots
     - subjects
@@ -133,6 +137,9 @@ NewAssignment:
       type: number
       format: int64
       description: Estimated hourly rate for the assignment in dollars.
+    lesson_duration:
+      type: integer
+      description: Duration of each lesson in minutes.
     weekly_frequency:
       type: integer
     available_slots:
@@ -153,6 +160,7 @@ NewAssignment:
   required:
     - title
     - estimated_rate_hourly
+    - lesson_duration
     - weekly_frequency
     - available_slots
     - subjects

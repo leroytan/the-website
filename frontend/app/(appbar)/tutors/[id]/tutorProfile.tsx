@@ -18,20 +18,44 @@ import { useAuth } from "@/context/authContext";
 import Link from "next/link";
 import { Button } from "@/components/button";
 import { Tutor } from "@/components/types";
+import { useAlert } from "@/context/alertContext";
+import { useError } from "@/context/errorContext";
 
 export default function TutorProfile({ tutor }: { tutor: Tutor }) {
   const { user, tutor: loggedinTutor } = useAuth();
   const isOwnProfile = user && loggedinTutor?.id === tutor.id;
   const [selectedTab, setSelectedTab] = useState("tutor information");
   const [message, setMessage] = useState("");
-  const handleSendMessage = (e: React.FormEvent) => {
+  const { setAlert } = useAlert();
+  const { setError } = useError();
+  
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Message sent:", message);
-    setMessage("");
+    try {
+      const response = await fetch("/api/chat/send-message-to-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ to_user_id: tutor.id, content: message }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAlert("Message sent successfully! Go to your messages to see the conversation.");
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setError("Failed to send message. Please try again later.");
+    }
   };
 
   return (
-    <motion.div className="min-h-screen bg-customLightYellow px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
+    <motion.div className="min-h-screen bg-customLightYellow/50 px-4 sm:px-8 md:px-16 lg:px-20 py-6 sm:py-8">
       <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10 flex flex-col sm:flex-row justify-center gap-6 relative">
         <div className="absolute top-4 right-4">
           {isOwnProfile && (
@@ -222,6 +246,7 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
                     whileTap={{ scale: 0.95 }}
                     type="button"
                     className="px-4 py-2 bg-gray-200 text-[#4a58b5] rounded-md hover:bg-gray-300 transition-colors duration-200"
+                    onClick={() => setMessage("")}
                   >
                     Cancel
                   </motion.button>

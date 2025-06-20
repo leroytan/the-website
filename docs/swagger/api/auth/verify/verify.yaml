@@ -1,0 +1,15 @@
+components:
+  schemas:
+    VerificationSentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Verification code sent successfully"
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2023-12-01T10:35:00Z"
