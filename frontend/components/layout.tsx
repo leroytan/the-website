@@ -77,7 +77,7 @@ const UserMenu = () => {
             className="object-cover w-full h-full"
           />
         </div>
-        <span className="hidden md:block text-sm font-medium text-gray-700">
+        <span className="hidden lg:block text-sm font-medium text-gray-700">
           {user?.name}
         </span>
         <ChevronDown
@@ -195,15 +195,15 @@ export default function ComponentLayout({
   ];
 
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <div className={`${geistSans.variable} ${geistMono.variable} antialiased `}>
       <header
         id="appbar"
-        className="bg-white shadow-sm sticky top-0 left-0 right-0 z-20 h-14"
+        className="bg-white shadow-sm sticky top-0 left-0 right-0 z-20 h-14 px-2 md:px-4 lg:px-8"
       >
         {loading ? (
           <LoadingSkeleton />
         ) : (
-          <div className="flex flex-row items-center justify-between px-4 h-full">
+          <div className="flex flex-row items-center justify-between px-4 h-full w-full">
             {/* Mobile Menu Button */}
             <div className="md:hidden">
               <BurgerMenu togglesideBar={toggleSideBar} />
@@ -217,13 +217,13 @@ export default function ComponentLayout({
             >
               <Link href="/" passHref className="flex flex-row items-center">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/logo.svg"
                   alt="THE Logo"
-                  width={3508}
-                  height={2480}
-                  className="h-10 md:h-14 w-auto"
+                  width={2732}
+                  height={2186}
+                  className="h-14 w-auto"
                 />
-                <div className="hidden md:block pl-4">
+                <div className="hidden lg:block pl-4">
                   <span className="text-customDarkBlue font-semibold text-xl">
                     Teach. &nbsp;
                   </span>
@@ -245,7 +245,7 @@ export default function ComponentLayout({
                     <Button
                       key={item.path}
                       onClick={() => router.push(item.path)}
-                      className={`flex flex-col items-center justify-center h-full px-4 gap-0.5 ${
+                      className={`flex flex-col items-center justify-center h-full gap-0.5 px-2 md:px-3 lg:px-4 ${
                         pathname === item.path
                           ? "border-b-2 border-b-[#4a58b5] text-[#4a58b5]"
                           : "text-gray-500 hover:text-[#4a58b5]"
@@ -254,7 +254,7 @@ export default function ComponentLayout({
                       <div className="flex items-center justify-center">
                         {item.icon}
                       </div>
-                      <span className="text-sm">{item.name}</span>
+                      <span className="text-xs md:text-sm">{item.name}</span>
                     </Button>
                   ))}
                   <div className="h-auto w-0.5 self-stretch bg-neutral-100 mx-2" />
@@ -262,7 +262,7 @@ export default function ComponentLayout({
                     <Button
                       key={item.path}
                       onClick={() => router.push(item.path)}
-                      className={`flex flex-col items-center justify-center h-full px-4 gap-0.5 ${
+                      className={`flex flex-col items-center justify-center h-full gap-0.5 px-2 md:px-3 lg:px-4 ${
                         pathname === item.path
                           ? "border-b-2 border-b-[#4a58b5] text-[#4a58b5]"
                           : "text-gray-500 hover:text-[#4a58b5]"
@@ -271,50 +271,14 @@ export default function ComponentLayout({
                       <div className="flex items-center justify-center">
                         {item.icon}
                       </div>
-                      <span className="text-sm">{item.name}</span>
+                      <span className="text-xs md:text-sm">{item.name}</span>
                     </Button>
                   ))}
                 </nav>
               </div>
             )}
 
-            {/* Mobile Navigation Icons */}
-            {user && (
-              <div className="flex md:hidden items-center gap-4 ml-auto">
-                {!tutor && (
-                  <Button
-                    onClick={() => {
-                      const params = new URLSearchParams(
-                        window.location.search
-                      );
-                      params.set("add", "true");
-                      router.push(`/assignments?${params.toString()}`);
-                    }}
-                    className="p-2 bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200"
-                  >
-                    <Plus size={24} />
-                  </Button>
-                )}
-                <Button
-                  onClick={() => router.push("/chat")}
-                  className={`p-2 ${
-                    pathname === "/chat" ? "text-[#4a58b5]" : "text-gray-500"
-                  }`}
-                >
-                  <MessageCircle size={24} />
-                </Button>
-                <Button
-                  onClick={() => router.push("/notifications")}
-                  className={`p-2 ${
-                    pathname === "/notifications"
-                      ? "text-[#4a58b5]"
-                      : "text-gray-500"
-                  }`}
-                >
-                  <Bell size={24} />
-                </Button>
-              </div>
-            )}
+            
 
             {/* Right-aligned items */}
             <div className="flex items-center gap-3 ml-4">
@@ -345,7 +309,7 @@ export default function ComponentLayout({
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSideBar} />
 
       {/* Main Content */}
-      <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
+      <main className="min-h-[calc(100vh-3.5rem)] w-full max-w-screen">{children}</main>
     </div>
   );
 }
@@ -370,7 +334,7 @@ function LoadingSkeleton() {
             height={2480}
             className="h-14 w-auto"
           />
-          <div className="hidden md:block pl-4 flex-row whitespace-nowrap">
+          <div className="hidden lg:block pl-4 flex-row whitespace-nowrap">
             <span className="text-customDarkBlue font-semibold text-xl">
               Teach. &nbsp;
             </span>

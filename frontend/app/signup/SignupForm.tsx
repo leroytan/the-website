@@ -62,6 +62,10 @@ export default function SignupPage() {
       return;
     }
     if (res.ok) {
+      if (userType === "Tutor") {
+            document.cookie = `intends_to_be_tutor=${userType === "Tutor"}; path=/; SameSite=Lax; Secure`;
+            document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
+          }
       await refetch(); // refresh user and tutor data for authcontext
       router.push("/login");
       router.refresh();

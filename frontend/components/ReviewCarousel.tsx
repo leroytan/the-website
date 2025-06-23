@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 
 const reviews = [
   { id: 1, text: "T.H.E. tutors have been instrumental in my academic growth. Their patience and expertise are unmatched.", author: "Emily S.", grade: "11th Grade" },
@@ -47,8 +47,18 @@ const ReviewCarousel = () => {
 
   return (
     <div className="relative w-full max-w-4xl mx-auto px-4 py-12" aria-live="polite">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="relative h-[200px] sm:h-[180px]">
+      <div className="bg-white rounded-lg shadow-md overflow-visible relative">
+        {/* Quote icon hanging outside */}
+        <Quote 
+          className="absolute -top-8 -left-8 text-[#fabb84] opacity-60 z-0"
+          aria-hidden="true"
+          color="#fabb84"
+          fill="#fabb84"
+          style={{ transform: 'rotate(180deg)' }}
+          size={70}
+        />
+        {/* Review content clipped to card */}
+        <div className="relative overflow-hidden h-[200px] sm:h-[180px] z-10">
           <AnimatePresence initial={false} custom={direction} mode="wait">
             <motion.div
               key={currentReview}
@@ -58,10 +68,10 @@ const ReviewCarousel = () => {
               animate="center"
               exit="exit"
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute inset-0 flex flex-col justify-center p-6 sm:p-8"
+              className="absolute inset-0 flex flex-col justify-center p-6 sm:p-8 z-10"
               aria-live="assertive"
             >
-              <p className="text-[#4a58b5] mb-4 text-base sm:text-lg italic">"{reviews[currentReview].text}"</p>
+              <p className="text-[#4a58b5] mb-4 text-base sm:text-lg italic">{reviews[currentReview].text}</p>
               <div className="flex justify-between items-center">
                 <p className="font-semibold text-[#fc6453] text-sm sm:text-base">- {reviews[currentReview].author}</p>
                 <p className="text-[#fabb84] text-xs sm:text-sm">{reviews[currentReview].grade}</p>
