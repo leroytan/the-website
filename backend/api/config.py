@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     gmail_client_id: str  # OAuth client ID for Gmail
     gmail_client_secret: str  # OAuth client secret for Gmail
     gmail_startup_notification_email: str = ""
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
+    frontend_url: str = "http://localhost:3000"
 
     @property
     def env(self):

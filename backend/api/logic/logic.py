@@ -27,8 +27,8 @@ class Logic:
         with Session(StorageService.engine) as session:
             # Check if user exists
             user = session.execute(select(User).filter_by(email=login_data.email)).scalar_one_or_none()
-            if not user or not AuthService.verify_password(login_data.password, user.password_hash):
-                raise HTTPException(status_code=401, detail="Incorrect email or password")
+            if not user or not user.password_hash or not AuthService.verify_password(login_data.password, user.password_hash):
+                raise HTTPException(status_code=401, detail="Incorrect email or password. Did you previously sign in with Google?")
     
         token_data = TokenData(email=login_data.email)
         
@@ -199,3 +199,14 @@ class Logic:
             
             except (JWTError, ValueError) as e:
                 raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    @staticmethod
+    async def handle_google_login_signup(code: str) -> TokenPair:
+        """
+        Handles Google OAuth login/signup flow.
+        """
+        try:
+            tokens = await AuthService.authenticate_google_user(code)
+            return tokens
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}")

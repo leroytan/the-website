@@ -33,7 +33,8 @@ class User(Base, SerializerMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True) # Made nullable for Google-only accounts
+    google_id = Column(String, unique=True, index=True, nullable=True) # New field for Google ID
     token_version = Column(Integer, default=0)
     intends_to_be_tutor = Column(Boolean, default=False)
     

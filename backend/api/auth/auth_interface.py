@@ -103,3 +103,17 @@ class AuthInterface(ABC):
             dict: A dictionary containing the new access and refresh tokens.
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    def authenticate_google_user(code: str) -> dict[str, str]:
+        """
+        Authenticates a user using Google OAuth2 authorization code.
+
+        Args:
+            code (str): The authorization code received from Google.
+
+        Returns:
+            dict: A dictionary containing the application's access and refresh tokens.
+        """
+        pass

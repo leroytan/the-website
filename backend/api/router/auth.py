@@ -11,8 +11,45 @@ from api.storage.models import User
 from api.storage.models import User
 from fastapi import APIRouter, Depends, Request, Response, HTTPException
 from fastapi.responses import RedirectResponse
+from api.config import settings
 
 router = APIRouter()
+
+@router.get("/api/auth/google/login")
+async def google_login():
+    """
+    Redirects to Google's OAuth consent screen for login/signup.
+    """
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"response_type=code&"
+        f"client_id={settings.google_client_id}&"
+        f"redirect_uri={settings.google_redirect_uri}&"
+        f"scope=openid%20email%20profile&"
+        f"access_type=offline&"
+        f"prompt=consent"
+    )
+    return RedirectResponse(google_auth_url)
+
+@router.get("/api/auth/google/callback")
+async def google_callback(request: Request, response: Response, code: str = None, error: str = None):
+    """
+    Handles the callback from Google OAuth, exchanges the code for tokens,
+    and logs in/signs up the user.
+    """
+    if error:
+        raise HTTPException(status_code=400, detail=f"Google OAuth error: {error}")
+    
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code missing")
+
+    try:
+        tokens = await Logic.handle_google_login_signup(code)
+        RouterAuthUtils.update_tokens(tokens, response)
+        # Redirect to frontend with tokens as query parameters
+        return RedirectResponse(url=f"{settings.frontend_url}/login?access_token={tokens.access_token}&refresh_token={tokens.refresh_token}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Google login failed: {str(e)}")
 
 @router.post("/api/auth/login")
 async def login(
