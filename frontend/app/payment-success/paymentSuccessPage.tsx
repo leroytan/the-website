@@ -11,7 +11,8 @@ import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatchClient';
 const PaymentSuccess = () => {
   const router = useRouter();
 
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const searchParams = new URLSearchParams(params?.toString() || "");
   const sessionId = searchParams.get('session_id');
   const tutorId = searchParams.get('tutor_id');
   const chatId = searchParams.get('chat_id');

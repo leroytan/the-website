@@ -21,7 +21,8 @@ const AddAssignmentOverlay = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const searchParams = new URLSearchParams(params?.toString() || "");
   const [showOverlay, setShowOverlay] = useState(true);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 

@@ -9,7 +9,8 @@ import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const searchParams = new URLSearchParams(params?.toString() || "");
   const redirectTo = searchParams.get("redirectTo") || "/";
   const { refetch } = useAuth();
   const [showLogin, setShowLogin] = useState(false);

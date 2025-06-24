@@ -13,7 +13,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const searchParams = new URLSearchParams(params?.toString() || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

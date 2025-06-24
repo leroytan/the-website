@@ -7,7 +7,8 @@ interface PaginationProps {
 }
 
 export function Pagination({ totalPages }: PaginationProps) {
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const searchParams = new URLSearchParams(params?.toString() || "");
   const pathname = usePathname();
   const currentPage = Number(searchParams.get('page_number')) || 1;
 

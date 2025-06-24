@@ -17,7 +17,8 @@ export function FilterSortBar({
   levels,
   sortOptions,
 }: FilterSortProps) {
-  const searchParams = useSearchParams();
+  const params = useSearchParams();
+  const searchParams = new URLSearchParams(params?.toString() || "");
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();

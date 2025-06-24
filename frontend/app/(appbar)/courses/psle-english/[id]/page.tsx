@@ -30,7 +30,7 @@ const courseModules: courseModule[] = [
 
 export default function ModuleVideoPage() {
   const router = useRouter()
-  const params = useParams()
+  const params = useParams() || {};
   const [progress, setProgress] = useState(0)
   const [completed, setCompleted] = useState(false)
   const moduleId = parseInt(params.id as string)
