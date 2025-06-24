@@ -1,12 +1,16 @@
+import base64
+import json
+from urllib.parse import quote
+
 from api.router.models import (
     LoginRequest,
     SignupRequest,
     ForgotPasswordRequest,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    VerifyPasswordResetTokenRequest
 )
 from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
-from fastapi import Depends
 from api.storage.models import User
 from api.storage.models import User
 from fastapi import APIRouter, Depends, Request, Response, HTTPException
@@ -16,10 +20,26 @@ from api.config import settings
 router = APIRouter()
 
 @router.get("/api/auth/google/login")
-async def google_login():
+async def google_login(request: Request):
     """
     Redirects to Google's OAuth consent screen for login/signup.
     """
+    # Get the origin from the request
+    origin = request.headers.get("origin") or request.headers.get("referer")
+
+    # Create state parameter with origin information
+    state_data = {
+        "origin": origin,
+        # You can add other data here if needed
+        # "timestamp": int(time.time()),
+        # "user_id": user_id if available
+    }
+    
+    # Encode the state data (base64 encode JSON for safety)
+    state = base64.urlsafe_b64encode(
+        json.dumps(state_data).encode()
+    ).decode().rstrip('=')  # Remove padding for URL safety
+
     google_auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?"
         f"response_type=code&"
@@ -27,12 +47,13 @@ async def google_login():
         f"redirect_uri={settings.google_redirect_uri}&"
         f"scope=openid%20email%20profile&"
         f"access_type=offline&"
-        f"prompt=consent"
+        f"prompt=consent&"
+        f"state={quote(state)}"
     )
     return RedirectResponse(google_auth_url)
 
 @router.get("/api/auth/google/callback")
-async def google_callback(request: Request, response: Response, code: str = None, error: str = None):
+async def google_callback(request: Request, response: Response, code: str = None, error: str = None, state: str = None):
     """
     Handles the callback from Google OAuth, exchanges the code for tokens,
     and logs in/signs up the user.
@@ -42,12 +63,27 @@ async def google_callback(request: Request, response: Response, code: str = None
     
     if not code:
         raise HTTPException(status_code=400, detail="Authorization code missing")
+    
+    # Decode the state parameter to get the origin
+    origin = None
+    if state:
+        try:
+            # Add padding back for base64 decoding
+            padded_state = state + '=' * (4 - len(state) % 4)
+            state_data = json.loads(base64.urlsafe_b64decode(padded_state).decode())
+            origin = state_data.get("origin")
+        except Exception as e:
+            # Log the error but don't fail the authentication
+            print(f"Failed to decode state parameter: {e}")
 
     try:
         tokens = await Logic.handle_google_login_signup(code)
         RouterAuthUtils.update_tokens(tokens, response)
-        # Redirect to frontend with tokens as query parameters
-        return RedirectResponse(url=f"{settings.frontend_url}/login?access_token={tokens.access_token}&refresh_token={tokens.refresh_token}")
+
+        # Use the origin from state if available, otherwise fall back to default
+        redirect_url = origin or settings.frontend_url
+
+        return RedirectResponse(url=f"{redirect_url}/login?access_token={tokens.access_token}&refresh_token={tokens.refresh_token}")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Google login failed: {str(e)}")
 
@@ -173,3 +209,18 @@ async def reset_password(
         dict: A message indicating the success of the password reset.
     """
     return Logic.reset_password(reset_password_request)
+
+@router.post("/api/auth/verify-password-reset-token")
+async def verify_password_reset_token(
+    verify_password_reset_token_request: VerifyPasswordResetTokenRequest,
+):
+    """
+    Verify the validity of a password reset token.
+    
+    Args:
+        verify_password_reset_token_request (VerifyPasswordResetTokenRequest): Contains the reset token.
+    
+    Returns:
+        dict: A message indicating the validity of the token.
+    """
+    return Logic.verify_password_reset_token(verify_password_reset_token_request)

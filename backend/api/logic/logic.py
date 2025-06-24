@@ -7,7 +7,8 @@ from api.router.models import (
     LoginRequest,
     SignupRequest,
     ForgotPasswordRequest,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    VerifyPasswordResetTokenRequest
 )
 from api.storage.models import User
 from api.storage.storage_service import StorageService
@@ -144,13 +145,15 @@ class Logic:
             
             # Store the reset token and its expiration on the user
             user.password_reset_token = reset_token
-            user.password_reset_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+            user.password_reset_token_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
             
             # Commit changes
             session.add(user)
             session.commit()
             
-            reset_link = GmailEmailService.create_reset_link(reset_token, origin)
+            url = f"{origin}/login/reset-password"
+            
+            reset_link = GmailEmailService.create_reset_link(reset_token, url)
             GmailEmailService.send_password_reset_email(
                 recipient_email=forgot_password_request.email,
                 reset_link=reset_link
@@ -196,6 +199,31 @@ class Logic:
                     "message": "Password successfully updated",
                     "token_version": user.token_version
                 }
+            
+            except (JWTError, ValueError) as e:
+                raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    @staticmethod
+    def verify_password_reset_token(verify_password_reset_token_request: VerifyPasswordResetTokenRequest) -> dict:
+        """
+        Verify the validity of a password reset token.
+        """
+        with Session(StorageService.engine) as session:
+            try:
+                # Verify the reset token
+                payload = AuthService.verify_password_reset_token(verify_password_reset_token_request.reset_token)
+                
+                # Find the user
+                user = session.execute(select(User).filter_by(email=payload.email)).scalar_one_or_none()
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+                
+                # Validate token against stored token and expiration
+                if (user.password_reset_token != verify_password_reset_token_request.reset_token or
+                    user.password_reset_token_expires_at < datetime.now(timezone.utc)):
+                    raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+                
+                return {"message": "Password reset token is valid"}
             
             except (JWTError, ValueError) as e:
                 raise HTTPException(status_code=400, detail="Invalid reset token")

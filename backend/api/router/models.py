@@ -262,18 +262,29 @@ class ForgotPasswordRequest(BaseModel):
         """
         return email.lower().strip()
 
+class VerifyPasswordResetTokenRequest(BaseModel):
+    """
+    Model for verifying a password reset token
+    """
+    reset_token: str = Field(
+        ...,
+        description="Unique reset token",
+        min_length=32,
+        max_length=1024
+    )
+
 class ResetPasswordRequest(BaseModel):
     """
     Model for completing password reset
     """
     reset_token: str = Field(
-        ..., 
+        ...,
         description="Unique reset token",
         min_length=32,
         max_length=1024
     )
     new_password: str = Field(
-        ..., 
+        ...,
         description="New account password",
         min_length=8,
         max_length=128

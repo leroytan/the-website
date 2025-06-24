@@ -137,6 +137,32 @@ class AuthService(AuthInterface):
             raise ValueError("Invalid or expired password reset token")
 
     @staticmethod
+    def verify_password_reset_token_for_validation(token: str) -> TokenData:
+        """
+        Verify a password reset token for validation purposes (no expiration check here).
+        This is used to check if the token is syntactically valid and was issued by us.
+        """
+        Utils.validate_non_empty(token=token)
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM], options={"verify_exp": False})
+            
+            # Validate token type
+            if payload.get("type") != "password_reset":
+                raise ValueError("Invalid password reset token type")
+            
+            # Create a copy of the payload to modify
+            token_payload = payload.copy()
+            
+            # Remove time-related fields
+            token_payload.pop("exp")
+            token_payload.pop("type")
+            
+            # Preserve any additional fields like token_version if present
+            return TokenData(**token_payload)
+        except jwt.JWTError as e:
+            raise ValueError("Invalid password reset token format or signature")
+
+    @staticmethod
     async def authenticate_google_user(code: str) -> TokenPair:
         # Exchange authorization code for tokens
         token_response = await httpx.AsyncClient().post(

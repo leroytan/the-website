@@ -135,6 +135,14 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
           {errorMessage && (
             <ErrorMessage message={errorMessage} />
           )}
+          <div className="flex justify-between items-center mb-4">
+            <Link
+              href="/login/forgot-password"
+              className="text-sm text-[#4a58b5] hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
           <motion.button
             type="submit"
             whileHover={{ scale: 1.05 }}
