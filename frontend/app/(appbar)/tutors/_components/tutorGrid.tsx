@@ -47,7 +47,11 @@ export function TutorGrid({ tutors }: { tutors: Tutor[] }) {
             </div>
             <div className="flex items-center text-[#4a58b5]">
               <DollarSign size={16} className="mr-2 text-[#fc6453]" />
-              <span>{tutor.rate}</span>
+              <span>
+                {tutor.min_rate && tutor.max_rate
+                  ? `$${tutor.min_rate} - $${tutor.max_rate} per hour`
+                  : "N/A"}
+              </span>
             </div>
             <div className="flex items-center text-[#4a58b5]">
               <span className="font-medium mr-2">Experience:</span>

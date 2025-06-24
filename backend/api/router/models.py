@@ -22,7 +22,8 @@ class TutorPublicSummary(BaseModel):
     name: str
     photo_url: str | None
     highest_education: str
-    rate: str | None
+    min_rate: float | None
+    max_rate: float | None
     rating: float | None
     about_me: str
     subjects_teachable: list[str]
@@ -36,7 +37,8 @@ class NewTutorProfile(BaseModel):
     highest_education: str | None
     availability: str | None
     resume_url: str | None
-    rate: str | None
+    min_rate: float | None
+    max_rate: float | None
     location: str | None
     about_me: str | None
     experience: str | None
@@ -51,7 +53,8 @@ class TutorProfile(BaseModel):
     email: str
     photo_url: str | None
     highest_education: str | None
-    rate: str | None
+    min_rate: float | None
+    max_rate: float | None
     location: str | None
     rating: float | None
     about_me: str | None

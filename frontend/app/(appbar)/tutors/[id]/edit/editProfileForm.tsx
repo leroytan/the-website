@@ -24,6 +24,7 @@ import MultiSelectButton from "@/components/multiSelectButton";
 import { Tutor } from "@/components/types";
 import TagInput from "@/components/tagInput";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import RangeSlider from "@/components/RangeSlider/RangeSlider";
 
 export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
   const router = useRouter();
@@ -33,7 +34,8 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
     highest_education: tutor.highest_education || "",
     availability: tutor.availability || "",
     resume_url: tutor.resume_url || "",
-    rate: tutor.rate || "",
+    min_rate: tutor.min_rate ?? 0,
+    max_rate: tutor.max_rate ?? 100,
     location: tutor.location || "",
     rating: tutor.rating || "",
     about_me: tutor.about_me || "",
@@ -58,7 +60,8 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
       highest_education: formData.highest_education,
       availability: formData.availability,
       resume_url: formData.resume_url,
-      rate: formData.rate,
+      min_rate: formData.min_rate,
+      max_rate: formData.max_rate,
       location: formData.location,
       rating: formData.rating,
       about_me: formData.about_me,
@@ -191,14 +194,20 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
               <div>
                 <div className="flex items-center text-customDarkBlue mb-2">
                   <DollarSign className="w-5 h-5 mr-2 text-customOrange" />
-                  <h3 className="text-lg font-semibold">Rate</h3>
+                  <h3 className="text-lg font-semibold">Hourly Rate</h3>
                 </div>
-                <Input
-                  name="rate"
-                  type="number"
-                  placeholder="e.g. 35"
-                  value={formData.rate}
-                  onChange={handleChange}
+                <RangeSlider
+                  hasSteps={true}
+                  value={{ min: 0, max: 100 }}
+                  from={formData.min_rate}
+                  to={formData.max_rate}
+                  onChange={({ min, max }) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      min_rate: parseInt(min),
+                      max_rate: parseInt(max),
+                    }));
+                  }}
                 />
               </div>
               <div>

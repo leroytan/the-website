@@ -4,6 +4,7 @@ import { Button } from "@/components/button";
 import DropDown from "@/components/dropdown";
 import Input from "@/components/input";
 import MultiSelectButton from "@/components/multiSelectButton";
+import RangeSlider from "@/components/RangeSlider"
 import Modal from "./_components/modal";
 import { CloudUpload, Save, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -23,7 +24,8 @@ type TutorProfileFormData = {
   subjects: string[];
   levels: string[];
   skills: string;
-  rate: string;
+  min_rate: string;
+  max_rate: string;
 };
 
 function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
@@ -69,7 +71,8 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
     subjects: [],
     levels: [],
     skills: "",
-    rate: "",
+    min_rate: "10",
+    max_rate: "100",
   });
   const [modalOpen, setModalOpen] = useState(false);
   const handleChange = (
@@ -97,8 +100,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
       !formData.experience ||
       !formData.locations.trim() ||
       formData.subjects.length === 0 ||
-      formData.levels.length === 0 ||
-      !formData.rate.trim()
+      formData.levels.length === 0
     ) {
       setError("Please fill in all required fields.");
       return;
@@ -108,7 +110,8 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
       highest_education: formData.education,
       availability: formData.availability,
       resume_url: formData.resumeUrl,
-      rate: formData.rate,
+      min_rate: parseInt(formData.min_rate, 10),
+      max_rate: parseInt(formData.max_rate, 10),
       location: formData.locations,
       about_me: formData.bio,
       experience: formData.experience,
@@ -340,24 +343,21 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
 
           <label className="font-semibold text-customDarkBlue">
             <span className="text-red-500">* </span>
-            <span>Rate</span>
+            <span>Hourly Rate Range</span>
           </label>
-          <div className="flex items-center">
-            <span className="px-3 py-2 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md text-gray-500">
-              S$
-            </span>
-            <Input
-              name="rate"
-              type="text"
-              placeholder=""
-              value={formData.rate}
-              onChange={handleChange}
-              className="rounded-l-none rounded-r-none mx-0.5"
-            />
-            <span className="px-3 py-2 bg-gray-200 border border-l-0 border-gray-300 rounded-r-md text-gray-500">
-              /hour
-            </span>
-          </div>
+          <RangeSlider
+            value={{ min: 10, max: 100 }}
+            onChange={(output) => {
+              setFormData((prev) => ({
+                ...prev,
+                min_rate: output.min.toString(),
+                max_rate: output.max.toString()
+              }));
+            }}
+            hasSteps={true}
+            tooltipVisibility="always"
+            formatter={(x) => `$${x}/hr`}
+          />
         </div>
 
         <div className="col-span-full flex justify-end gap-4">
