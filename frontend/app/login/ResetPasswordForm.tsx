@@ -33,7 +33,7 @@ export default function ResetPasswordForm() {
       setResetToken(token);
       verifyToken(token);
     }
-  }, [searchParams]);
+  }, []);
 
   const verifyToken = async (token: string) => {
     try {

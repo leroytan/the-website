@@ -191,7 +191,7 @@ async def forgot_password(
         dict: A message indicating the status of the password reset request.
     """
     # Use the request's origin to generate the reset link
-    origin = request.headers.get("origin", "http://localhost:3000")
+    origin = request.headers.get("origin") or request.headers.get("referer") or "teachhonourexcel.com"
     return Logic.forgot_password(origin, forgot_password_request)
 
 @router.post("/api/auth/reset-password")
