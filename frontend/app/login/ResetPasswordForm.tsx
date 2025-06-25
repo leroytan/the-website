@@ -1,11 +1,11 @@
 "use client";
 import "@/app/globals.css";
 import { motion } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, SearchCheck } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ErrorMessage from "@/components/ErrorMessage";
 
@@ -23,8 +23,13 @@ export default function ResetPasswordForm() {
   const [resetToken, setResetToken] = useState("");
   const [isTokenValid, setIsTokenValid] = useState<boolean | null>(null); // null: checking, true: valid, false: invalid
 
+  const searchParamsRef = useRef(searchParams);
   useEffect(() => {
-    const token = searchParams.get("token");
+    searchParamsRef.current = searchParams;
+  }, [searchParams])
+
+  useEffect(() => {
+    const token = searchParamsRef.current.get("token");
     if (!token) {
       setErrorMessage("Invalid or missing reset token");
       setIsTokenValid(false);

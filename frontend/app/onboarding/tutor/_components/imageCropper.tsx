@@ -94,7 +94,7 @@ const ImageCropper = ({ closeModal, updateAvatar }: ImageCropperProps) => {
         <div className="flex flex-col items-center">
           <ReactCrop
             crop={crop}
-            onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
+            onChange={(_, percentCrop) => setCrop(percentCrop)}
             circularCrop
             keepSelection
             aspect={ASPECT_RATIO}

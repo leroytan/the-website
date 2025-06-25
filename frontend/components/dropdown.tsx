@@ -123,6 +123,7 @@ function DropDown<T>({
                     key={index}
                     role="option"
                     tabIndex={0}
+                    aria-selected={tempSelected === item}
                     onClick={(e) => {
                       e.preventDefault();
                       setTempSelected(item);

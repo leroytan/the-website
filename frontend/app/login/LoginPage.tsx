@@ -68,7 +68,7 @@ export default function LoginPage() {
     };
 
     handleAuthCallback();
-  }, [redirectTo, router, searchParams]);
+  }, [redirectTo, router, searchParams, refetch]);
 
   if (checking) {
     return (

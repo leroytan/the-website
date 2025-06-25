@@ -4,9 +4,10 @@ import RangeSlider from "./RangeSlider";
 // example of styling by css
 // import "./RangeSlider.scss";
 
-export default {
+const meta = {
     title: "RangeSlider",
 };
+export default meta;
 
 const datesArray: string[] = [
     "01-01-2020",
