@@ -31,6 +31,8 @@ const ProfilePictureUploader = ({ photoUrl }: ProfilePictureUploaderProps) => {
   const [avatarUrl, setAvatarUrl] = useState<string>(photoUrl || "");
   const [modalOpen, setModalOpen] = useState(false);
   const oldAvatarUrl = useRef<string>("");
+  const params = useParams();
+  const tutorId = params.id;
 
   const updateAvatar = async (avatarDataUrl: string | null) => {
     if (!avatarDataUrl) return;

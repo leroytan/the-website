@@ -74,7 +74,7 @@ const getModuleData = (moduleCode: string): Module | null => {
 }
 
 export default function ModuleReviewsPage() {
-  const params = useParams() || {}
+  const params = useParams()
   const moduleCode = params.moduleCode as string
   const [moduleData, setModuleData] = useState<Module | null>(null)
 

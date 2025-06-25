@@ -329,8 +329,7 @@ const ChatApp = () => {
     }
   ];
 
-  const params = useSearchParams();
-  const searchParams = new URLSearchParams(params?.toString() || "");
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState(1);
   const [newMessage, setNewMessage] = useState("");

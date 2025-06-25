@@ -5,8 +5,7 @@ import { FormEvent, useRef } from 'react';
 export default function SearchBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const params = useSearchParams();
-  const searchParams = new URLSearchParams(params?.toString() || "");
+  const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: FormEvent) => {

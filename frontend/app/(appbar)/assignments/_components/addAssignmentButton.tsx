@@ -6,8 +6,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 const AddAssignmentButton = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const params = useSearchParams();
-  const searchParams = new URLSearchParams(params?.toString() || "");
+  const searchParams = useSearchParams();
 
   function handleOpenOverlay(): void {
     const params = new URLSearchParams(searchParams.toString());
