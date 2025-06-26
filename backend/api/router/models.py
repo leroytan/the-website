@@ -22,7 +22,8 @@ class TutorPublicSummary(BaseModel):
     name: str
     photo_url: str | None
     highest_education: str
-    rate: str | None
+    min_rate: float | None
+    max_rate: float | None
     rating: float | None
     about_me: str
     subjects_teachable: list[str]
@@ -36,7 +37,8 @@ class NewTutorProfile(BaseModel):
     highest_education: str | None
     availability: str | None
     resume_url: str | None
-    rate: str | None
+    min_rate: float | None
+    max_rate: float | None
     location: str | None
     about_me: str | None
     experience: str | None
@@ -51,7 +53,8 @@ class TutorProfile(BaseModel):
     email: str
     photo_url: str | None
     highest_education: str | None
-    rate: str | None
+    min_rate: float | None
+    max_rate: float | None
     location: str | None
     rating: float | None
     about_me: str | None
@@ -262,18 +265,29 @@ class ForgotPasswordRequest(BaseModel):
         """
         return email.lower().strip()
 
+class VerifyPasswordResetTokenRequest(BaseModel):
+    """
+    Model for verifying a password reset token
+    """
+    reset_token: str = Field(
+        ...,
+        description="Unique reset token",
+        min_length=32,
+        max_length=1024
+    )
+
 class ResetPasswordRequest(BaseModel):
     """
     Model for completing password reset
     """
     reset_token: str = Field(
-        ..., 
+        ...,
         description="Unique reset token",
         min_length=32,
         max_length=1024
     )
     new_password: str = Field(
-        ..., 
+        ...,
         description="New account password",
         min_length=8,
         max_length=128

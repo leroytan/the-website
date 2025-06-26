@@ -26,5 +26,5 @@ cd "$(dirname "$0")/backend" || {
 poetry install
 
 # Set app environment and run the server
-export APP_ENV=development
+export APP_ENV=${APP_ENV:-development}
 poetry run python -m uvicorn api.index:app --reload

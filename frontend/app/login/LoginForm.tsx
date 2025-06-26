@@ -14,6 +14,8 @@ import { User, Tutor } from "@/components/types";
 import ErrorMessage from "@/components/ErrorMessage";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
+import { FcGoogle } from "react-icons/fc";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
@@ -133,6 +135,14 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
           {errorMessage && (
             <ErrorMessage message={errorMessage} />
           )}
+          <div className="flex justify-between items-center mb-4">
+            <Link
+              href="/login/forgot-password"
+              className="text-sm text-[#4a58b5] hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
           <motion.button
             type="submit"
             whileHover={{ scale: 1.05 }}
@@ -142,6 +152,27 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
             Log In
           </motion.button>
         </form>
+
+        <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+            </div>
+        </div>
+
+        <motion.button
+            type="button"
+            onClick={() => { window.location.href = `${BASE_URL}/auth/google/login`; }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+        >
+            <FcGoogle className="mr-2 h-5 w-5" />
+            Sign in with Google
+        </motion.button>
+
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
           Don't have an account?{" "}
           <Link href="/signup" className="text-[#fc6453] hover:underline">

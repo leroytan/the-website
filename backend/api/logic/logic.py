@@ -7,7 +7,8 @@ from api.router.models import (
     LoginRequest,
     SignupRequest,
     ForgotPasswordRequest,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    VerifyPasswordResetTokenRequest
 )
 from api.storage.models import User
 from api.storage.storage_service import StorageService
@@ -27,8 +28,8 @@ class Logic:
         with Session(StorageService.engine) as session:
             # Check if user exists
             user = session.execute(select(User).filter_by(email=login_data.email)).scalar_one_or_none()
-            if not user or not AuthService.verify_password(login_data.password, user.password_hash):
-                raise HTTPException(status_code=401, detail="Incorrect email or password")
+            if not user or not user.password_hash or not AuthService.verify_password(login_data.password, user.password_hash):
+                raise HTTPException(status_code=401, detail="Incorrect email or password. Did you previously sign in with Google?")
     
         token_data = TokenData(email=login_data.email)
         
@@ -144,13 +145,15 @@ class Logic:
             
             # Store the reset token and its expiration on the user
             user.password_reset_token = reset_token
-            user.password_reset_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+            user.password_reset_token_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
             
             # Commit changes
             session.add(user)
             session.commit()
             
-            reset_link = GmailEmailService.create_reset_link(reset_token, origin)
+            url = f"{origin}/login/reset-password"
+            
+            reset_link = GmailEmailService.create_reset_link(reset_token, url)
             GmailEmailService.send_password_reset_email(
                 recipient_email=forgot_password_request.email,
                 reset_link=reset_link
@@ -199,3 +202,39 @@ class Logic:
             
             except (JWTError, ValueError) as e:
                 raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    @staticmethod
+    def verify_password_reset_token(verify_password_reset_token_request: VerifyPasswordResetTokenRequest) -> dict:
+        """
+        Verify the validity of a password reset token.
+        """
+        with Session(StorageService.engine) as session:
+            try:
+                # Verify the reset token
+                payload = AuthService.verify_password_reset_token(verify_password_reset_token_request.reset_token)
+                
+                # Find the user
+                user = session.execute(select(User).filter_by(email=payload.email)).scalar_one_or_none()
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+                
+                # Validate token against stored token and expiration
+                if (user.password_reset_token != verify_password_reset_token_request.reset_token or
+                    user.password_reset_token_expires_at < datetime.now(timezone.utc)):
+                    raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+                
+                return {"message": "Password reset token is valid"}
+            
+            except (JWTError, ValueError) as e:
+                raise HTTPException(status_code=400, detail="Invalid reset token")
+
+    @staticmethod
+    async def handle_google_login_signup(code: str) -> TokenPair:
+        """
+        Handles Google OAuth login/signup flow.
+        """
+        try:
+            tokens = await AuthService.authenticate_google_user(code)
+            return tokens
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}")

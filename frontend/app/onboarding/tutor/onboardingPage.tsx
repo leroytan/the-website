@@ -19,6 +19,7 @@ export default function TutorOnboarding() {
       document.cookie =
         "intends_to_be_tutor=false; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax; Secure";
       router.push("/dashboard");
+      router.refresh();
     }
   };
   const steps = [

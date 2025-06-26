@@ -190,9 +190,13 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
                   <div>
                     <div className="flex items-center text-customDarkBlue mb-2">
                       <DollarSign className="w-5 h-5 mr-2 text-customOrange" />
-                      <h3 className="text-lg font-semibold">Rate</h3>
+                      <h3 className="text-lg font-semibold">Rate Range</h3>
                     </div>
-                    <p className="text-gray-900">{tutor.rate || "N/A"}</p>
+                    <p className="text-gray-900">
+                      {tutor.min_rate && tutor.max_rate
+                        ? `$${tutor.min_rate} - $${tutor.max_rate} per hour`
+                        : "N/A"}
+                    </p>
                   </div>
                   <div>
                     <div className="flex items-center text-customDarkBlue mb-2">

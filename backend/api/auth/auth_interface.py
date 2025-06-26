@@ -103,3 +103,41 @@ class AuthInterface(ABC):
             dict: A dictionary containing the new access and refresh tokens.
         """
         pass
+
+    @staticmethod
+    @abstractmethod
+    def authenticate_google_user(code: str) -> dict[str, str]:
+        """
+        Authenticates a user using Google OAuth2 authorization code.
+
+        Args:
+            code (str): The authorization code received from Google.
+
+        Returns:
+            dict: A dictionary containing the application's access and refresh tokens.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def create_password_reset_token(token_data: TokenData, token_version: int = 0, expires_delta: Optional[timedelta] = None) -> str:
+        """
+        Creates a password reset token.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def verify_password_reset_token(token: str) -> TokenData:
+        """
+        Verifies a password reset token.
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def verify_password_reset_token_for_validation(token: str) -> TokenData:
+        """
+        Verifies a password reset token for validation purposes (no expiration check).
+        """
+        pass

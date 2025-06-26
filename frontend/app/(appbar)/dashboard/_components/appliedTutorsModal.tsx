@@ -54,8 +54,13 @@ export default function AppliedTutorsModal({
             requests?.map((request) => (
               <div
                 key={request.id}
-                className="flex flex-col gap-4 p-4 border rounded-lg shadow-sm"
+                className="flex flex-col gap-4 p-4 border rounded-lg shadow-sm relative"
               >
+                {request.requested_rate_hourly && (
+                  <div className="absolute top-4 right-4 text-green-600 bg-green-100 font-bold px-3 py-1 rounded-lg">
+                    ${request.requested_rate_hourly}/hour
+                  </div>
+                )}
                 {/* Tutor Info */}
                 <div className="flex items-center gap-3">
                   <Image
@@ -139,7 +144,7 @@ export default function AppliedTutorsModal({
                     className="px-3 py-2 flex justify-center items-center bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 text-sm whitespace-nowrap"
                     onClick={() => onAccept(request.id, 3500, request.tutor_id)}
                   >
-                    Accept & Pay
+                    Accept
                   </Button>
                   <Button
                     className="px-3 py-2 flex justify-center items-center bg-white border border-orange-400 text-orange-400 text-sm rounded-full"

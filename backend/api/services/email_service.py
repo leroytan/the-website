@@ -147,7 +147,7 @@ class GmailEmailService:
     @staticmethod
     def create_reset_link(
         reset_token: str, 
-        base_url: str = "https://yourwebsite.com/reset-password"
+        url: str = "https://yourwebsite.com/reset-password"
     ) -> str:
         """
         Create a password reset link
@@ -156,7 +156,7 @@ class GmailEmailService:
         :param base_url: Base URL for password reset page
         :return: Complete reset link
         """
-        return f"{base_url}?token={reset_token}"
+        return f"{url}?token={reset_token}"
     
     @staticmethod
     def send_email(

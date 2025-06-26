@@ -4,17 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import localFont from "next/font/local";
 import "./layout.css"; // Separate CSS file for component-specific styles
 import Sidebar from "./sideBar";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Menu,
-  User,
   BriefcaseBusiness,
   MessageCircle,
   UserRoundSearch,
-  Bell,
   LayoutDashboard,
   ChevronDown,
-  Plus,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -191,7 +188,7 @@ export default function ComponentLayout({
       name: "Messages",
       icon: <MessageCircle size={24} />,
     },
-    { path: "/notifications", name: "Notifications", icon: <Bell size={24} /> },
+    //{ path: "/notifications", name: "Notifications", icon: <Bell size={24} /> },
   ];
 
   return (
@@ -282,8 +279,8 @@ export default function ComponentLayout({
 
             {/* Right-aligned items */}
             <div className="flex items-center gap-3 ml-4">
-              {user && !tutor && (
-                <div className="hidden md:flex items-center">
+              {user && (
+                <div className="md:flex items-center">
                   <AddAssignmentButton />
                 </div>
               )}

@@ -32,6 +32,7 @@ export interface TuitionListing {
       start_time: string;
       end_time: string;
     }[];
+    requested_rate_hourly?: number;
   }[];
 }
 export interface TuitionListingFilters {
@@ -68,7 +69,8 @@ export interface Tutor {
   email: string;
   photo_url: string;
   highest_education: string;
-  rate: number;
+  min_rate: number;
+  max_rate: number;
   location: string;
   rating: number;
   about_me: string;

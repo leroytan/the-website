@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Home, Search } from 'react-feather'; // Assuming you're using React Feather icons
+import { Home } from 'react-feather'; // Assuming you're using React Feather icons
 import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatchClient';
 
 const PaymentSuccess = () => {
