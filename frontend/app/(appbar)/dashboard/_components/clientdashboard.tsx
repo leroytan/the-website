@@ -30,11 +30,10 @@ export default function ClientDashboard({
       method: "GET",
       credentials: "include",
     });
-
     if (!response.ok) {
       throw new Error("Failed to fetch assignment details");
     }
-    console.log("Assignment details fetched successfully:", assignment.id);
+    console.log("Assignment details fetched successfully:", assignment);
     const updatedAssignment: TuitionListing = await response.json();
     setSelectedRequests(updatedAssignment.requests || []);
     setModalOpen(true);
@@ -139,6 +138,9 @@ export default function ClientDashboard({
                     view="client"
                     onChat={handleChat}
                     onViewApplicants={openApplicantsModal}
+                    onViewDetails={() =>
+                      router.push(`/assignments?selected=${assignment.id}`)
+                    }
                   />
                 ))}
               </div>

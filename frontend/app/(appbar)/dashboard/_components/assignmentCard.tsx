@@ -47,6 +47,7 @@ export default function AssignmentCard({
           </div>
           
           {view === 'client' && assignment.status === "OPEN" && (
+            <div className="flex gap-2">
             <Button
               className="px-4 py-2 flex items-center bg-customYellow text-white rounded-xl hover:bg-customOrange transition-colors duration-200 text-sm shadow-sm"
               onClick={() => onViewApplicants?.(assignment)}
@@ -54,6 +55,14 @@ export default function AssignmentCard({
               <MessageCircleMore className="mr-2" size={16} />
               View Applicants
             </Button>
+            <Button
+            className="px-4 py-2 flex items-center bg-white text-customDarkBlue border border-customDarkBlue rounded-xl hover:bg-orange-50 transition-colors duration-200 text-sm shadow-sm"
+            onClick={() => onViewDetails && assignment.id && onViewDetails(assignment.id)}
+          >
+            <ExternalLink className="mr-2" size={16} />
+            View Details
+          </Button>
+          </div>            
           )}
           {view === 'client' && assignment.status === "FILLED" && (
             <div className="flex items-center gap-2">

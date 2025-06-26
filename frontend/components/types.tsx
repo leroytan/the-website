@@ -32,6 +32,7 @@ export interface TuitionListing {
       start_time: string;
       end_time: string;
     }[];
+    requested_rate_hourly?: number;
   }[];
 }
 export interface TuitionListingFilters {

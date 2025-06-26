@@ -19,7 +19,7 @@ export default function TutorDashboard({
   };
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState("pending");
   const [isTutorView, setIsTutorView] = useState(true);
   const [selectedRequests, setSelectedRequests] = useState<
     TuitionListing["requests"]
@@ -122,7 +122,7 @@ export default function TutorDashboard({
           <aside className="lg:w-1/4">
             <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm p-6 border border-customLightYellow/60">
               <nav className="space-y-2">
-                {["active", "pending"].map((key) => (
+                {["pending", "active"].map((key) => (
                   <button
                     key={key}
                     className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ${

@@ -47,11 +47,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       name: 'Messages',
       icon: <MessageCircle size={24} />,
     },
-    {
+    /*{
       path: '/notifications',
       name: 'Notifications',
       icon: <Bell size={24} />,
-    },
+    },*/
   ];
 
   return (

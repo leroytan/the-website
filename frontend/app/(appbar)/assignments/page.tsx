@@ -84,12 +84,24 @@ export default async function AssignmentsPage({
 
   return (
     <div className="flex flex-col items-center bg-customLightYellow/50 h-[calc(100vh-56px)]">
-      <FilterSortBar
-        subjects={subjects}
-        levels={levels}
-        locations={locations}
-        sortOptions={sortOptions}
-      />
+      {/* Show on all screens if no detail is selected, or only on md+ if detail is selected */}
+      {!selectedId ? (
+        <FilterSortBar
+          subjects={subjects}
+          levels={levels}
+          locations={locations}
+          sortOptions={sortOptions}
+        />
+      ) : (
+        <div className="hidden md:block w-full">
+          <FilterSortBar
+            subjects={subjects}
+            levels={levels}
+            locations={locations}
+            sortOptions={sortOptions}
+          />
+        </div>
+      )}
       <div className="flex flex-col md:flex-row bg-white rounded-xl shadow-lg w-full max-w-7xl h-full overflow-hidden">
         {/* Left Panel */}
         <div

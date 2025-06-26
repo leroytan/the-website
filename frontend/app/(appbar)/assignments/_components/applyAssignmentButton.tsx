@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../../../components/button";
 import { useAuth } from "../../../../context/authContext";
-import { AvailableSlotsDialog } from "./AvailableSlotsDialog";
+import { TutorRequestDialog } from "./tutorRequestDialog";
 import { Dialog } from "../../../../components/dialog";
 import { useRouter } from "next/navigation";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
@@ -38,21 +38,21 @@ const ApplyAssignmentButton = ({
     setIsFilled(status === "FILLED");
   }, [status]);
 
-  async function handleSubmit(slots: TimeSlot[]) {
+  async function handleSubmit(data: { requested_rate_hourly: number; available_slots: TimeSlot[] }) {
     !isApplied && setIsApplied((x) => !x);
     try {
-      const data = await fetchWithTokenCheck(`/api/assignment-requests/new`, {
+      const res = await fetchWithTokenCheck(`/api/assignment-requests/new`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ assignment_id: assignmentId, available_slots: slots }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignment_id: assignmentId,
+          requested_rate_hourly: data.requested_rate_hourly,
+          available_slots: data.available_slots,
+        }),
         credentials: "include",
       });
-      const res = await data.json();
-      if (!data.ok) throw new Error(`Failed to apply for the assignment: ${res.message}`);
-      
-      // Show success dialog after successful application
+      const json = await res.json();
+      if (!res.ok) throw new Error(`Failed to apply for the assignment: ${json.message}`);
       setShowSuccessDialog(true);
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -79,7 +79,7 @@ const ApplyAssignmentButton = ({
         >
           {isFilled ? "Filled" : isApplied ? "Applied" : "Apply"}
         </Button>
-        <AvailableSlotsDialog
+        <TutorRequestDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSubmit={handleSubmit}
