@@ -81,7 +81,7 @@ async def get_tutor_profile(id: int, request: Request, response: Response) -> Tu
 async def update_tutor_profile(
     tutorProfile: NewTutorProfile,
     id: int,
-    get_user: User = Depends(RouterAuthUtils.get_current_user)
+    user: User = Depends(RouterAuthUtils.get_current_user)
 ) -> TutorProfile:
     # Returns the updated private profile
     

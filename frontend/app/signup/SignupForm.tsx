@@ -12,6 +12,8 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/authContext";
 import ErrorMessage from "@/components/ErrorMessage";
 
+import { FcGoogle } from "react-icons/fc";
+
 const inter = Inter({ subsets: ["latin"] });
 
 const ROLES = ["Tutor", "Tutee/Parent"] as const;
@@ -225,6 +227,27 @@ export default function SignupPage() {
             Sign Up
           </motion.button>
         </form>
+
+        <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+            </div>
+        </div>
+
+        <motion.button
+            type="button"
+            onClick={() => { window.location.href = `${BASE_URL}/auth/google/login`; }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+        >
+            <FcGoogle className="mr-2 h-5 w-5" />
+            Sign up with Google
+        </motion.button>
+
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
           Already have an account?{" "}
           <Link href="/login" className="text-[#fc6453] hover:underline">

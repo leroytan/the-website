@@ -112,3 +112,42 @@ class StorageService:
         for obj in result:
             session.delete(obj)
         session.commit()
+
+    @staticmethod
+    def get_user_by_google_id(google_id: str) -> DeclarativeMeta | None:
+        from api.storage.models import User
+        with Session(StorageService.engine) as session:
+            return session.query(User).filter(User.google_id == google_id).first()
+
+    @staticmethod
+    def update_user_google_id(user_id: int, google_id: str) -> DeclarativeMeta:
+        from api.storage.models import User
+        with Session(StorageService.engine) as session:
+            user = session.query(User).filter(User.id == user_id).first()
+            if user:
+                user.google_id = google_id
+                session.commit()
+                session.refresh(user)
+            return user
+
+    @staticmethod
+    def create_user(name: str, email: str, password_hash: str | None, google_id: str | None, intends_to_be_tutor: bool) -> DeclarativeMeta:
+        from api.storage.models import User
+        with Session(StorageService.engine) as session:
+            new_user = User(
+                name=name,
+                email=email,
+                password_hash=password_hash,
+                google_id=google_id,
+                intends_to_be_tutor=intends_to_be_tutor
+            )
+            session.add(new_user)
+            session.commit()
+            session.refresh(new_user)
+            return new_user
+
+    @staticmethod
+    def get_user_by_email(email: str) -> DeclarativeMeta | None:
+        from api.storage.models import User
+        with Session(StorageService.engine) as session:
+            return session.query(User).filter(User.email == email).first()
