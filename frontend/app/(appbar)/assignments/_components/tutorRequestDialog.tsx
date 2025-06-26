@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Dialog } from "../../../../components/dialog";
 import { Button } from "../../../../components/button";
 import { X, ChevronLeft, ChevronRight, Plus, Clock, Hourglass } from "lucide-react";
 import DropDown from "../../../../components/dropdown";
 import { motion, AnimatePresence } from "framer-motion";
+import Checkbox from "../../../../components/checkbox";
 
 type Direction = "left" | "right";
 
@@ -23,7 +24,7 @@ interface ClientTimeSlot {
 interface AvailableSlotsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (slots: { day: string; start_time: string; end_time: string }[]) => void;
+  onSubmit: (data: { requested_rate_hourly: number; available_slots: { day: string; start_time: string; end_time: string }[] }) => void;
   clientSlots?: ClientTimeSlot[];
 }
 
@@ -38,23 +39,18 @@ const DAYS = [
 ];
 const DURATIONS = ["1 hour", "1.5 hours", "2 hours", "2.5 hours", "3 hours"];
 
-export const AvailableSlotsDialog = ({
+export const TutorRequestDialog = ({
   isOpen,
   onClose,
   onSubmit,
   clientSlots = [],
 }: AvailableSlotsDialogProps) => {
-  const [slots, setSlots] = useState<TimeSlot[]>([
-    {
-      day: "",
-      hours: "",
-      minutes: "",
-      duration: "",
-    },
-  ]);
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [currentSlot, setCurrentSlot] = useState(0);
+  const [requestedRate, setRequestedRate] = useState("");
   const prevSlotRef = useRef(0);
   const directionRef = useRef<Direction>("right");
+  const [copiedMappings, setCopiedMappings] = useState<Record<number, number>>({});
 
   const goToSlot = (newIndex: number) => {
     prevSlotRef.current = currentSlot;
@@ -104,6 +100,10 @@ export const AvailableSlotsDialog = ({
       alert("Please fill in all fields for each slot");
       return;
     }
+    if (!requestedRate) {
+      alert("Please select a requested hourly rate.");
+      return;
+    }
 
     // Convert slots to the required format
     const formattedSlots = slots.map((slot) => {
@@ -131,9 +131,19 @@ export const AvailableSlotsDialog = ({
       };
     });
 
-    onSubmit(formattedSlots);
+    onSubmit({
+      requested_rate_hourly: parseInt(requestedRate, 10),
+      available_slots: formattedSlots,
+    });
     onClose();
   };
+
+  useEffect(() => {
+    if (slots.length === 0) {
+      setSlots([{ day: "", hours: "", minutes: "", duration: "" }]);
+      setCurrentSlot(0);
+    }
+  }, [slots]);
 
   if (!isOpen) return null;
 
@@ -142,7 +152,7 @@ export const AvailableSlotsDialog = ({
       <div className="space-y-4 p-4 sm:p-6">
         <div className="flex justify-between items-center border-b pb-4">
           <h2 className="text-xl font-semibold text-customDarkBlue">
-            Select Your Available Time Slots
+            Select Your Rate & Available Slots
           </h2>
           <button
             onClick={onClose}
@@ -150,6 +160,21 @@ export const AvailableSlotsDialog = ({
           >
             <X size={20} />
           </button>
+        </div>
+
+        {/* Requested Rate Dropdown */}
+        <div>
+          <h3 className="text-base font-medium text-customDarkBlue mb-2">
+            Requested Hourly Rate <span className="text-red-500">*</span>
+          </h3>
+          <DropDown
+            placeholder="Select Rate"
+            stringOnDisplay={requestedRate ? `$${requestedRate}/hour` : ''}
+            iterable={[25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100].map((r) => `${r}`)}
+            renderItem={(option) => <span>${option}/hour</span>}
+            stateController={setRequestedRate}
+            className="w-full rounded-md text-sm"
+          />
         </div>
 
         {/* Client's Available Slots */}
@@ -164,20 +189,80 @@ export const AvailableSlotsDialog = ({
                 const end = slot.end_time;
                 const [sh, sm] = start.split(":").map(Number);
                 const [eh, em] = end.split(":").map(Number);
-                const durationHours = eh + em / 60 - sh - sm / 60;
+                const durationMinutes = (eh * 60 + em) - (sh * 60 + sm);
+                const durationOptions = [60, 90, 120, 150, 180];
+                const closestDuration = durationOptions.reduce((prev, curr) => Math.abs(curr - durationMinutes) < Math.abs(prev - durationMinutes) ? curr : prev, durationOptions[0]);
+                const hours = Math.floor(closestDuration / 60);
+                const mins = closestDuration % 60;
+                const durationLabel = mins === 0 ? `${hours} hour` : `${hours}.5 hour`;
 
                 return (
                   <div
                     key={`client-slot-${index}-${slot.day}-${start}-${end}`}
                     className="flex justify-between items-center bg-customLightYellow px-4 py-2 rounded-xl"
                   >
+                    <Checkbox
+                      defaultChecked={copiedMappings.hasOwnProperty(index)}
+                      onChange={() => {
+                        if (copiedMappings.hasOwnProperty(index)) {
+                          // Uncheck: remove the mapped tutor slot
+                          const slotIdx = copiedMappings[index];
+                          const newSlots = slots.filter((_, i) => i !== slotIdx);
+                          // Remove mapping and update all mappings after the removed slot
+                          const newMappings: Record<number, number> = {};
+                          Object.entries(copiedMappings).forEach(([cIdx, tIdx]) => {
+                            const cIdxNum = Number(cIdx);
+                            const t = tIdx as number;
+                            if (cIdxNum !== index) {
+                              newMappings[cIdxNum] = t > slotIdx ? t - 1 : t;
+                            }
+                          });
+                          if (newSlots.length === 0) {
+                            setSlots([{ day: "", hours: "", minutes: "", duration: "" }]);
+                            setCurrentSlot(0);
+                          } else {
+                            setSlots(newSlots);
+                            setCurrentSlot(Math.max(0, slotIdx - 1));
+                          }
+                          setCopiedMappings(newMappings);
+                        } else {
+                          // Check: add new slot or fill current if empty
+                          let slotToUse = currentSlot;
+                          let newSlots = [...slots];
+                          const isCurrentEmpty = !slots[currentSlot].day && !slots[currentSlot].hours && !slots[currentSlot].minutes && !slots[currentSlot].duration;
+                          if (isCurrentEmpty) {
+                            newSlots[currentSlot] = {
+                              day: slot.day,
+                              hours: sh.toString().padStart(2, "0"),
+                              minutes: sm.toString().padStart(2, "0"),
+                              duration: durationLabel,
+                            };
+                          } else {
+                            newSlots = [
+                              ...slots,
+                              {
+                                day: slot.day,
+                                hours: sh.toString().padStart(2, "0"),
+                                minutes: sm.toString().padStart(2, "0"),
+                                duration: durationLabel,
+                              },
+                            ];
+                            slotToUse = newSlots.length - 1;
+                            setCurrentSlot(slotToUse);
+                          }
+                          setSlots(newSlots);
+                          setCopiedMappings({ ...copiedMappings, [index]: slotToUse });
+                        }
+                      }}
+                      className="mr-2"
+                    />
                     <span className="font-bold text-customDarkBlue">{slot.day}</span>
                     <div className="flex flex-col items-end text-customDarkBlue text-sm">
                       <div className="flex items-center gap-1">
                         <Clock size={14} /> {start} - {end}
                       </div>
                       <div className="flex items-center gap-1">
-                        <Hourglass size={14} /> {durationHours.toFixed(1)} hours
+                        <Hourglass size={14} /> {(durationMinutes / 60).toFixed(1)} hours
                       </div>
                     </div>
                   </div>
@@ -213,10 +298,6 @@ export const AvailableSlotsDialog = ({
                       opacity: 0,
                     }}
                     animate={{ x: 0, opacity: 1 }}
-                    exit={{
-                      x: directionRef.current === "right" ? -300 : 300,
-                      opacity: 0,
-                    }}
                     transition={{ duration: 0.3 }}
                     className="top-0 left-0 w-full"
                   >
@@ -242,53 +323,60 @@ export const AvailableSlotsDialog = ({
                           <label className="block text-sm font-medium text-customDarkBlue mb-1">
                             Day <span className="text-red-500">*</span>
                           </label>
-                          <DropDown
-                            placeholder="Select Day"
-                            stringOnDisplay={slots[currentSlot].day}
-                            stateController={(value) => {
-                              const newSlots = [...slots];
-                              newSlots[currentSlot].day = value;
-                              setSlots(newSlots);
-                            }}
-                            iterable={DAYS}
-                            className="w-full rounded-md text-sm"
-                          />
+                          <div className={Object.values(copiedMappings).includes(currentSlot) ? 'pointer-events-none opacity-60' : ''}>
+                            <DropDown
+                              placeholder="Select Day"
+                              stringOnDisplay={slots[currentSlot].day}
+                              stateController={(value) => {
+                                const newSlots = [...slots];
+                                newSlots[currentSlot].day = value;
+                                setSlots(newSlots);
+                              }}
+                              iterable={DAYS}
+                              className="w-full rounded-md text-sm"
+                              disabled={Object.values(copiedMappings).includes(currentSlot)}
+                            />
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-customDarkBlue mb-1">
                             Start Time <span className="text-red-500">*</span>
                           </label>
-                          <div className="flex items-center gap-2">
-                            <DropDown
-                              placeholder="Hour"
-                              stringOnDisplay={slots[currentSlot].hours}
-                              iterable={Array.from({ length: 24 }, (_, i) =>
-                                i.toString().padStart(2, "0")
-                              )}
-                              stateController={(value) => {
-                                const newSlots = [...slots];
-                                newSlots[currentSlot].hours = value;
-                                setSlots(newSlots);
-                              }}
-                              className="w-full rounded-md text-sm"
-                            />
-                            <span className="text-customDarkBlue font-medium">
-                              :
-                            </span>
-                            <DropDown
-                              placeholder="Minute"
-                              stringOnDisplay={slots[currentSlot].minutes}
-                              iterable={Array.from({ length: 60 }, (_, i) =>
-                                i.toString().padStart(2, "0")
-                              )}
-                              stateController={(value) => {
-                                const newSlots = [...slots];
-                                newSlots[currentSlot].minutes = value;
-                                setSlots(newSlots);
-                              }}
-                              className="w-full rounded-md text-sm"
-                            />
+                          <div className={Object.values(copiedMappings).includes(currentSlot) ? 'pointer-events-none opacity-60' : ''}>
+                            <div className="flex items-center gap-2">
+                              <DropDown
+                                placeholder="Hour"
+                                stringOnDisplay={slots[currentSlot].hours}
+                                iterable={Array.from({ length: 24 }, (_, i) =>
+                                  i.toString().padStart(2, "0")
+                                )}
+                                stateController={(value) => {
+                                  const newSlots = [...slots];
+                                  newSlots[currentSlot].hours = value;
+                                  setSlots(newSlots);
+                                }}
+                                className="w-full rounded-md text-sm"
+                                disabled={Object.values(copiedMappings).includes(currentSlot)}
+                              />
+                              <span className="text-customDarkBlue font-medium">
+                                :
+                              </span>
+                              <DropDown
+                                placeholder="Minute"
+                                stringOnDisplay={slots[currentSlot].minutes}
+                                iterable={Array.from({ length: 60 }, (_, i) =>
+                                  i.toString().padStart(2, "0")
+                                )}
+                                stateController={(value) => {
+                                  const newSlots = [...slots];
+                                  newSlots[currentSlot].minutes = value;
+                                  setSlots(newSlots);
+                                }}
+                                className="w-full rounded-md text-sm"
+                                disabled={Object.values(copiedMappings).includes(currentSlot)}
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -296,17 +384,20 @@ export const AvailableSlotsDialog = ({
                           <label className="block text-sm font-medium text-customDarkBlue mb-1">
                             Duration <span className="text-red-500">*</span>
                           </label>
-                          <DropDown
-                            placeholder="Select Duration"
-                            stringOnDisplay={slots[currentSlot].duration}
-                            iterable={DURATIONS}
-                            stateController={(value) => {
-                              const newSlots = [...slots];
-                              newSlots[currentSlot].duration = value;
-                              setSlots(newSlots);
-                            }}
-                            className="w-full rounded-md text-sm"
-                          />
+                          <div className={Object.values(copiedMappings).includes(currentSlot) ? 'pointer-events-none opacity-60' : ''}>
+                            <DropDown
+                              placeholder="Select Duration"
+                              stringOnDisplay={slots[currentSlot].duration}
+                              iterable={DURATIONS}
+                              stateController={(value) => {
+                                const newSlots = [...slots];
+                                newSlots[currentSlot].duration = value;
+                                setSlots(newSlots);
+                              }}
+                              className="w-full rounded-md text-sm"
+                              disabled={Object.values(copiedMappings).includes(currentSlot)}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>

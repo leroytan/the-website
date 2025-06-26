@@ -10,6 +10,7 @@ interface DropDownProps<T> {
   placeholder?: string;
   className?: string;
   onApply?: (value: T) => void;
+  disabled?: boolean;
 }
 
 function DropDown<T>({
@@ -20,6 +21,7 @@ function DropDown<T>({
   placeholder = "Select...",
   className = "",
   onApply,
+  disabled
 }: DropDownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [tempSelected, setTempSelected] = useState<T | null>(null);
@@ -82,9 +84,10 @@ function DropDown<T>({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="px-4 py-2 border rounded-full bg-white text-customDarkBlue font-medium flex items-center justify-between w-full"
+        className={`px-4 py-2 border rounded-full bg-white text-customDarkBlue font-medium flex items-center justify-between w-full ${disabled ? "bg-gray-200 cursor-not-allowed" : ""}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        disabled={disabled}
       >
         <span className={showPlaceholder ? "text-gray-400" : ""}>
           {showPlaceholder ? placeholder : stringOnDisplay}
