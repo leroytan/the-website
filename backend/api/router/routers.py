@@ -1,14 +1,15 @@
 from fastapi import APIRouter
 from api.router import (
-    auth, 
-    user, 
-    course, 
-    assignment, 
-    chat, 
-    tutor, 
-    reviews, 
-    me, 
+    auth,
+    user,
+    course,
+    assignment,
+    chat,
+    tutor,
+    reviews,
+    me,
     payment,
+    websocket,
 )
 
 # Change from router to a list of routers
@@ -22,4 +23,5 @@ routers = [
     reviews.router,
     me.router,
     payment.router,
+    websocket.router,
 ]

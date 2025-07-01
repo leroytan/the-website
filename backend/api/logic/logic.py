@@ -13,7 +13,7 @@ from api.router.models import (
 from api.storage.models import User
 from api.storage.storage_service import StorageService
 from api.services.email_service import GmailEmailService
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 from jose import JWTError
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -86,9 +86,15 @@ class Logic:
                 
                 # Validate token version
                 if payload.token_version != user.token_version:
-                    credentials_exception.detail = "Token version mismatch. Please log in again."
-                    raise credentials_exception
-                
+                    raise HTTPException(
+                        status_code=401,
+                        detail={
+                            "code": "TOKEN_VERSION_MISMATCH",
+                            "message": "Token is no longer valid due to password change."
+                        },
+                        headers={"WWW-Authenticate": "Bearer"}
+                    )
+                                
                 return user
         
         except (JWTError, ValueError, ValidationError) as e:
