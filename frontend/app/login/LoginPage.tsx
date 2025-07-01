@@ -40,14 +40,10 @@ export default function LoginPage() {
           });
 
           if (res.ok) {
-            await refetch(); // refresh user and tutor data for authcontext
-            // Fetch user state and set cookies
-            const meRes = await fetchWithTokenCheck(`/api/me"`);
-            const { user, tutor }: { user: User; tutor: Tutor | null } =
-              await meRes.json();
+            const { user, tutor } = await refetch();  // refresh user and tutor data for authcontext
 
             // Set helper cookies for middleware
-            if (user.intends_to_be_tutor && !tutor) {
+            if (user?.intends_to_be_tutor && !tutor) {
               document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
               document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
             }

@@ -8,23 +8,25 @@ interface AuthContextType {
   user: User | null;
   tutor: Tutor | null;
   loading: boolean;
-  refetch: () => void;
+  refetch: () => Promise<{ user: User | null; tutor: Tutor | null }>;
   logout: () => void;
 }
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   tutor: null,
   loading: true,
-  refetch: () => {},
+  refetch: async () => ({ user: null, tutor: null }),
   logout: () => {},
 });
+
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [tutor, setTutor] = useState<Tutor | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchAuth = async () => {
+  const fetchAuth = async (): Promise<{ user: User | null; tutor: Tutor | null }> => {
     try {
       const res = await fetchWithTokenCheck(`/api/me`, {
         credentials: "include",
@@ -33,9 +35,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await res.json();
       setUser(data.user);
       setTutor(data.tutor);
+      return { user: data.user, tutor: data.tutor };
     } catch (err) {
       setUser(null);
       setTutor(null);
+      return { user: null, tutor: null };
     } finally {
       setLoading(false);
     }
@@ -46,10 +50,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Refetch function to manually refresh user and tutor data
-  const refetch = async () => {
-    setLoading(true);
-    await fetchAuth();
-    console.log(user, tutor);
+  const refetch = async (): Promise<{ user: User | null; tutor: Tutor | null }> => {
+    setLoading(true); // optional; you could remove this if handled in fetchAuth
+    return await fetchAuth();
   };
   // Logout function to clear user and tutor data
   const logout = async () => {

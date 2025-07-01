@@ -44,10 +44,31 @@ async function getAssignments(isTutor: boolean, accessToken: string): Promise<As
 
 export default async function DashboardPage() {
   const cookieStore = await cookies()
-  const accessToken = cookieStore.get('access_token')?.value
+  let accessToken = cookieStore.get('access_token')?.value
 
+  // If no access token, attempt to refresh
   if (!accessToken) {
-    throw new Error('No access token found')
+    try {
+      const refreshResponse = await fetch(`${BASE_URL}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!refreshResponse.ok) {
+        // If refresh fails, redirect to login
+        return redirect('/login');
+      }
+
+      // Re-check for access token after refresh
+      const updatedCookieStore = await cookies()
+      accessToken = updatedCookieStore.get('access_token')?.value
+
+      if (!accessToken) {
+        return redirect('/login');
+      }
+    } catch (error) {
+      return redirect('/login');
+    }
   }
 
   // Get user and tutor info
