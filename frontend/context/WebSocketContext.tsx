@@ -9,23 +9,33 @@ import logger from '@/utils/logger';
 interface Notification {
   type: string;
   message: string;
+  chat_id?: number;
+  sender_id?: number;
+  sender_name?: string;
+  content_preview?: string;
+  message_type?: string;
+  timestamp?: string;
 }
 
 interface WebSocketContextType {
   socket: WebSocket | null;
   notifications: Notification[];
   clearNotifications: () => void;
+  onNewMessage?: (notification: Notification) => void;
+  setOnNewMessage: (callback: (notification: Notification) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
   socket: null,
   notifications: [],
-  clearNotifications: () => {}
+  clearNotifications: () => {},
+  setOnNewMessage: () => {}
 });
 
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [onNewMessage, setOnNewMessage] = useState<((notification: Notification) => void) | undefined>();
   const { user, loading } = useAuth();
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -33,6 +43,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const clearNotifications = () => {
     setNotifications([]);
+  };
+
+  const handleSetOnNewMessage = (callback: (notification: Notification) => void) => {
+    setOnNewMessage(() => callback);
   };
 
   const initWebSocket = async () => {
@@ -73,6 +87,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         try {
           const notification: Notification = JSON.parse(event.data);
           setNotifications(prev => [...prev, notification]);
+          
+          // Handle new message notifications
+          if (notification.type === 'new_message' && onNewMessage) {
+            onNewMessage(notification);
+          }
         } catch (error) {
           logger.error('WebSocketContext: Failed to parse notification:', event.data);
         }
@@ -127,7 +146,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [user, loading]);
 
   return (
-    <WebSocketContext.Provider value={{ socket, notifications, clearNotifications }}>
+    <WebSocketContext.Provider value={{
+      socket,
+      notifications,
+      clearNotifications,
+      onNewMessage,
+      setOnNewMessage: handleSetOnNewMessage
+    }}>
       {children}
     </WebSocketContext.Provider>
   );

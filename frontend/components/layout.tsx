@@ -21,6 +21,8 @@ import { usePathname, useRouter } from "next/navigation";
 import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssignmentButton";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import NotificationToast from "./NotificationToast";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -166,6 +168,7 @@ export default function ComponentLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { hasUnreadMessages } = useChatNotifications();
 
   // Debug logging for user state changes
   useEffect(() => {
@@ -263,14 +266,17 @@ export default function ComponentLayout({
                     <Button
                       key={item.path}
                       onClick={() => router.push(item.path)}
-                      className={`flex flex-col items-center justify-center h-full gap-0.5 px-2 md:px-3 lg:px-4 ${
+                      className={`flex flex-col items-center justify-center h-full gap-0.5 px-2 md:px-3 lg:px-4 relative ${
                         pathname === item.path
                           ? "border-b-2 border-b-[#4a58b5] text-[#4a58b5]"
                           : "text-gray-500 hover:text-[#4a58b5]"
                       }`}
                     >
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center relative">
                         {item.icon}
+                        {item.path === '/chat' && hasUnreadMessages && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                        )}
                       </div>
                       <span className="text-xs md:text-sm">{item.name}</span>
                     </Button>
@@ -308,6 +314,9 @@ export default function ComponentLayout({
 
       {/* Mobile Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSideBar} />
+
+      {/* Notification Toast */}
+      {user && <NotificationToast />}
 
       {/* Main Content */}
       <main className="min-h-[calc(100vh-3.5rem)] w-full max-w-screen">{children}</main>

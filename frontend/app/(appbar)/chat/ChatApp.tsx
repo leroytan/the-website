@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { useWebSocket } from "@/context/WebSocketContext";
 import logger from "@/utils/logger";
 
 const ChatApp = () => {
@@ -340,6 +341,7 @@ const ChatApp = () => {
   const initialChatData: ChatData = {};
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
   const { setError } = useError();
+  const { setOnNewMessage } = useWebSocket();
 
   const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
   const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
@@ -536,6 +538,60 @@ const ChatApp = () => {
   };
 
   const hasInitializedSocket = useRef(false);
+
+  // Handle notifications from root WebSocket when not actively chatting
+  useEffect(() => {
+    const handleNewMessageNotification = (notification: any) => {
+      if (notification.type === 'new_message' && notification.chat_id) {
+        // Update chat data with notification info
+        setChatData((prevChatData: ChatData) => {
+          const chatId = notification.chat_id;
+          const existingChat = prevChatData[chatId];
+          
+          if (existingChat) {
+            // Update existing chat with unread status
+            const updatedChat = existingChat.clone();
+            updatedChat.hasUnreadMessages = true;
+            return {
+              ...prevChatData,
+              [chatId]: updatedChat,
+            };
+          } else {
+            // Create new chat thread from notification
+            const newChat = new ChatThread(
+              chatId,
+              true, // Assume locked for new chats
+              notification.sender_name || 'Unknown User',
+              -1,
+              [],
+              {
+                id: chatId,
+                name: notification.sender_name || 'Unknown User',
+                lastMessage: notification.content_preview || 'New message',
+                displayTime: timeAgo(notification.timestamp || new Date().toISOString()),
+                hasUnread: true,
+                isLocked: true,
+                hasMessages: true,
+                lastUpdate: new Date(notification.timestamp || new Date().toISOString()),
+                lastMessageType: notification.message_type === 'tutor_request' ? 'tutorRequest' : 'textMessage',
+              }
+            );
+            newChat.hasUnreadMessages = true;
+            return {
+              ...prevChatData,
+              [chatId]: newChat,
+            };
+          }
+        });
+      }
+    };
+
+    setOnNewMessage(handleNewMessageNotification);
+
+    return () => {
+      setOnNewMessage(() => {});
+    };
+  }, [setOnNewMessage]);
 
   // This only runs when the component mounts
   useEffect(() => {
