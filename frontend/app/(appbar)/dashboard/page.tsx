@@ -46,29 +46,9 @@ export default async function DashboardPage() {
   const cookieStore = await cookies()
   let accessToken = cookieStore.get('access_token')?.value
 
-  // If no access token, attempt to refresh
+  // If no access token, redirect to login (remove server-side refresh to prevent loops)
   if (!accessToken) {
-    try {
-      const refreshResponse = await fetch(`${BASE_URL}/api/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!refreshResponse.ok) {
-        // If refresh fails, redirect to login
-        return redirect('/login');
-      }
-
-      // Re-check for access token after refresh
-      const updatedCookieStore = await cookies()
-      accessToken = updatedCookieStore.get('access_token')?.value
-
-      if (!accessToken) {
-        return redirect('/login');
-      }
-    } catch (error) {
-      return redirect('/login');
-    }
+    return redirect('/login');
   }
 
   // Get user and tutor info
@@ -84,6 +64,7 @@ export default async function DashboardPage() {
   }
 
   const { user, tutor } = await meResponse.json()
+  // const { tutor } = useAuth()
 
   // Get assignments based on user role
   const assignments = await getAssignments(!!tutor, accessToken)

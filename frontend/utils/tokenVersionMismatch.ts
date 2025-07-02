@@ -21,10 +21,8 @@ export async function fetchWithTokenCheck(input: RequestInfo | URL, init?: Reque
     // Handle specific fetch error cases
     if (error instanceof TypeError) {
       // Handle fetch-specific errors (like network failures)
-      alert("Network issue: Unable to reach the server.");
     } else {
       // Handle general errors (non-network related)
-      alert("An error occurred while fetching data.");
     }
     // throw error; // Optionally re-throw the error after handling it
     return new Response(JSON.stringify({

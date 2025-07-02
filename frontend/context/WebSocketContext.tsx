@@ -27,13 +27,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user, loading } = useAuth();
   const socketRef = useRef<WebSocket | null>(null);
-  const hasInitializedSocket = useRef(false);
 
   const clearNotifications = () => {
     setNotifications([]);
   };
 
   const initWebSocket = async () => {
+    // Close existing socket if any
+    if (socketRef.current) {
+      socketRef.current.close();
+    }
+    return
+    
     try {
       const response = await fetchWithTokenCheck(`/api/ws/jwt`, {
         credentials: "include",
@@ -43,14 +48,15 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       const data = await response.json();
       const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
-      console.log(`Connecting to WebSocket at ${wsURL}/ws/notifications?access_token=${data.access_token}`);
       const newSocket = new WebSocket(
         `${wsURL}/ws/notifications?access_token=${data.access_token}`
       );
-      socketRef.current = newSocket;
-      setSocket(newSocket);
-
-      newSocket.onopen = () => console.log("Connected to Notifications WebSocket");
+      
+      newSocket.onopen = () => {
+        console.log("Connected to Notifications WebSocket");
+        socketRef.current = newSocket;
+        setSocket(newSocket);
+      };
 
       newSocket.onmessage = (event) => {
         try {
@@ -61,10 +67,15 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       };
 
-      newSocket.onclose = () => {
+      newSocket.onclose = (event) => {
+        console.log("Notifications WebSocket closed", event.reason);
         socketRef.current = null;
         setSocket(null);
-        console.log("Notifications WebSocket closed");
+        
+        // Reconnection strategy with backoff
+        if (user && !loading) {
+          setTimeout(initWebSocket, 5000); // Retry after 5 seconds
+        }
       };
     } catch (error) {
       console.error("Failed to initialize WebSocket:", error);
@@ -72,12 +83,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   useEffect(() => {
-    // Only attempt WebSocket connection if user is authenticated and not loading
-    if (!user || loading) return;
-
-    if (!hasInitializedSocket.current) {
+    if (user && !loading) {
       initWebSocket();
-      hasInitializedSocket.current = true;
     }
 
     return () => {

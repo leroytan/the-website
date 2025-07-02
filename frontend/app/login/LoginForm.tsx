@@ -49,7 +49,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
       }
       router.replace(redirectTo);
-      router.refresh();
+      // router.refresh();
     } else {
       const errorData = await res.json();
       setErrorMessage(errorData.message || "Login failed");

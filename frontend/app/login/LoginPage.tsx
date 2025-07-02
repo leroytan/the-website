@@ -48,7 +48,7 @@ export default function LoginPage() {
               document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
             }
             router.replace(redirectTo); // silently redirect, no flash
-            router.refresh(); // refresh the page to get updated data
+            // router.refresh(); // Removed: causes multiple concurrent requests to dashboard
           } else {
             setShowLogin(true); // show form only if refresh fails
           }
