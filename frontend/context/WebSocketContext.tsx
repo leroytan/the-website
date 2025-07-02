@@ -22,7 +22,7 @@ interface WebSocketContextType {
   notifications: Notification[];
   clearNotifications: () => void;
   onNewMessage?: (notification: Notification) => void;
-  setOnNewMessage: (callback: (notification: Notification) => void) => void;
+  setOnNewMessage: (callback?: (notification: Notification) => void) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType>({
@@ -45,8 +45,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setNotifications([]);
   };
 
-  const handleSetOnNewMessage = (callback: (notification: Notification) => void) => {
-    setOnNewMessage(() => callback);
+  const handleSetOnNewMessage = (callback?: (notification: Notification) => void) => {
+    setOnNewMessage(callback);
   };
 
   const initWebSocket = async () => {

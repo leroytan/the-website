@@ -542,7 +542,7 @@ const ChatApp = () => {
   // Handle notifications from root WebSocket when not actively chatting
   useEffect(() => {
     const handleNewMessageNotification = (notification: any) => {
-      if (notification.type === 'new_message' && notification.chat_id) {
+      if (notification && notification.type === 'new_message' && notification.chat_id) {
         // Update chat data with notification info
         setChatData((prevChatData: ChatData) => {
           const chatId = notification.chat_id;
@@ -589,9 +589,9 @@ const ChatApp = () => {
     setOnNewMessage(handleNewMessageNotification);
 
     return () => {
-      setOnNewMessage(() => {});
+      setOnNewMessage(undefined);
     };
-  }, [setOnNewMessage]);
+  }, []); // Remove setOnNewMessage from dependencies to prevent infinite loop
 
   // This only runs when the component mounts
   useEffect(() => {

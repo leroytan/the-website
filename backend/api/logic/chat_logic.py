@@ -59,10 +59,17 @@ class ChatLogic:
             Convert a chat message to a dictionary format in the expected format for the frontend.
             """
             sent_by_user = message.sender_id == user_id
+            
+            # Check if the chat is locked to determine sender name display
+            sender_name = message.sender.name
+            if hasattr(message, 'chat') and message.chat and message.chat.is_locked and not sent_by_user:
+                # Hide sender name for locked chats (except for messages sent by the current user)
+                sender_name = "Anonymous User"
+            
             message_dict = {
                 "id": message.id,
                 "chat_id": message.chat_id,
-                "sender": message.sender.name,
+                "sender": sender_name,
                 "content": message.content,
                 "message_type": message.message_type.value,
                 "created_at": message.created_at.isoformat(),
@@ -217,12 +224,22 @@ class ChatLogic:
         # Send notification to receiver via root WebSocket if they're not connected to chat
         if receiver_id not in ChatLogic.active_connections:
             with Session(StorageService.engine) as session:
-                sender = session.query(User).filter(User.id == sender_id).first()
-                sender_name = sender.name if sender else "Unknown User"
+                # Get the chat to check if it's locked
+                chat = session.query(PrivateChat).filter(PrivateChat.id == chat_message.chat_id).first()
+                
+                if chat and chat.is_locked:
+                    # Hide sender name for locked chats
+                    sender_name = "Anonymous User"
+                    display_message = "New message from Anonymous User"
+                else:
+                    # Show real sender name for unlocked chats
+                    sender = session.query(User).filter(User.id == sender_id).first()
+                    sender_name = sender.name if sender else "Unknown User"
+                    display_message = f"New message from {sender_name}"
                 
                 notification_data = {
                     "type": "new_message",
-                    "message": f"New message from {sender_name}",
+                    "message": display_message,
                     "chat_id": chat_message.chat_id,
                     "sender_id": sender_id,
                     "sender_name": sender_name,
