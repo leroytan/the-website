@@ -67,14 +67,12 @@ const AddAssignmentOverlay = ({
   const goToPrevSlot = () => {
     if (formData.slots.length <= 1 || currentSlot === 0) return;
     goToSlot(currentSlot - 1);
-    console.log(directionRef.current);
   };
 
   const goToNextSlot = () => {
     if (formData.slots.length <= 1 || currentSlot === formData.slots.length - 1)
       return;
     goToSlot(currentSlot + 1);
-    console.log(directionRef.current);
   };
 
   const handleAddSlot = () => {
@@ -198,7 +196,6 @@ const AddAssignmentOverlay = ({
       setShowOverlay(false);
       setShowSuccessDialog(true);
     } catch (error) {
-      console.log(error);
       alert(error);
     }
   }

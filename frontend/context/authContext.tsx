@@ -33,11 +33,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchAuth = async (): Promise<{ user: User | null; tutor: Tutor | null }> => {
     // If already fetching, wait for the current fetch to complete
     if (isFetching.current && currentFetchPromise.current) {
-      logger.debug("AuthContext: fetchAuth called but already fetching, waiting for current fetch to complete...");
       return await currentFetchPromise.current;
     }
     
-    logger.debug("AuthContext: Starting fetchAuth...");
     isFetching.current = true;
     
     // Create and store the fetch promise
@@ -50,7 +48,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           credentials: "include",
         });
         if (!refreshRes.ok) throw new Error("Not authenticated");
-        console.log(document.cookie)
         const res = await fetchWithTokenCheck(`/api/me`, {
           credentials: "include",
         });
@@ -59,14 +56,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         logger.debug("AuthContext: fetchAuth successful, setting user state:", {
           user: data.user ? { id: data.user.id, name: data.user.name, email: data.user.email } : null,
-          tutor: data.tutor ? { id: data.tutor.id } : null
+          tutor: data.tutor ? { id: data.tutor.id } : null,
+          timestamp: new Date().toISOString()
         });
         
         setUser(data.user);
         setTutor(data.tutor);
         return { user: data.user, tutor: data.tutor };
       } catch (err) {
-        logger.debug("AuthContext: fetchAuth failed, clearing user state:", err);
         setUser(null);
         setTutor(null);
         return { user: null, tutor: null };
@@ -75,7 +72,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         hasInitialized.current = true;
         isFetching.current = false;
         currentFetchPromise.current = null;
-        logger.debug("AuthContext: fetchAuth completed, loading set to false");
       }
     })();
     
@@ -99,7 +95,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setTutor(null);
     setLoading(false);
-    logger.debug("User logged out");
   };
 
   return (

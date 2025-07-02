@@ -508,13 +508,12 @@ const ChatApp = () => {
     }
     const data = await response.json();
     const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
-    logger.debug(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
     const socket = new WebSocket(
       `${wsURL}/ws/chat?access_token=${data.access_token}`
     );
     socketRef.current = socket;
 
-    socket.onopen = () => logger.debug("Connected to WebSocket");
+    socket.onopen = () => {};
 
     socket.onmessage = (event) => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
@@ -533,7 +532,6 @@ const ChatApp = () => {
 
     socket.onclose = () => {
       socketRef.current = null;
-      logger.debug("WebSocket closed");
     }
   };
 
@@ -746,7 +744,6 @@ const ChatApp = () => {
                     if (!response.ok) {
                       throw new Error("Failed to create chat");
                     } else {
-                      logger.debug("Chat created successfully");
                       setNewMessage("");
                     }
                     const chatPreview: ChatPreviewBackendDTO = await response.json();

@@ -33,7 +33,6 @@ export default function ClientDashboard({
     if (!response.ok) {
       throw new Error("Failed to fetch assignment details");
     }
-    console.log("Assignment details fetched successfully:", assignment);
     const updatedAssignment: TuitionListing = await response.json();
     setSelectedRequests(updatedAssignment.requests || []);
     setModalOpen(true);

@@ -126,7 +126,6 @@ export const Primary = () => (
                 tooltipVisibility="always"
                 tooltipPosition="over"
                 onChange={(x) => {
-                    console.log("1: ", x);
                 }}
                 from={"01-01-2020"}
                 to={"03-25-2020"}
@@ -140,7 +139,6 @@ export const Primary = () => (
                 tooltipVisibility="always"
                 tooltipPosition="over"
                 onChange={(x) => {
-                    console.log("2: ", x);
                 }}
                 from={"03-21-2020"}
                 to={"03-25-2020"}

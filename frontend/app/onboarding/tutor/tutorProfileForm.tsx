@@ -92,7 +92,6 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
   };
 
   const handleSubmit = async () => {
-    console.log("Submitting tutor profile:", formData);
     if (
       !formData.bio.trim() ||
       !formData.education ||
@@ -137,7 +136,6 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
         throw new Error(res.message || "Failed to save profile");
       }
       nextStep(); // Proceed to the next step in the onboarding process
-      console.log("Profile saved successfully");
       // Optionally redirect or update UI here
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

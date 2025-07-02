@@ -30,9 +30,6 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    logger.debug("Manual login attempted with:", { email });
-
-    logger.debug("Sending manual login request...");
 
     const res = await fetch(`/api/auth/login`, {
       method: "POST",
@@ -41,7 +38,6 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     });
 
     if (res.ok) {
-      logger.debug("Manual login successful, calling refetch...");
       const { user, tutor }: { user: User | null; tutor: Tutor | null } = await refetch(); // refresh user and tutor data for authcontext
 
       logger.debug("Manual login refetch completed:", {
@@ -53,10 +49,8 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       if (user?.intends_to_be_tutor && !tutor) {
       document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
       document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
-      logger.debug("Manual login helper cookies set for middleware");
       }
       
-      logger.debug("Manual login navigating to:", redirectTo);
       router.replace(redirectTo);
       // router.refresh();
     } else {

@@ -21,7 +21,6 @@ import { usePathname, useRouter } from "next/navigation";
 import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssignmentButton";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
-import logger from "@/utils/logger";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -170,12 +169,6 @@ export default function ComponentLayout({
 
   // Debug logging for user state changes
   useEffect(() => {
-    logger.debug("ComponentLayout: Auth state changed:", {
-      user: user ? { id: user.id, name: user.name, email: user.email } : null,
-      tutor: tutor ? { id: tutor.id } : null,
-      loading,
-      pathname
-    });
   }, [user, tutor, loading, pathname]);
 
   const toggleSideBar = () => {

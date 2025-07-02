@@ -15,6 +15,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     throw new Error("Failed to load tutor data");
   }
   const tutor = await res.json();
-  console.log("Fetched tutor data:", tutor);
   return <TutorProfile tutor={tutor} />;
 }

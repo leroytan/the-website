@@ -15,12 +15,19 @@ export default function LoginPage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    logger.debug("LoginPage: useEffect triggered", {
+      authLoading,
+      hasUser: !!user,
+      hasTutor: !!tutor,
+      redirectTo,
+      timestamp: new Date().toISOString()
+    });
+
     const accessToken = searchParams.get("access_token");
     const refreshToken = searchParams.get("refresh_token");
 
     const handleAuthCallback = async () => {
       if (accessToken && refreshToken) {
-        logger.debug("Google login callback detected with tokens");
         
         // Set tokens in cookies
         document.cookie = `access_token=${accessToken}; path=/; SameSite=Lax; Secure`;
@@ -28,12 +35,11 @@ export default function LoginPage() {
 
         await new Promise(r => setTimeout(r, 50));
         
-        logger.debug("Tokens set in cookies, calling refetch...");
         
         // Clear the tokens from the URL
         const { user, tutor } = await refetch(); // Refresh user and tutor data for authcontext
         
-        logger.debug("Refetch completed:", {
+        logger.debug("LoginPage: Refetch completed:", {
           user: user ? { id: user.id, name: user.name, email: user.email } : null,
           tutor: tutor ? { id: tutor.id } : null
         });
@@ -42,10 +48,8 @@ export default function LoginPage() {
         if (user?.intends_to_be_tutor && !tutor) {
           document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
           document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
-          logger.debug("Helper cookies set for middleware");
         }
         
-        logger.debug("Navigating to:", redirectTo);
         router.replace(redirectTo, undefined);
       } else {
         setShowLogin(true);
@@ -54,7 +58,7 @@ export default function LoginPage() {
     };
 
     handleAuthCallback();
-  }, [redirectTo, router, searchParams, refetch, authLoading, user, tutor]);
+  }, [redirectTo, router, searchParams, refetch]);
 
   if (checking) {
     return (

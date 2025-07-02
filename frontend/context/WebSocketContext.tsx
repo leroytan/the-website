@@ -28,17 +28,26 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user, loading } = useAuth();
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isIntentionallyClosedRef = useRef(false);
 
   const clearNotifications = () => {
     setNotifications([]);
   };
 
   const initWebSocket = async () => {
+    
+    // Clear any pending reconnection timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
     // Close existing socket if any
     if (socketRef.current) {
+      isIntentionallyClosedRef.current = true;
       socketRef.current.close();
     }
-    return
     
     try {
       const response = await fetchWithTokenCheck(`/api/ws/jwt`, {
@@ -49,14 +58,15 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       const data = await response.json();
       const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
+      
       const newSocket = new WebSocket(
         `${wsURL}/ws/notifications?access_token=${data.access_token}`
       );
       
       newSocket.onopen = () => {
-        logger.debug("Connected to Notifications WebSocket");
         socketRef.current = newSocket;
         setSocket(newSocket);
+        isIntentionallyClosedRef.current = false;
       };
 
       newSocket.onmessage = (event) => {
@@ -64,32 +74,55 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const notification: Notification = JSON.parse(event.data);
           setNotifications(prev => [...prev, notification]);
         } catch (error) {
-          logger.error('Failed to parse notification:', event.data);
+          logger.error('WebSocketContext: Failed to parse notification:', event.data);
         }
       };
 
       newSocket.onclose = (event) => {
-        logger.debug("Notifications WebSocket closed", event.reason);
-        socketRef.current = null;
-        setSocket(null);
         
-        // Reconnection strategy with backoff
-        if (user && !loading) {
-          setTimeout(initWebSocket, 5000); // Retry after 5 seconds
+        // Only clear socket state if this is the current socket
+        if (socketRef.current === newSocket) {
+          socketRef.current = null;
+          setSocket(null);
+        }
+        
+        // Only reconnect if:
+        // 1. User is authenticated and not loading
+        // 2. Connection was not intentionally closed
+        // 3. No reconnection timeout is already scheduled
+        if (user && !loading && !isIntentionallyClosedRef.current && !reconnectTimeoutRef.current) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectTimeoutRef.current = null;
+            if (user && !loading && !socketRef.current) {
+              initWebSocket();
+            }
+          }, 5000);
         }
       };
+
+      newSocket.onerror = (error) => {
+        logger.error("WebSocketContext: WebSocket error occurred", error);
+      };
     } catch (error) {
-      logger.error("Failed to initialize WebSocket:", error);
+      logger.error("WebSocketContext: Failed to initialize WebSocket:", error);
     }
   };
 
   useEffect(() => {
+    
     if (user && !loading) {
       initWebSocket();
     }
 
     return () => {
-      socketRef.current?.close();
+      if (socketRef.current) {
+        isIntentionallyClosedRef.current = true;
+        socketRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
   }, [user, loading]);
 
