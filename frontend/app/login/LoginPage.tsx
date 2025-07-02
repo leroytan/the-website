@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LoginForm from "./LoginForm";
 import { useAuth } from "@/context/authContext";
-import { Tutor, User } from "@/components/types";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import logger from "@/utils/logger";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/";
-  const { refetch } = useAuth();
+  const { refetch, loading: authLoading, user, tutor } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [checking, setChecking] = useState(true);
 
@@ -21,50 +20,41 @@ export default function LoginPage() {
 
     const handleAuthCallback = async () => {
       if (accessToken && refreshToken) {
+        logger.debug("Google login callback detected with tokens");
+        
         // Set tokens in cookies
         document.cookie = `access_token=${accessToken}; path=/; SameSite=Lax; Secure`;
         document.cookie = `refresh_token=${refreshToken}; path=/; SameSite=Lax; Secure`;
+
+        await new Promise(r => setTimeout(r, 50));
+        
+        logger.debug("Tokens set in cookies, calling refetch...");
         
         // Clear the tokens from the URL
-        await refetch(); // Refresh user and tutor data for authcontext
-        router.replace(redirectTo, undefined);
-        setChecking(false);
-        return;
-      }
-
-      const tryRefresh = async () => {
-        try {
-          const res = await fetch(`/api/auth/refresh`, {
-            method: "POST",
-            credentials: "include",
-          });
-
-          if (res.ok) {
-            const { user, tutor } = await refetch();  // refresh user and tutor data for authcontext
-
-            // Set helper cookies for middleware
-            if (user?.intends_to_be_tutor && !tutor) {
-              document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
-              document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
-            }
-            router.replace(redirectTo); // silently redirect, no flash
-            // router.refresh(); // Removed: causes multiple concurrent requests to dashboard
-          } else {
-            setShowLogin(true); // show form only if refresh fails
-          }
-        } catch (err) {
-          console.error("Refresh failed:", err);
-          setShowLogin(true);
-        } finally {
-          setChecking(false);
+        const { user, tutor } = await refetch(); // Refresh user and tutor data for authcontext
+        
+        logger.debug("Refetch completed:", {
+          user: user ? { id: user.id, name: user.name, email: user.email } : null,
+          tutor: tutor ? { id: tutor.id } : null
+        });
+        
+        // Set helper cookies for middleware (similar to manual login)
+        if (user?.intends_to_be_tutor && !tutor) {
+          document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
+          document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
+          logger.debug("Helper cookies set for middleware");
         }
-      };
-
-      tryRefresh();
+        
+        logger.debug("Navigating to:", redirectTo);
+        router.replace(redirectTo, undefined);
+      } else {
+        setShowLogin(true);
+      }
+      setChecking(false);
     };
 
     handleAuthCallback();
-  }, [redirectTo, router, searchParams, refetch]);
+  }, [redirectTo, router, searchParams, refetch, authLoading, user, tutor]);
 
   if (checking) {
     return (

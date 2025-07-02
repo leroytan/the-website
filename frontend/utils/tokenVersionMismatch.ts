@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import logger from './logger';
 
 // Wrapper for fetch that automatically handles token version mismatch
 export async function fetchWithTokenCheck(input: RequestInfo | URL, init?: RequestInit) {
@@ -17,7 +18,7 @@ export async function fetchWithTokenCheck(input: RequestInfo | URL, init?: Reque
     
     return response;
   } catch (error) {
-    console.error("Fetch error:", error);
+    logger.error("Fetch error:", error);
     // Handle specific fetch error cases
     if (error instanceof TypeError) {
       // Handle fetch-specific errors (like network failures)

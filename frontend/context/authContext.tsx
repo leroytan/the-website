@@ -2,7 +2,8 @@
 
 import { Tutor, User } from "@/components/types";
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
-import { fetchWithTokenCheck } from "../utils/tokenVersionMismatch";
+import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatch";
+import logger from "@/utils/logger";
 
 interface AuthContextType {
   user: User | null;
@@ -27,33 +28,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const hasInitialized = useRef(false);
   const isFetching = useRef(false);
+  const currentFetchPromise = useRef<Promise<{ user: User | null; tutor: Tutor | null }> | null>(null);
 
   const fetchAuth = async (): Promise<{ user: User | null; tutor: Tutor | null }> => {
-    // Prevent concurrent calls
-    if (isFetching.current) {
-      return { user, tutor };
+    // If already fetching, wait for the current fetch to complete
+    if (isFetching.current && currentFetchPromise.current) {
+      logger.debug("AuthContext: fetchAuth called but already fetching, waiting for current fetch to complete...");
+      return await currentFetchPromise.current;
     }
     
+    logger.debug("AuthContext: Starting fetchAuth...");
     isFetching.current = true;
     
-    try {
-      const res = await fetchWithTokenCheck(`/api/me`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Not authenticated");
-      const data = await res.json();
-      setUser(data.user);
-      setTutor(data.tutor);
-      return { user: data.user, tutor: data.tutor };
-    } catch (err) {
-      setUser(null);
-      setTutor(null);
-      return { user: null, tutor: null };
-    } finally {
-      setLoading(false);
-      hasInitialized.current = true;
-      isFetching.current = false;
-    }
+    // Create and store the fetch promise
+    const fetchPromise = (async () => {
+      setLoading(true);
+      
+      try {
+        const refreshRes = await fetch(`/api/auth/refresh`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (!refreshRes.ok) throw new Error("Not authenticated");
+        console.log(document.cookie)
+        const res = await fetchWithTokenCheck(`/api/me`, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Not authenticated");
+        const data = await res.json();
+        
+        logger.debug("AuthContext: fetchAuth successful, setting user state:", {
+          user: data.user ? { id: data.user.id, name: data.user.name, email: data.user.email } : null,
+          tutor: data.tutor ? { id: data.tutor.id } : null
+        });
+        
+        setUser(data.user);
+        setTutor(data.tutor);
+        return { user: data.user, tutor: data.tutor };
+      } catch (err) {
+        logger.debug("AuthContext: fetchAuth failed, clearing user state:", err);
+        setUser(null);
+        setTutor(null);
+        return { user: null, tutor: null };
+      } finally {
+        setLoading(false);
+        hasInitialized.current = true;
+        isFetching.current = false;
+        currentFetchPromise.current = null;
+        logger.debug("AuthContext: fetchAuth completed, loading set to false");
+      }
+    })();
+    
+    currentFetchPromise.current = fetchPromise;
+    return await fetchPromise;
   };
   
   // Fetch user and tutor data on mount - only once
@@ -65,7 +92,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Refetch function to manually refresh user and tutor data
   const refetch = useCallback(async (): Promise<{ user: User | null; tutor: Tutor | null }> => {
-    setLoading(true); // optional; you could remove this if handled in fetchAuth
     return await fetchAuth();
   }, []); // Empty dependency array since fetchAuth uses refs and doesn't depend on state
   // Logout function to clear user and tutor data
@@ -73,7 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setTutor(null);
     setLoading(false);
-    console.log("User logged out");
+    logger.debug("User logged out");
   };
 
   return (

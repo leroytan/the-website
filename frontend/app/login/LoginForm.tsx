@@ -5,14 +5,14 @@ import { Eye, EyeOff } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { BASE_URL } from "@/utils/constants";
 import { useAuth } from "@/context/authContext";
 import { User, Tutor } from "@/components/types";
 import ErrorMessage from "@/components/ErrorMessage";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import logger from "@/utils/logger";
 
 import { FcGoogle } from "react-icons/fc";
 
@@ -30,9 +30,9 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Login attempted with:", { email, password });
+    logger.debug("Manual login attempted with:", { email });
 
-    console.log("Sending login request...");
+    logger.debug("Sending manual login request...");
 
     const res = await fetch(`/api/auth/login`, {
       method: "POST",
@@ -41,13 +41,22 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     });
 
     if (res.ok) {
+      logger.debug("Manual login successful, calling refetch...");
       const { user, tutor }: { user: User | null; tutor: Tutor | null } = await refetch(); // refresh user and tutor data for authcontext
+
+      logger.debug("Manual login refetch completed:", {
+        user: user ? { id: user.id, name: user.name, email: user.email } : null,
+        tutor: tutor ? { id: tutor.id } : null
+      });
 
       // Set helper cookies for middleware
       if (user?.intends_to_be_tutor && !tutor) {
       document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
       document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
+      logger.debug("Manual login helper cookies set for middleware");
       }
+      
+      logger.debug("Manual login navigating to:", redirectTo);
       router.replace(redirectTo);
       // router.refresh();
     } else {

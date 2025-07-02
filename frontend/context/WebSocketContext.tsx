@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { useAuth } from './authContext';
 import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatch';
 import { BASE_URL } from '@/utils/constants';
+import logger from '@/utils/logger';
 
 interface Notification {
   type: string;
@@ -53,7 +54,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       );
       
       newSocket.onopen = () => {
-        console.log("Connected to Notifications WebSocket");
+        logger.debug("Connected to Notifications WebSocket");
         socketRef.current = newSocket;
         setSocket(newSocket);
       };
@@ -63,12 +64,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const notification: Notification = JSON.parse(event.data);
           setNotifications(prev => [...prev, notification]);
         } catch (error) {
-          console.error('Failed to parse notification:', event.data);
+          logger.error('Failed to parse notification:', event.data);
         }
       };
 
       newSocket.onclose = (event) => {
-        console.log("Notifications WebSocket closed", event.reason);
+        logger.debug("Notifications WebSocket closed", event.reason);
         socketRef.current = null;
         setSocket(null);
         
@@ -78,7 +79,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         }
       };
     } catch (error) {
-      console.error("Failed to initialize WebSocket:", error);
+      logger.error("Failed to initialize WebSocket:", error);
     }
   };
 

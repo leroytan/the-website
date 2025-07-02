@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import logger from "@/utils/logger";
 
 const ChatApp = () => {
 
@@ -507,13 +508,13 @@ const ChatApp = () => {
     }
     const data = await response.json();
     const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
-    console.log(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
+    logger.debug(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
     const socket = new WebSocket(
       `${wsURL}/ws/chat?access_token=${data.access_token}`
     );
     socketRef.current = socket;
 
-    socket.onopen = () => console.log("Connected to WebSocket");
+    socket.onopen = () => logger.debug("Connected to WebSocket");
 
     socket.onmessage = (event) => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
@@ -532,7 +533,7 @@ const ChatApp = () => {
 
     socket.onclose = () => {
       socketRef.current = null;
-      console.log("WebSocket closed");
+      logger.debug("WebSocket closed");
     }
   };
 
@@ -560,7 +561,7 @@ const ChatApp = () => {
       credentials: "include",
     });
     if (!response.ok) {
-      console.error("Failed to mark chat as read");
+      logger.error("Failed to mark chat as read");
     }
     setChatData((prevChatData) => {
       const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
@@ -617,7 +618,7 @@ const ChatApp = () => {
 
       router.push(session.url);
     } catch (err) {
-      console.error("Stripe error:", err);
+      logger.error("Stripe error:", err);
       alert(err);
     }
   };
@@ -729,7 +730,7 @@ const ChatApp = () => {
                 {/* <button
                   onClick={async () => {
                     if (newMessage.trim() === "" || isNaN(+newMessage)) {
-                      console.error("New message has to be a valid user ID");
+                      logger.error("New message has to be a valid user ID");
                       return;
                     }
                     const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
@@ -745,7 +746,7 @@ const ChatApp = () => {
                     if (!response.ok) {
                       throw new Error("Failed to create chat");
                     } else {
-                      console.log("Chat created successfully");
+                      logger.debug("Chat created successfully");
                       setNewMessage("");
                     }
                     const chatPreview: ChatPreviewBackendDTO = await response.json();
@@ -781,7 +782,7 @@ const ChatApp = () => {
                           try {
                             const tutorRequest: TutorRequest = JSON.parse(message.content as string);
                             if (tutorRequest.assignmentRequestId === undefined || tutorRequest.tutorId === undefined) {
-                              console.error("Invalid tutor request message:", message.content);
+                              logger.error("Invalid tutor request message:", message.content);
                               return <p>Error: Invalid tutor request message.</p>;
                             }
                             return (
@@ -826,7 +827,7 @@ const ChatApp = () => {
                               </div>
                             );
                           } catch (e) {
-                            console.error("Failed to parse tutor request content:", e);
+                            logger.error("Failed to parse tutor request content:", e);
                             return <p>{message.content}</p>; // Fallback to plain text if parsing fails
                           }
                         })()
