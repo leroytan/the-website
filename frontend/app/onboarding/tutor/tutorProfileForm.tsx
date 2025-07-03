@@ -13,6 +13,7 @@ import { useError } from "@/context/errorContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { useAuth } from "@/context/authContext";
 
 type TutorProfileFormData = {
   bio: string;
@@ -28,9 +29,10 @@ type TutorProfileFormData = {
   max_rate: string;
 };
 
-function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
+function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: () => void }) {
   const { setError } = useError();
   const router = useRouter();
+  const { refetch } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const oldAvatarUrl = useRef<string>("");
   const updateAvatar = async (avatarDataUrl: string | null) => {
@@ -135,6 +137,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
         const res = await response.json();
         throw new Error(res.message || "Failed to save profile");
       }
+      await refetch();
       nextStep(); // Proceed to the next step in the onboarding process
       // Optionally redirect or update UI here
     } catch (err) {
@@ -159,22 +162,10 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
       if (!response.ok) {
         throw new Error("Failed to update user status");
       }
-
-      // Clear cookies
-      document.cookie =
-        "tutor_profile_complete=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure";
-      document.cookie =
-        "intends_to_be_tutor=false; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax; Secure";
-      
-      router.push("/");
     } catch (error) {
       console.error("Error updating user status:", error);
-      // Still clear cookies and redirect even if the backend update fails
-      document.cookie =
-        "tutor_profile_complete=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure";
-      document.cookie =
-        "intends_to_be_tutor=false; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax; Secure";
-      router.push("/");
+    } finally {
+      cancel();
     }
   };
 

@@ -70,6 +70,8 @@ class RouterAuthUtils:
             tokens (dict): A dictionary containing the new access and refresh tokens.
             response (Response): The response object to update with the new tokens.
         """
+        if origin.startswith("http://"):
+            origin = None
         response.set_cookie(
             key="access_token",
             value=tokens.access_token,
