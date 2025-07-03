@@ -6,7 +6,7 @@ const nextConfig = {
         protocol: "https",
         hostname: "**.r2.cloudflarestorage.com",
         port: "",
-        pathname: "/teach-honour-excel-website-dev/profile_photos/**",
+        pathname: "/teach-honour-excel-website-**/profile_photos/**",
       }
     ]
   },

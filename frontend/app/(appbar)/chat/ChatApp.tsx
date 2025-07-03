@@ -509,9 +509,9 @@ const ChatApp = () => {
       throw new Error("Failed to fetch JWT");
     }
     const data = await response.json();
-    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
+    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "/ws");
     const socket = new WebSocket(
-      `${wsURL}/ws/chat?access_token=${data.access_token}`
+      `${wsURL}/chat?access_token=${data.access_token}`
     );
     socketRef.current = socket;
 

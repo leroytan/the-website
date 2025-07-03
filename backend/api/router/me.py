@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 router = APIRouter()
 
-@router.post("/api/me/upload-profile-photo/")
+@router.post("/api/me/upload-profile-photo")
 async def upload_profile_photo(file: UploadFile = File(...), user: User = Depends(RouterAuthUtils.get_current_user)):
     if file.content_type not in ["image/jpeg", "image/png", "image/webp", "image/jpg", "image/gif"]:
         raise HTTPException(status_code=400, detail="Invalid image type")

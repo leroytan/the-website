@@ -71,10 +71,10 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         throw new Error("Failed to fetch JWT");
       }
       const data = await response.json();
-      const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
+      const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "/ws");
       
       const newSocket = new WebSocket(
-        `${wsURL}/ws/notifications?access_token=${data.access_token}`
+        `${wsURL}/notifications?access_token=${data.access_token}`
       );
       
       newSocket.onopen = () => {

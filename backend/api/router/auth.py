@@ -53,7 +53,7 @@ async def google_login(request: Request):
     return RedirectResponse(google_auth_url)
 
 @router.get("/api/auth/google/callback")
-async def google_callback(request: Request, response: Response, code: str = None, error: str = None, state: str = None):
+async def google_callback(code: str = None, error: str = None, state: str = None):
     """
     Handles the callback from Google OAuth, exchanges the code for tokens,
     and logs in/signs up the user.
@@ -78,10 +78,9 @@ async def google_callback(request: Request, response: Response, code: str = None
 
     try:
         tokens = await Logic.handle_google_login_signup(code)
-        RouterAuthUtils.update_tokens(tokens, response)
 
         # Use the origin from state if available, otherwise fall back to default
-        redirect_url = origin or settings.frontend_url
+        redirect_url = origin or settings.frontend_domain
 
         return RedirectResponse(url=f"{redirect_url}/login?access_token={tokens.access_token}&refresh_token={tokens.refresh_token}")
     except Exception as e:
@@ -90,6 +89,7 @@ async def google_callback(request: Request, response: Response, code: str = None
 @router.post("/api/auth/login")
 async def login(
     login_request: LoginRequest,
+    request: Request,
     response: Response,
     _ = Depends(RouterAuthUtils.assert_logged_out)
 ):
@@ -109,13 +109,15 @@ async def login(
     """
 
     tokens = Logic.handle_login(login_data=login_request)
-    RouterAuthUtils.update_tokens(tokens, response)
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
+    RouterAuthUtils.update_tokens(tokens, response, origin)
 
     return {"message": "Logged in successfully"}
 
 @router.post("/api/auth/signup")
 async def signup(
     signup_request: SignupRequest,
+    request: Request,
     response: Response,
     _ = Depends(RouterAuthUtils.assert_logged_out)
 ):
@@ -137,7 +139,8 @@ async def signup(
     """
     
     tokens = Logic.handle_signup(signup_request)
-    RouterAuthUtils.update_tokens(tokens, response)
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
+    RouterAuthUtils.update_tokens(tokens, response, origin)
 
     response.status_code = 201
 
@@ -159,7 +162,8 @@ async def refresh(request: Request, response: Response):
     refresh_token = request.cookies.get("refresh_token")
 
     tokens = Logic.refresh_tokens(refresh_token)
-    RouterAuthUtils.update_tokens(tokens, response)
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
+    RouterAuthUtils.update_tokens(tokens, response, origin)
 
     return {"message": "Tokens refreshed successfully"}
 
@@ -191,7 +195,7 @@ async def forgot_password(
         dict: A message indicating the status of the password reset request.
     """
     # Use the request's origin to generate the reset link
-    origin = request.headers.get("origin") or request.headers.get("referer") or "teachhonourexcel.com"
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
     return Logic.forgot_password(origin, forgot_password_request)
 
 @router.post("/api/auth/reset-password")

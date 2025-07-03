@@ -50,7 +50,7 @@ function TutorProfileForm({ nextStep }: { nextStep: () => void }) {
 
     // Upload to your API
     try {
-      const response = await fetchWithTokenCheck(`/api/me/upload-profile-photo/`, {
+      const response = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
         method: "POST",
         body: formData,
         credentials: "include",

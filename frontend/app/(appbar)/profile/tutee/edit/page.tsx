@@ -73,6 +73,7 @@ export default function TuteeProfileEditPage() {
         const uploadResponse = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
           method: 'POST',
           body: formData,
+          credentials: 'include',
         })
         if (!uploadResponse.ok) throw new Error('Failed to upload photo')
       }
