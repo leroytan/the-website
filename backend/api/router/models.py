@@ -155,6 +155,8 @@ class AssignmentPublicView(AssignmentBaseView):
     request_status: AssignmentRequestStatus = AssignmentRequestStatus.NOT_SUBMITTED  # Status of the request if applied
 
 class AssignmentOwnerView(AssignmentBaseView):
+    applied: bool = True  # Indicates if the user has applied for the assignment
+    request_status: AssignmentRequestStatus = AssignmentRequestStatus.REJECTED  # Status of the request if applied
     tutor_id: int | None
     requests: list[AssignmentRequestView]
 

@@ -87,7 +87,11 @@ class AssignmentLogic:
             ]
             return AssignmentOwnerView(**base_data)
         else:
-            if user_id is not None:
+            if user_id == assignment.owner_id:
+                # Owners cannot apply to their own assignments
+                base_data["applied"] = True
+                base_data["request_status"] = AssignmentRequestStatus.REJECTED.value
+            elif user_id is not None:
                 for request in assignment.assignment_requests:
                     if request.tutor_id == user_id:
                         base_data["applied"] = True
