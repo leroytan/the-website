@@ -35,6 +35,14 @@ get:
         default: 10
       required: false
       description: number of assignments per page
+    - in: query
+      name: debug
+      schema:
+        type: string
+        default: None
+      required: false
+      example: estimated_rate_hourly
+      description: the field of assignment to debug, e.g., 'estimated_rate_hourly', 'weekly_frequency', etc. Will be returned as a additional field in the response
   responses:
     '200':
       description: Successful retrieval of assignments and filter options
