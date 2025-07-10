@@ -29,21 +29,24 @@ const variants = {
 const ReviewCarousel = () => {
   const [currentReview, setCurrentReview] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [timerKey, setTimerKey] = useState(0);
 
   const nextReview = useCallback(() => {
     setDirection(1);
     setCurrentReview((prev) => (prev + 1) % reviews.length);
+    setTimerKey((k) => k + 1);
   }, []);
 
   const prevReview = useCallback(() => {
     setDirection(-1);
     setCurrentReview((prev) => (prev - 1 + reviews.length) % reviews.length);
+    setTimerKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(nextReview, 5000);
+    const interval = setInterval(nextReview, 10000);
     return () => clearInterval(interval);
-  }, [nextReview]);
+  }, [nextReview, timerKey]);
 
   return (
     <div className="relative w-full max-w-4xl mx-auto px-4 py-12" aria-live="polite">
@@ -59,7 +62,7 @@ const ReviewCarousel = () => {
         />
         {/* Review content clipped to card */}
         <div className="relative overflow-hidden h-[200px] sm:h-[180px] z-10">
-          <AnimatePresence initial={false} custom={direction} mode="wait">
+          <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={currentReview}
               custom={direction}
@@ -67,7 +70,7 @@ const ReviewCarousel = () => {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: "spring", stiffness: 400, damping: 18, duration: 0.1 }}
               className="absolute inset-0 flex flex-col justify-center p-6 sm:p-8 z-10"
               aria-live="assertive"
             >
@@ -87,6 +90,7 @@ const ReviewCarousel = () => {
             onClick={() => {
               setDirection(index > currentReview ? 1 : -1);
               setCurrentReview(index);
+              setTimerKey((k) => k + 1);
             }}
             className={`w-2 h-2 rounded-full transition-colors duration-200 ${
               index === currentReview ? 'bg-[#fc6453]' : 'bg-[#fabb84] hover:bg-[#fc6453]'

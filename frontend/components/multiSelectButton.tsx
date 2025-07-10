@@ -4,6 +4,7 @@ import { Button } from "./button";
 
 interface MultiSelectProps {
   options: string[] | { value: string; label: string }[];
+  applied?: string[];
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
@@ -13,6 +14,7 @@ interface MultiSelectProps {
 
 const MultiSelectButton: React.FC<MultiSelectProps> = ({
   options,
+  applied,
   selected,
   onChange,
   placeholder = "Select...",
@@ -68,9 +70,30 @@ const MultiSelectButton: React.FC<MultiSelectProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <span>
-          {selected.length > 0 ? (
+          {applied ? (
+            applied.length > 0 ? (
+              <>
+                {[...applied]
+                  .sort(
+                    (a, b) =>
+                      normalizedOptions.findIndex((opt) => opt.value === a) -
+                      normalizedOptions.findIndex((opt) => opt.value === b)
+                  )
+                  .slice(0, 3)
+                  .map(
+                    (val) =>
+                      normalizedOptions.find((opt) => opt.value === val)
+                        ?.label ?? val
+                  )
+                  .join(", ")}
+                {selected.length > 3 && <>, +{selected.length - 3} more</>}
+              </>
+            ) : (
+              <span className="text-gray-400">{placeholder}</span>
+            )
+          ) : selected.length > 0 ? (
             <>
-              {[...selected]
+              {selected
                 .sort(
                   (a, b) =>
                     normalizedOptions.findIndex((opt) => opt.value === a) -

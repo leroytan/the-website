@@ -42,7 +42,7 @@ export default function LoginPage() {
           if (res.ok) {
             await refetch(); // refresh user and tutor data for authcontext
             // Fetch user state and set cookies
-            const meRes = await fetchWithTokenCheck(`/api/me"`);
+            const meRes = await fetchWithTokenCheck(`/api/me`);
             const { user, tutor }: { user: User; tutor: Tutor | null } =
               await meRes.json();
 
@@ -52,7 +52,6 @@ export default function LoginPage() {
               document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
             }
             router.replace(redirectTo); // silently redirect, no flash
-            router.refresh(); // refresh the page to get updated data
           } else {
             setShowLogin(true); // show form only if refresh fails
           }
@@ -68,7 +67,7 @@ export default function LoginPage() {
     };
 
     handleAuthCallback();
-  }, [redirectTo, router, searchParams, refetch]);
+  }, [redirectTo, searchParams]);
 
   if (checking) {
     return (

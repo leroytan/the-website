@@ -20,7 +20,7 @@ const ChatApp = () => {
     private initialPreview: ChatPreview;
     private indexOfLastTutorRequest: number = -1; // Index of the last tutor request message, -1 if none
     public hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
-    public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no unread messages
+    public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no more messages
 
     static fromPreviewDTO(dto: ChatPreviewBackendDTO): ChatThread {
       const messages: Message[] = []; // Initialize with an empty array
@@ -633,7 +633,7 @@ const ChatApp = () => {
     <div className="flex flex-row bg-customLightYellow h-[calc(100vh-56px)]">
         {/* Sidebar - Shown on mobile */}
         <aside
-          className={`w-full md:w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
+          className={`w-full md:w-1/4  border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
             }`}
         >
           <div className="flex flex-col flex-grow h-full ">
@@ -649,11 +649,11 @@ const ChatApp = () => {
               <div className="bg-white p-2 font-bold sticky top-0 z-10">
                 Locked
               </div>
-              <div className="space-y-2">
+              <div>
                 {lockedChats.map((preview, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 border-b"
+                    className={`flex items-center justify-between p-2 border-b cursor-pointer ${selectedChat === preview.id ? 'md:bg-[#fabb84] md:bg-opacity-30' : ''}`}
                     onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
@@ -680,11 +680,11 @@ const ChatApp = () => {
               <div className="bg-white px-2 py-4 font-bold sticky top-0 z-10">
                 Unlocked
               </div>
-              <div className="space-y-2">
+              <div>
                 {unlockedChats.map((preview, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 border-b"
+                    className={`flex items-center justify-between p-2 border-b cursor-pointer ${selectedChat === preview.id ? 'md:bg-[#fabb84] md:bg-opacity-30' : ''}`}
                     onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
@@ -714,14 +714,14 @@ const ChatApp = () => {
           className={`flex-1 p-4 min-w-[320px] ${showChat ? "block" : "hidden md:block"
             }`}
         >
-          <button
-            className="mb-4 p-2 text-sm bg-gray-200 rounded-md md:hidden"
-            onClick={() => setShowChat(false)}
-          >
-            <ArrowLeftToLine size={24} />
-          </button>
           <div className="p-4 bg-white rounded-3xl shadow-md h-full flex flex-col">
             <div className="flex items-center mb-4">
+              <button
+                className="mr-2 p-2 text-sm md:hidden"
+                onClick={() => setShowChat(false)}
+              >
+                <ArrowLeftToLine size={24} />
+              </button>
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="ml-4">
                 <p className="text-lg font-semibold">{chatName}</p>

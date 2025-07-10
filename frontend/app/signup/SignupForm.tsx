@@ -261,7 +261,7 @@ export default function SignupPage() {
         transition={{ delay: 0.5, duration: 0.5 }}
         className="mt-8 text-center text-xs text-[#4a58b5]"
       >
-        &copy; 2024 Teach . Honour . Excel. All rights reserved.
+        &copy; {new Date().getFullYear()} Teach . Honour . Excel. All rights reserved.
       </motion.p>
     </div>
   );

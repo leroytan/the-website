@@ -191,7 +191,7 @@ export default function ModuleReviewsPage() {
 
       <footer className="bg-[#4a58b5] text-white py-4 sm:py-6">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs sm:text-sm">&copy; 2024 Teach . Honour . Excel. All rights reserved.</p>
+          <p className="text-xs sm:text-sm">&copy; {new Date().getFullYear()} Teach . Honour . Excel. All rights reserved.</p>
         </div>
       </footer>
     </div>

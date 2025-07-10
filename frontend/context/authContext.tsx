@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log(user, tutor);
   };
   // Logout function to clear user and tutor data
-  const logout = async () => {
+  const logout = () => {
     setUser(null);
     setTutor(null);
     setLoading(false);

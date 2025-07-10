@@ -20,6 +20,7 @@ import { Button } from "@/components/button";
 import { Tutor } from "@/components/types";
 import { useAlert } from "@/context/alertContext";
 import { useError } from "@/context/errorContext";
+import { UserImage } from "@/components/userImage";
 
 export default function TutorProfile({ tutor }: { tutor: Tutor }) {
   const { user, tutor: loggedinTutor } = useAuth();
@@ -72,13 +73,7 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
           )}
         </div>
         <div>
-          <Image
-            src={tutor.photo_url || "/placeholder.svg"}
-            alt={tutor.name}
-            width={140}
-            height={140}
-            className="rounded-full border-4 border-[#fabb84]"
-          />
+          <UserImage user={{ photo_url: tutor.photo_url, name: tutor.name }} width={140} height={140} />
         </div>
 
         <div className="flex flex-col justify-center">
@@ -93,29 +88,30 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
             Subjects: {tutor.subjects_teachable?.join(", ") || "N/A"}
           </p>
           <div className="flex flex-wrap items-center space-x-3 mt-2">
-            <div className="flex items-center mr-4">
+            {/* <div className="flex items-center mr-4">
               <Star className="w-5 h-5 mr-1" fill="#fabb84" color="#fabb84" />
               <span className="font-semibold text-customDarkBlue mr-1">
                 {tutor.rating?.toFixed(1) || "N/A"}
               </span>
               <span className="text-customDarkBlue">(0 reviews)</span>
-            </div>
-            <div className="flex items-center mr-4">
+            </div> */}
+            {/* <div className="flex items-center mr-4">
               <Users className="w-5 h-5 mr-1" fill="#fabb84" color="#fabb84" />
               <span className="text-customDarkBlue font-semibold mr-1">--</span>
               <span className="text-customDarkBlue">students</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
 
       <div className="mt-6 flex flex-col sm:flex-row gap-6 sm:gap-8">
-        <div className="w-full sm:w-1/4 bg-white shadow-lg rounded-xl p-4 sm:p-6">
-          <Quote className="w-5 h-5 mr-2 text-[#fabb84]" />
+        <div className="w-full sm:w-1/4 bg-white shadow-lg rounded-xl p-4 sm:p-6 relative">
+          <Quote className="w-5 h-5 mb-2 text-customYellow rotate-180" />
           <h3 className="text-orange-500 font-semibold text-lg">About Me</h3>
           <p className="text-customDarkBlue mt-3 whitespace-pre-line">
             {tutor.about_me || "No description provided."}
           </p>
+          <Quote className="w-5 h-5 text-customYellow absolute bottom-4 right-4" />
         </div>
 
         <div className="w-full sm:w-3/4 bg-white shadow-lg rounded-xl p-4 sm:p-6 max-w-full break-words">
@@ -207,13 +203,13 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
                       {tutor.special_skills?.join(", ") || "N/A"}
                     </p>
                   </div>
-                  {/* New Field: Experience */}
+                  {/* New Field: Teaching/Tuition Experience */}
                   <div>
                     <div className="flex items-center text-customDarkBlue mb-2">
                       <Star className="w-5 h-5 mr-2 text-customOrange" />
-                      <h3 className="text-lg font-semibold">Experience</h3>
+                      <h3 className="text-lg font-semibold">Teaching/Tuition Experience</h3>
                     </div>
-                    <p className="text-gray-900">{tutor.experience || "N/A"}</p>
+                    <p className="text-gray-900">{tutor.experience || "N/A"} years</p>
                   </div>
                   {/* New Field: Availability */}
                   <div>
