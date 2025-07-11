@@ -2,10 +2,14 @@ import stripe
 from api.config import settings
 from api.logic.assignment_logic import AssignmentLogic
 from api.logic.chat_logic import ChatLogic
+from api.logic.tutor_logic import TutorLogic
 from api.router.models import PaymentRequest
-from api.storage.models import User
+from api.storage.models import User, Tutor, AssignmentRequest
+from api.services.email_service import GmailEmailService
 from fastapi import HTTPException
 from typing import Callable
+from sqlalchemy.orm import Session
+from api.storage.storage_service import StorageService
 
 stripe.api_key = settings.stripe_api_key
 
@@ -89,6 +93,36 @@ class PaymentLogic:
                 preview = ChatLogic.get_or_create_private_chat(owner_id, requester_id)
 
                 ChatLogic.unlock_chat(preview.id, owner_id)
+
+                # Send email to tutor about successful payment
+                with Session(StorageService.engine) as session:
+                    # Fetch the tutor's details
+                    tutor = session.query(Tutor).filter_by(id=requester_id).first()
+                    
+                    # Fetch the assignment details
+                    assignment_request = session.query(AssignmentRequest).filter_by(id=int(metadata['assignment_request_id'])).first()
+                    assignment = assignment_request.assignment
+
+                    if tutor and tutor.user and assignment:
+                        # Compose email content
+                        email_content = f"""
+                        Congratulations! Your assignment request for "{assignment.title}" has been accepted and paid for.
+
+                        Assignment Details:
+                        - Title: {assignment.title}
+                        - Hourly Rate: ${assignment_request.requested_rate_hourly}
+                        - Lesson Duration: {assignment_request.requested_duration} minutes
+
+                        You can now view the details in your dashboard.
+                        """
+                        print(email_content)
+                        # Send email to tutor
+                        GmailEmailService.send_email(
+                            recipient_email=tutor.user.email,
+                            subject=f"Assignment Accepted: {assignment.title}",
+                            content=email_content
+                        )
+                        print(f"Email sent to tutor {tutor.user.email} about assignment acceptance.")
 
                 return {"status": "success"}
 
