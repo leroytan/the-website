@@ -351,3 +351,23 @@ class ChatReadStatus(Base):
 
     chat = relationship('PrivateChat', backref='read_statuses')
     user = relationship('User')
+
+
+class ChatNotificationTracker(Base):
+    """
+    Tracks notification status for private chats
+    Implements async chat notification strategy
+    """
+    __tablename__ = 'ChatNotificationTracker'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)
+    notification_count = Column(Integer, default=0, nullable=False)
+    last_notification_timestamp = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationship to PrivateChat
+    chat = relationship('PrivateChat', backref='notification_tracker')
+
+    __table_args__ = (
+        UniqueConstraint('chat_id', name='uix_chat_notification_tracker'),
+    )
