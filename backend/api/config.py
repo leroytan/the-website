@@ -57,13 +57,20 @@ class Settings(BaseSettings):
     def is_database_local(self):
         return self.database_url.split("@")[-1].startswith("localhost")
             
-    def make_engine(self, create_engine: callable, NullPool: callable):
+    def make_engine(self, create_engine: callable):
         if self.database_url == "":
             raise ValueError("Database URL is not set. Please check your configuration.")
         if self.is_database_local:
             return create_engine(self.database_url)
         else:
-            return create_engine(self.database_url, client_encoding='utf8', poolclass=NullPool)
+            return create_engine(
+                self.database_url,
+                client_encoding='utf8',
+                pool_size=5,           # Persistent connections
+                max_overflow=10,       # Extra connections when needed
+                pool_pre_ping=True,    # Validate connections
+                pool_recycle=3600      # Recycle every hour
+            )
 
 # Instantiate the settings object
 settings = Settings()
