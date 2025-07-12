@@ -59,10 +59,17 @@ class ChatLogic:
             Convert a chat message to a dictionary format in the expected format for the frontend.
             """
             sent_by_user = message.sender_id == user_id
+            
+            # Check if the chat is locked to determine sender name display
+            sender_name = message.sender.name
+            if hasattr(message, 'chat') and message.chat and message.chat.is_locked and not sent_by_user:
+                # Hide sender name for locked chats (except for messages sent by the current user)
+                sender_name = "Anonymous User"
+            
             message_dict = {
                 "id": message.id,
                 "chat_id": message.chat_id,
-                "sender": message.sender.name,
+                "sender": sender_name,
                 "content": message.content,
                 "message_type": message.message_type.value,
                 "created_at": message.created_at.isoformat(),
@@ -168,6 +175,21 @@ class ChatLogic:
         return chat_message
     
     @staticmethod
+    async def send_notification_to_user(user_id: int, notification_data: dict) -> None:
+        """
+        Send a notification to a user via the root WebSocket connection.
+        This is imported here to avoid circular imports.
+        """
+        try:
+            from api.router.websocket import WebSocketManager
+            notification_json = json.dumps(notification_data)
+            await WebSocketManager.send_personal_notification(user_id, notification_json)
+        except ImportError:
+            print("WebSocketManager not available for notifications")
+        except Exception as e:
+            print(f"Failed to send notification to user {user_id}: {e}")
+    
+    @staticmethod
     async def send_private_message(chat_message: ChatMessage) -> None:
         """
         Sends a private chat message to the appropriate WebSocket connections.
@@ -198,6 +220,34 @@ class ChatLogic:
             except RuntimeError:
                 async with ChatLogic.mutex:
                     ChatLogic.active_connections.pop(sender_id, None)
+
+        # Send notification to receiver via root WebSocket if they're not connected to chat
+        if receiver_id not in ChatLogic.active_connections:
+            with Session(StorageService.engine) as session:
+                # Get the chat to check if it's locked
+                chat = session.query(PrivateChat).filter(PrivateChat.id == chat_message.chat_id).first()
+                
+                if chat and chat.is_locked:
+                    # Hide sender name for locked chats
+                    sender_name = "Anonymous User"
+                    display_message = "New message from Anonymous User"
+                else:
+                    # Show real sender name for unlocked chats
+                    sender = session.query(User).filter(User.id == sender_id).first()
+                    sender_name = sender.name if sender else "Unknown User"
+                    display_message = f"New message from {sender_name}"
+                
+                notification_data = {
+                    "type": "new_message",
+                    "message": display_message,
+                    "chat_id": chat_message.chat_id,
+                    "sender_id": sender_id,
+                    "sender_name": sender_name,
+                    "content_preview": chat_message.content[:50] + "..." if len(chat_message.content) > 50 else chat_message.content,
+                    "message_type": chat_message.message_type.value,
+                    "timestamp": chat_message.created_at.isoformat()
+                }
+                await ChatLogic.send_notification_to_user(receiver_id, notification_data)
 
     @staticmethod
     async def handle_private_message(new_chat_message: NewChatMessage, sender_id: int) -> None:

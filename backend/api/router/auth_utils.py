@@ -61,7 +61,7 @@ class RouterAuthUtils:
         response.delete_cookie("refresh_token")
 
     @staticmethod
-    def update_tokens(tokens: TokenPair, response: Response) -> None:
+    def update_tokens(tokens: TokenPair, response: Response, origin: str) -> None:
         """
         Update the response with new access and refresh tokens.
         This method sets the tokens as HTTP-only cookies in the response,
@@ -70,6 +70,8 @@ class RouterAuthUtils:
             tokens (dict): A dictionary containing the new access and refresh tokens.
             response (Response): The response object to update with the new tokens.
         """
+        if origin.startswith("http://"):
+            origin = None
         response.set_cookie(
             key="access_token",
             value=tokens.access_token,
@@ -77,6 +79,7 @@ class RouterAuthUtils:
             secure=True,    # Use HTTPS in production
             samesite="strict",  # CSRF protection
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
+            domain=origin,  # 👈 This makes the cookie usable by your frontend
         )
         response.set_cookie(
             key="refresh_token",
@@ -85,6 +88,7 @@ class RouterAuthUtils:
             secure=True,    # Use HTTPS in production
             samesite="strict",  # CSRF protection
             max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
+            domain=origin,  # 👈 This makes the cookie usable by your frontend
         )
 
     @staticmethod
@@ -96,7 +100,7 @@ class RouterAuthUtils:
         Args:
             request (Request): The request object containing the user's information.
         Returns:
-            str: The generated JWT token.
+            str: The retrieved JWT token.
         """
         return request.cookies.get("access_token")
 

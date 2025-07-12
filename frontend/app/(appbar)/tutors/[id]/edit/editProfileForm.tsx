@@ -32,7 +32,6 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
   const router = useRouter();
   const { refetch } = useAuth();
   const [loading, setLoading] = useState(false);
-  console.log("Editing tutor profile for:", tutor);
 
   const [formData, setFormData] = useState({
     highest_education: tutor.highest_education || "",
@@ -75,7 +74,6 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
       special_skills: formData.special_skills,
     };
 
-    console.log("Submitting form data:", payload);
 
     const res = await fetchWithTokenCheck(`/api/tutors/${tutor.id}`, {
       method: "PUT",

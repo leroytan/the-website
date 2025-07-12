@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import { Home, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
+import logger from '@/utils/logger'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,7 +16,7 @@ export default function NotFound() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     // Implement search functionality here
-    console.log('Search query:', searchQuery)
+    logger.debug('Search query:', searchQuery)
   }
 
   return (

@@ -22,6 +22,8 @@ import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssi
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 import { UserImage } from "./userImage";
+import NotificationToast from "./NotificationToast";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -170,6 +172,7 @@ export default function ComponentLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { hasUnreadMessages } = useChatNotifications();
 
   const toggleSideBar = () => {
     setIsSidebarOpen((prev) => !prev);
@@ -270,9 +273,12 @@ export default function ComponentLayout({
                           : "text-gray-500 hover:text-[#4a58b5]"
                       }`}
                     >
-                      <div className="flex flex-col items-center justify-center">
+                      <div className="flex flex-col items-center justify-center relative">
                         {item.icon}
-                        <span className="text-xs md:text-sm mt-1">{item.name}</span>
+                        <span className="text-xs md:text-sm">{item.name}</span>
+                        {item.path === '/chat' && hasUnreadMessages && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                        )}
                       </div>
                     </Button>
                   ))}
@@ -307,6 +313,9 @@ export default function ComponentLayout({
 
       {/* Mobile Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSideBar} />
+
+      {/* Notification Toast */}
+      {user && <NotificationToast />}
 
       {/* Main Content */}
       <main className="min-h-[calc(100vh-3.5rem)] w-full max-w-screen">

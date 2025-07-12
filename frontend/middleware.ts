@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/onboarding/tutor', request.url));
   }
   //Redirect users who have completed onboarding to dashboard
-  if (pathname === '/onboarding/tutor' && !tutorProfileComplete) {
+  if (pathname === '/onboarding/tutor' && tutorProfileComplete === "true") {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   return NextResponse.next();

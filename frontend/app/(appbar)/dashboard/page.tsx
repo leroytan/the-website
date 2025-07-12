@@ -44,10 +44,11 @@ async function getAssignments(isTutor: boolean, accessToken: string): Promise<As
 
 export default async function DashboardPage() {
   const cookieStore = await cookies()
-  const accessToken = cookieStore.get('access_token')?.value
+  let accessToken = cookieStore.get('access_token')?.value
 
+  // If no access token, redirect to login (remove server-side refresh to prevent loops)
   if (!accessToken) {
-    throw new Error('No access token found')
+    return redirect('/login');
   }
 
   // Get user and tutor info
@@ -63,6 +64,7 @@ export default async function DashboardPage() {
   }
 
   const { user, tutor } = await meResponse.json()
+  // const { tutor } = useAuth()
 
   // Get assignments based on user role
   const assignments = await getAssignments(!!tutor, accessToken)

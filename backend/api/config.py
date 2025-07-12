@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     google_client_id: str
     google_client_secret: str
     google_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
-    frontend_url: str = "teachhonourexcel.com"
+    frontend_domain: str = "https://teachhonourexcel.com"
 
     @property
     def env(self):

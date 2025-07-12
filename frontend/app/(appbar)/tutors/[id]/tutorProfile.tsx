@@ -32,7 +32,6 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
   
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Message sent:", message);
     try {
       const response = await fetch("/api/chat/send-message-to-user", {
         method: "POST",

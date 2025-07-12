@@ -9,6 +9,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { useWebSocket } from "@/context/WebSocketContext";
+import logger from "@/utils/logger";
 
 const ChatApp = () => {
 
@@ -339,6 +341,7 @@ const ChatApp = () => {
   const initialChatData: ChatData = {};
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
   const { setError } = useError();
+  const { setOnNewMessage } = useWebSocket();
 
   const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
   const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
@@ -506,14 +509,13 @@ const ChatApp = () => {
       throw new Error("Failed to fetch JWT");
     }
     const data = await response.json();
-    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
-    console.log(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
+    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "/ws");
     const socket = new WebSocket(
-      `${wsURL}/ws/chat?access_token=${data.access_token}`
+      `${wsURL}/chat?access_token=${data.access_token}`
     );
     socketRef.current = socket;
 
-    socket.onopen = () => console.log("Connected to WebSocket");
+    socket.onopen = () => {};
 
     socket.onmessage = (event) => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
@@ -532,11 +534,64 @@ const ChatApp = () => {
 
     socket.onclose = () => {
       socketRef.current = null;
-      console.log("WebSocket closed");
     }
   };
 
   const hasInitializedSocket = useRef(false);
+
+  // Handle notifications from root WebSocket when not actively chatting
+  useEffect(() => {
+    const handleNewMessageNotification = (notification: any) => {
+      if (notification && notification.type === 'new_message' && notification.chat_id) {
+        // Update chat data with notification info
+        setChatData((prevChatData: ChatData) => {
+          const chatId = notification.chat_id;
+          const existingChat = prevChatData[chatId];
+          
+          if (existingChat) {
+            // Update existing chat with unread status
+            const updatedChat = existingChat.clone();
+            updatedChat.hasUnreadMessages = true;
+            return {
+              ...prevChatData,
+              [chatId]: updatedChat,
+            };
+          } else {
+            // Create new chat thread from notification
+            const newChat = new ChatThread(
+              chatId,
+              true, // Assume locked for new chats
+              notification.sender_name || 'Unknown User',
+              -1,
+              [],
+              {
+                id: chatId,
+                name: notification.sender_name || 'Unknown User',
+                lastMessage: notification.content_preview || 'New message',
+                displayTime: timeAgo(notification.timestamp || new Date().toISOString()),
+                hasUnread: true,
+                isLocked: true,
+                hasMessages: true,
+                lastUpdate: new Date(notification.timestamp || new Date().toISOString()),
+                lastMessageType: notification.message_type === 'tutor_request' ? 'tutorRequest' : 'textMessage',
+              }
+            );
+            newChat.hasUnreadMessages = true;
+            return {
+              ...prevChatData,
+              [chatId]: newChat,
+            };
+          }
+        });
+      }
+    };
+
+    setOnNewMessage(handleNewMessageNotification);
+
+    return () => {
+      setOnNewMessage(undefined);
+    };
+  }, []); // Remove setOnNewMessage from dependencies to prevent infinite loop
 
   // This only runs when the component mounts
   useEffect(() => {
@@ -560,7 +615,7 @@ const ChatApp = () => {
       credentials: "include",
     });
     if (!response.ok) {
-      console.error("Failed to mark chat as read");
+      logger.error("Failed to mark chat as read");
     }
     setChatData((prevChatData) => {
       const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
@@ -617,7 +672,7 @@ const ChatApp = () => {
 
       router.push(session.url);
     } catch (err) {
-      console.error("Stripe error:", err);
+      logger.error("Stripe error:", err);
       alert(err);
     }
   };
@@ -729,7 +784,7 @@ const ChatApp = () => {
                 {/* <button
                   onClick={async () => {
                     if (newMessage.trim() === "" || isNaN(+newMessage)) {
-                      console.error("New message has to be a valid user ID");
+                      logger.error("New message has to be a valid user ID");
                       return;
                     }
                     const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
@@ -745,7 +800,6 @@ const ChatApp = () => {
                     if (!response.ok) {
                       throw new Error("Failed to create chat");
                     } else {
-                      console.log("Chat created successfully");
                       setNewMessage("");
                     }
                     const chatPreview: ChatPreviewBackendDTO = await response.json();
@@ -781,7 +835,7 @@ const ChatApp = () => {
                           try {
                             const tutorRequest: TutorRequest = JSON.parse(message.content as string);
                             if (tutorRequest.assignmentRequestId === undefined || tutorRequest.tutorId === undefined) {
-                              console.error("Invalid tutor request message:", message.content);
+                              logger.error("Invalid tutor request message:", message.content);
                               return <p>Error: Invalid tutor request message.</p>;
                             }
                             return (
@@ -826,7 +880,7 @@ const ChatApp = () => {
                               </div>
                             );
                           } catch (e) {
-                            console.error("Failed to parse tutor request content:", e);
+                            logger.error("Failed to parse tutor request content:", e);
                             return <p>{message.content}</p>; // Fallback to plain text if parsing fails
                           }
                         })()
