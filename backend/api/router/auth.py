@@ -148,8 +148,9 @@ async def signup(
     
 
 @router.post("/api/auth/logout")
-async def logout(response: Response, _ = Depends(RouterAuthUtils.assert_not_logged_out)):
-    RouterAuthUtils.clear_tokens(response)
+async def logout(request: Request, response: Response, _ = Depends(RouterAuthUtils.assert_not_logged_out)):
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
+    RouterAuthUtils.clear_tokens(response, origin)
     return {"message": "Logged out successfully"}
 
 @router.get("/api/protected")
