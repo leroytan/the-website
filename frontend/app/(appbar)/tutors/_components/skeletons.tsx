@@ -59,6 +59,7 @@ export function FilterSortBarSkeleton() {
         <div className="min-w-[180px]">
           <MultiSelectButton
             options={[]}
+            applied={[]}
             selected={[]}
             onChange={() => {}}
             placeholder="Loading Subjects..."
@@ -68,6 +69,7 @@ export function FilterSortBarSkeleton() {
         <div className="min-w-[180px]">
           <MultiSelectButton
             options={[]}
+            applied={[]}
             selected={[]}
             onChange={() => {}}
             placeholder="Loading Levels..."

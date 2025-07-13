@@ -1,108 +1,108 @@
-'use client'
+"use client";
 
-import { useAuth } from "@/context/authContext"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { ArrowLeft, Mail, GraduationCap, School, Upload, Save } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import ProfilePictureUploader from "@/app/(appbar)/tutors/[id]/ProfilePictureUploader"
+import { useAuth } from "@/context/authContext";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  ArrowLeft,
+  Mail,
+  GraduationCap,
+  School,
+  Upload,
+  Save,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import ProfilePictureUploader from "@/components/ProfilePictureUploader";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
 
 interface UserProfile {
-  id: number
-  name: string
-  email: string
-  profile_photo_url: string | null
-  intends_to_be_tutor: boolean
-  created_at: string
-  updated_at: string
+  id: number;
+  name: string;
+  email: string;
+  profile_photo_url: string | undefined;
+  intends_to_be_tutor: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function TuteeProfileEditPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [newImage, setNewImage] = useState<File | null>(null)
+  const { user, loading, refetch } = useAuth();
+  const router = useRouter();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [newImage, setNewImage] = useState<File | null>(null);
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/login?redirectTo=/profile/tutee/edit')
-        return
+        router.push("/login?redirectTo=/profile/tutee/edit");
+        return;
       }
-      
+
       // Fetch user profile data
       const fetchProfile = async () => {
         try {
-          const response = await fetchWithTokenCheck(`/api/me`)
-          if (!response.ok) throw new Error('Failed to fetch profile')
-          const data = await response.json()
-          setProfile(data.user)
+          const response = await fetchWithTokenCheck(`/api/me`);
+          if (!response.ok) throw new Error("Failed to fetch profile");
+          const data = await response.json();
+          setProfile(data.user);
         } catch (error) {
-          console.error('Error fetching profile:', error)
+          console.error("Error fetching profile:", error);
         }
-      }
-      
-      fetchProfile()
-    }
-  }, [user, loading, router])
+      };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+      fetchProfile();
+    }
+  }, [user, loading, router]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
     if (profile) {
-      setProfile(prev => ({ ...prev!, [name]: value }))
+      setProfile((prev) => ({ ...prev!, [name]: value }));
     }
-  }
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setNewImage(e.target.files[0])
-    }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!profile) return
+    e.preventDefault();
+    if (!profile) return;
 
     try {
-      const formData = new FormData()
+      const formData = new FormData();
       if (newImage) {
         formData.append('file', newImage)
         const uploadResponse = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
           method: 'POST',
           body: formData,
+          credentials: 'include',
         })
         if (!uploadResponse.ok) throw new Error('Failed to upload photo')
       }
-      
+
       // Update profile data
       const response = await fetchWithTokenCheck(`/api/me`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: profile.name,
           intends_to_be_tutor: profile.intends_to_be_tutor,
         }),
-      })
+      });
 
-      if (!response.ok) throw new Error('Failed to update profile')
-
-      router.push('/profile/tutee')
+      if (!response.ok) throw new Error("Failed to update profile");
+      refetch(); // Refresh user data in auth context
+      router.push("/profile/tutee");
     } catch (error) {
-      console.error('Error updating profile:', error)
+      console.error("Error updating profile:", error);
     }
-  }
-
-  const handleBack = () => {
-    router.back()
-  }
+  };
 
   if (loading || !profile) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   return (
@@ -114,7 +114,11 @@ export default function TuteeProfileEditPage() {
           </div>
         </div>
         <div className="relative">
-          <ProfilePictureUploader photoUrl={profile.profile_photo_url || "/images/THE-guyprofilephoto.png"} />
+          <ProfilePictureUploader
+            photoUrl={
+              profile.profile_photo_url || "/images/THE-guyprofilephoto.png"
+            }
+          />
         </div>
 
         <div className="flex-1">
@@ -135,12 +139,12 @@ export default function TuteeProfileEditPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 bg-white shadow-lg rounded-xl p-6">
-          
-        </div>
+        <div className="md:col-span-1 bg-white shadow-lg rounded-xl p-6"></div>
 
         <div className="md:col-span-2 bg-white shadow-lg rounded-xl p-6">
-          <h3 className="text-customDarkBlue font-semibold text-lg mb-4">Account Information</h3>
+          <h3 className="text-customDarkBlue font-semibold text-lg mb-4">
+            Account Information
+          </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center text-customDarkBlue mb-2">
@@ -176,5 +180,5 @@ export default function TuteeProfileEditPage() {
         </motion.button>
       </div>
     </div>
-  )
+  );
 }

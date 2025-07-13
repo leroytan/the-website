@@ -1,3 +1,5 @@
+import time
+
 from api.config import settings
 from api.router.auth_utils import RouterAuthUtils
 from api.router.routers import routers
@@ -20,6 +22,14 @@ async def startup_event():
     """
     send_startup_notification_email()
     pass
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 for router in routers:
     app.include_router(router)

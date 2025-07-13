@@ -14,7 +14,7 @@ theme: {
       customDarkBlue: '#4A58B5',
       customlightBlue: '#C0EDF0',
       customOrange: '#FC6453',
-      customYellow: '#FABB84',
+      customYellow: '#fcae66',
       customLightYellow: '#FFF2DE',
 
     },

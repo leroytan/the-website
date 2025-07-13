@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import { Home, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
+import logger from '@/utils/logger'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,7 +16,7 @@ export default function NotFound() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     // Implement search functionality here
-    console.log('Search query:', searchQuery)
+    logger.debug('Search query:', searchQuery)
   }
 
   return (
@@ -88,7 +89,7 @@ export default function NotFound() {
 
       <footer className="bg-[#4a58b5] text-white py-6">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm">&copy; 2024 Teach . Honour . Excel. All rights reserved.</p>
+          <p className="text-sm">&copy; {new Date().getFullYear()} Teach . Honour . Excel. All rights reserved.</p>
         </div>
       </footer>
     </div>

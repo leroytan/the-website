@@ -1,5 +1,5 @@
 "use client";
-import ProfilePictureUploader from "../ProfilePictureUploader";
+import ProfilePictureUploader from "../../../../../components/ProfilePictureUploader";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,11 +24,14 @@ import MultiSelectButton from "@/components/multiSelectButton";
 import { Tutor } from "@/components/types";
 import TagInput from "@/components/tagInput";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
-import RangeSlider from "@/components/RangeSlider/RangeSlider";
+import MultiRangeSlider from "@/components/RangeSlider/multiRangeSlider";
+import { useAuth } from "@/context/authContext";
+import { ErrorProvider } from "@/context/errorContext";
 
 export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
   const router = useRouter();
-  console.log("Editing tutor profile for:", tutor);
+  const { refetch } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     highest_education: tutor.highest_education || "",
@@ -54,7 +57,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true);
     // Extract only the required fields
     const payload = {
       highest_education: formData.highest_education,
@@ -71,7 +74,6 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
       special_skills: formData.special_skills,
     };
 
-    console.log("Submitting form data:", payload);
 
     const res = await fetchWithTokenCheck(`/api/tutors/${tutor.id}`, {
       method: "PUT",
@@ -82,10 +84,12 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
     });
 
     if (res.ok) {
+      refetch(); // Refresh user and tutor data in auth context
       router.push(`/tutors/${tutor.id}`);
     } else {
       alert("Failed to update profile");
     }
+    setLoading(false);
   };
 
   return (
@@ -108,13 +112,9 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
 
         {/* Bottom Split: Left - About Me, Right - Tutor Info */}
         <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
-          <div className="w-full sm:w-1/4 bg-white shadow-lg rounded-xl p-4 sm:p-6">
-            <div className="flex items-center text-customYellow mb-2">
-              <Quote className="w-5 h-5 mr-2" />
-              <h3 className="text-lg font-semibold text-orange-500">
-                About Me
-              </h3>
-            </div>
+          <div className="w-full sm:w-1/4 bg-white shadow-lg rounded-xl p-4 sm:p-6 relative">
+            <Quote className="w-5 h-5 mb-2 text-customYellow rotate-180" />
+            <h3 className="text-orange-500 font-semibold text-lg">About Me</h3>
             <textarea
               name="about_me"
               placeholder="Tell clients more about yourself"
@@ -122,6 +122,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
               value={formData.about_me}
               onChange={handleChange}
             />
+            <Quote className="w-5 h-5 text-customYellow absolute bottom-4 right-4" />
           </div>
 
           <div className="w-full sm:w-3/4 bg-white shadow-lg rounded-xl p-4 sm:p-6">
@@ -191,24 +192,27 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
                   }
                 />
               </div>
-              <div>
+              <div className="flex flex-col relative width-full height-full">
                 <div className="flex items-center text-customDarkBlue mb-2">
                   <DollarSign className="w-5 h-5 mr-2 text-customOrange" />
                   <h3 className="text-lg font-semibold">Hourly Rate</h3>
                 </div>
-                <RangeSlider
-                  hasSteps={true}
-                  value={{ min: 0, max: 100 }}
-                  from={formData.min_rate}
-                  to={formData.max_rate}
-                  onChange={({ min, max }) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      min_rate: parseInt(min),
-                      max_rate: parseInt(max),
-                    }));
-                  }}
-                />
+                <div className="flex items-center justify-between pt-2 pb-4">
+                  <MultiRangeSlider
+                    min={0}
+                    max={100}
+                    from={formData.min_rate}
+                    to={formData.max_rate}
+                    onChange={({ min, max }) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        min_rate: min,
+                        max_rate: max,
+                      }));
+                    }}
+                    formatter={(x) => `$${x}/hr`}
+                  />
+                </div>
               </div>
               <div>
                 <div className="flex items-center text-customDarkBlue mb-2">
@@ -228,14 +232,17 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
               <div>
                 <div className="flex items-center text-customDarkBlue mb-2">
                   <Star className="w-5 h-5 mr-2 text-customOrange" />
-                  <h3 className="text-lg font-semibold">Experience</h3>
+                  <h3 className="text-lg font-semibold">
+                    Teaching/Tuition Experience
+                  </h3>
                 </div>
-                <Input
-                  name="experience"
-                  placeholder="E.g., 8 years teaching, 15 years industry"
-                  value={formData.experience}
-                  onChange={handleChange}
-                  type="text"
+                <DropDown
+                  placeholder="- Select One -"
+                  stringOnDisplay={formData.experience}
+                  stateController={function (value: any): void {
+                    setFormData((prev) => ({ ...prev, experience: value }));
+                  }}
+                  iterable={["0-1", "2-3", "4-5", "5-6", "7+"]}
                 />
               </div>
               <div>
@@ -255,10 +262,11 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
           </div>
         </div>
 
-        <div className="text-right">
+        <div className="flex justify-end">
           <Button
             type="submit"
-            className="px-6 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors"
+            className="px-6 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors flex items-center justify-center whitespace-nowrap"
+            loading={loading}
           >
             <Save size={20} className="mr-2" />
             Save Changes
@@ -267,4 +275,4 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
       </form>
     </motion.div>
   );
-}
+};

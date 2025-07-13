@@ -6,6 +6,7 @@ import { X, LayoutDashboard, BriefcaseBusiness, MessageCircle, Bell, UserRoundSe
 import Link from 'next/link';
 import { useAuth } from '../context/authContext';
 import { usePathname } from 'next/navigation';
+import { useChatNotifications } from '@/hooks/useChatNotifications';
 
 type SidebarProps = {
   isOpen: boolean;
@@ -15,6 +16,7 @@ type SidebarProps = {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const pathname = usePathname();
+  const { hasUnreadMessages } = useChatNotifications();
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -96,13 +98,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       <Link
                         href={item.path}
                         onClick={onClose}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 relative ${
                           pathname === item.path
                             ? 'bg-[#4a58b5] text-white'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
-                        {item.icon}
+                        <div className="relative">
+                          {item.icon}
+                          {item.path === '/chat' && hasUnreadMessages && (
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                          )}
+                        </div>
                         <span className="font-medium">{item.name}</span>
                       </Link>
                     </li>

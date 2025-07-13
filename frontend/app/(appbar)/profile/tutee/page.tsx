@@ -4,16 +4,16 @@ import { useAuth } from "@/context/authContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, Mail, Phone, GraduationCap, BookOpen, School, MapPin, Edit, Pencil } from "lucide-react"
-import Image from "next/image"
+import { Mail, GraduationCap, School, Pencil } from "lucide-react"
 import Link from "next/link"
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { UserImage } from "@/components/userImage"
 
 interface UserProfile {
   id: number
   name: string
   email: string
-  profile_photo_url: string | null
+  profile_photo_url: string | undefined
   intends_to_be_tutor: boolean
   created_at: string
   updated_at: string
@@ -47,10 +47,6 @@ export default function TuteeProfilePage() {
     }
   }, [user, loading, router])
 
-  const handleBack = () => {
-    router.back()
-  }
-
   if (loading || !profile) {
     return <div>Loading...</div>
   }
@@ -71,13 +67,8 @@ export default function TuteeProfilePage() {
           </Link>
         </div>
         <div className="relative">
-          <Image
-            src={profile.profile_photo_url || "/placeholder.svg"}
-            alt={profile.name}
-            width={140}
-            height={140}
-            className="rounded-full border-4 border-customYellow"
-          />
+          <UserImage user={{ photo_url: profile.profile_photo_url, name: profile.name }} width={140} height={140} />
+        
         </div>
 
         <div className="flex-1">

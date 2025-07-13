@@ -9,6 +9,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { useWebSocket } from "@/context/WebSocketContext";
+import logger from "@/utils/logger";
 
 const ChatApp = () => {
 
@@ -20,7 +22,7 @@ const ChatApp = () => {
     private initialPreview: ChatPreview;
     private indexOfLastTutorRequest: number = -1; // Index of the last tutor request message, -1 if none
     public hasMoreMessages: boolean = true; // true if there are more messages to load, false if no more messages
-    public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no unread messages
+    public hasUnreadMessages: boolean = false; // true if there are unread messages, false if no more messages
 
     static fromPreviewDTO(dto: ChatPreviewBackendDTO): ChatThread {
       const messages: Message[] = []; // Initialize with an empty array
@@ -339,6 +341,7 @@ const ChatApp = () => {
   const initialChatData: ChatData = {};
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
   const { setError } = useError();
+  const { setOnNewMessage } = useWebSocket();
 
   const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
   const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
@@ -506,14 +509,13 @@ const ChatApp = () => {
       throw new Error("Failed to fetch JWT");
     }
     const data = await response.json();
-    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "");
-    console.log(`Connecting to WebSocket at ${wsURL}/ws/chat?access_token=${data.access_token}`);
+    const wsURL = BASE_URL.replace(/^http/, "ws").replace(/\/api/, "/ws");
     const socket = new WebSocket(
-      `${wsURL}/ws/chat?access_token=${data.access_token}`
+      `${wsURL}/chat?access_token=${data.access_token}`
     );
     socketRef.current = socket;
 
-    socket.onopen = () => console.log("Connected to WebSocket");
+    socket.onopen = () => {};
 
     socket.onmessage = (event) => {
       const parsedData: MessageBackendDTO = JSON.parse(event.data);
@@ -532,11 +534,64 @@ const ChatApp = () => {
 
     socket.onclose = () => {
       socketRef.current = null;
-      console.log("WebSocket closed");
     }
   };
 
   const hasInitializedSocket = useRef(false);
+
+  // Handle notifications from root WebSocket when not actively chatting
+  useEffect(() => {
+    const handleNewMessageNotification = (notification: any) => {
+      if (notification && notification.type === 'new_message' && notification.chat_id) {
+        // Update chat data with notification info
+        setChatData((prevChatData: ChatData) => {
+          const chatId = notification.chat_id;
+          const existingChat = prevChatData[chatId];
+          
+          if (existingChat) {
+            // Update existing chat with unread status
+            const updatedChat = existingChat.clone();
+            updatedChat.hasUnreadMessages = true;
+            return {
+              ...prevChatData,
+              [chatId]: updatedChat,
+            };
+          } else {
+            // Create new chat thread from notification
+            const newChat = new ChatThread(
+              chatId,
+              true, // Assume locked for new chats
+              notification.sender_name || 'Unknown User',
+              -1,
+              [],
+              {
+                id: chatId,
+                name: notification.sender_name || 'Unknown User',
+                lastMessage: notification.content_preview || 'New message',
+                displayTime: timeAgo(notification.timestamp || new Date().toISOString()),
+                hasUnread: true,
+                isLocked: true,
+                hasMessages: true,
+                lastUpdate: new Date(notification.timestamp || new Date().toISOString()),
+                lastMessageType: notification.message_type === 'tutor_request' ? 'tutorRequest' : 'textMessage',
+              }
+            );
+            newChat.hasUnreadMessages = true;
+            return {
+              ...prevChatData,
+              [chatId]: newChat,
+            };
+          }
+        });
+      }
+    };
+
+    setOnNewMessage(handleNewMessageNotification);
+
+    return () => {
+      setOnNewMessage(undefined);
+    };
+  }, []); // Remove setOnNewMessage from dependencies to prevent infinite loop
 
   // This only runs when the component mounts
   useEffect(() => {
@@ -560,7 +615,7 @@ const ChatApp = () => {
       credentials: "include",
     });
     if (!response.ok) {
-      console.error("Failed to mark chat as read");
+      logger.error("Failed to mark chat as read");
     }
     setChatData((prevChatData) => {
       const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
@@ -617,7 +672,7 @@ const ChatApp = () => {
 
       router.push(session.url);
     } catch (err) {
-      console.error("Stripe error:", err);
+      logger.error("Stripe error:", err);
       alert(err);
     }
   };
@@ -633,7 +688,7 @@ const ChatApp = () => {
     <div className="flex flex-row bg-customLightYellow h-[calc(100vh-56px)]">
         {/* Sidebar - Shown on mobile */}
         <aside
-          className={`w-full md:w-1/4 p-4 border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
+          className={`w-full md:w-1/4  border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
             }`}
         >
           <div className="flex flex-col flex-grow h-full ">
@@ -649,11 +704,11 @@ const ChatApp = () => {
               <div className="bg-white p-2 font-bold sticky top-0 z-10">
                 Locked
               </div>
-              <div className="space-y-2">
+              <div>
                 {lockedChats.map((preview, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 border-b"
+                    className={`flex items-center justify-between p-2 border-b cursor-pointer ${selectedChat === preview.id ? 'md:bg-[#fabb84] md:bg-opacity-30' : ''}`}
                     onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
@@ -680,11 +735,11 @@ const ChatApp = () => {
               <div className="bg-white px-2 py-4 font-bold sticky top-0 z-10">
                 Unlocked
               </div>
-              <div className="space-y-2">
+              <div>
                 {unlockedChats.map((preview, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 border-b"
+                    className={`flex items-center justify-between p-2 border-b cursor-pointer ${selectedChat === preview.id ? 'md:bg-[#fabb84] md:bg-opacity-30' : ''}`}
                     onClick={() => handleChatSelection(preview.id)}
                   >
                     <div className="flex items-center gap-2">
@@ -714,14 +769,14 @@ const ChatApp = () => {
           className={`flex-1 p-4 min-w-[320px] ${showChat ? "block" : "hidden md:block"
             }`}
         >
-          <button
-            className="mb-4 p-2 text-sm bg-gray-200 rounded-md md:hidden"
-            onClick={() => setShowChat(false)}
-          >
-            <ArrowLeftToLine size={24} />
-          </button>
           <div className="p-4 bg-white rounded-3xl shadow-md h-full flex flex-col">
             <div className="flex items-center mb-4">
+              <button
+                className="mr-2 p-2 text-sm md:hidden"
+                onClick={() => setShowChat(false)}
+              >
+                <ArrowLeftToLine size={24} />
+              </button>
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="ml-4">
                 <p className="text-lg font-semibold">{chatName}</p>
@@ -729,7 +784,7 @@ const ChatApp = () => {
                 {/* <button
                   onClick={async () => {
                     if (newMessage.trim() === "" || isNaN(+newMessage)) {
-                      console.error("New message has to be a valid user ID");
+                      logger.error("New message has to be a valid user ID");
                       return;
                     }
                     const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
@@ -745,7 +800,6 @@ const ChatApp = () => {
                     if (!response.ok) {
                       throw new Error("Failed to create chat");
                     } else {
-                      console.log("Chat created successfully");
                       setNewMessage("");
                     }
                     const chatPreview: ChatPreviewBackendDTO = await response.json();
@@ -781,7 +835,7 @@ const ChatApp = () => {
                           try {
                             const tutorRequest: TutorRequest = JSON.parse(message.content as string);
                             if (tutorRequest.assignmentRequestId === undefined || tutorRequest.tutorId === undefined) {
-                              console.error("Invalid tutor request message:", message.content);
+                              logger.error("Invalid tutor request message:", message.content);
                               return <p>Error: Invalid tutor request message.</p>;
                             }
                             return (
@@ -826,7 +880,7 @@ const ChatApp = () => {
                               </div>
                             );
                           } catch (e) {
-                            console.error("Failed to parse tutor request content:", e);
+                            logger.error("Failed to parse tutor request content:", e);
                             return <p>{message.content}</p>; // Fallback to plain text if parsing fails
                           }
                         })()

@@ -21,6 +21,9 @@ import { usePathname, useRouter } from "next/navigation";
 import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssignmentButton";
 import { useError } from "@/context/errorContext";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { UserImage } from "./userImage";
+import NotificationToast from "./NotificationToast";
+import { useChatNotifications } from "@/hooks/useChatNotifications";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -39,9 +42,8 @@ const UserMenu = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-  const { user, tutor, loading } = useAuth();
-  const { error, setError } = useError();
+  const { user, tutor } = useAuth();
+  const { setError } = useError();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -60,90 +62,94 @@ const UserMenu = () => {
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-      >
-        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden">
-          <Image
-            src={user?.profile_photo_url || "/images/THE-guyprofilephoto.png"}
-            alt="Profile"
-            width={40}
-            height={40}
-            className="object-cover w-full h-full"
-          />
-        </div>
-        <span className="hidden lg:block text-sm font-medium text-gray-700">
-          {user?.name}
-        </span>
-        <ChevronDown
-          size={20}
-          className={`text-gray-500 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+    <>
+      {user && (
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+          >
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden">
+              <UserImage user={{ photo_url: user.profile_photo_url, name: user.name }} />
+            </div>
+            <span className="hidden lg:block text-sm font-medium text-gray-700">
+              {user?.name}
+            </span>
+            <ChevronDown
+              size={20}
+              className={`text-gray-500 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50">
-          <div className="px-4 py-2 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
-          </div>
-          <div className="py-1">
-            <button
-              onClick={() => {
-                router.push("/profile");
-                setIsOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Profile
-            </button>
-            {user && !tutor && (
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetchWithTokenCheck(`/api/me`, {
-                      method: "PUT",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({ intends_to_be_tutor: true }),
-                    });
+          {isOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-medium text-gray-900">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    router.push("/profile");
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Profile
+                </button>
+                {user && !tutor && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetchWithTokenCheck(`/api/me`, {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ intends_to_be_tutor: true }),
+                        });
 
-                    if (response.ok) {
-                      document.cookie = `intends_to_be_tutor=${true}; path=/; SameSite=Lax; Secure`;
-                      document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
-                      router.push("/onboarding/tutor");
-                    } else {
-                      setError("An error occurred while updating your status.");
-                      // Optionally, display an error message to the user
-                    }
-                  } catch (error) {
-                    setError("An error occurred while updating your status.");
-                    // Optionally, display an error message to the user
-                  }
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Become a Tutor
-              </button>
-            )}
-            <button
-              onClick={() => {
-                router.push("/logout");
-                setIsOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-            >
-              Logout
-            </button>
-          </div>
+                        if (response.ok) {
+                          document.cookie = `intends_to_be_tutor=${true}; path=/; SameSite=Lax; Secure`;
+                          document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
+                          router.push("/onboarding/tutor");
+                        } else {
+                          setError(
+                            "An error occurred while updating your status."
+                          );
+                          // Optionally, display an error message to the user
+                        }
+                      } catch (error) {
+                        setError(
+                          "An error occurred while updating your status."
+                        );
+                        // Optionally, display an error message to the user
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Become a Tutor
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    router.push("/logout");
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 };
 
@@ -162,10 +168,11 @@ export default function ComponentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, tutor } = useAuth();
+  const { user, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { hasUnreadMessages } = useChatNotifications();
 
   const toggleSideBar = () => {
     setIsSidebarOpen((prev) => !prev);
@@ -248,10 +255,11 @@ export default function ComponentLayout({
                           : "text-gray-500 hover:text-[#4a58b5]"
                       }`}
                     >
-                      <div className="flex items-center justify-center">
+                      <div className="flex flex-col items-center justify-center">
                         {item.icon}
+                        <span className="text-xs md:text-sm">{item.name}</span>
                       </div>
-                      <span className="text-xs md:text-sm">{item.name}</span>
+                      
                     </Button>
                   ))}
                   <div className="h-auto w-0.5 self-stretch bg-neutral-100 mx-2" />
@@ -259,23 +267,24 @@ export default function ComponentLayout({
                     <Button
                       key={item.path}
                       onClick={() => router.push(item.path)}
-                      className={`flex flex-col items-center justify-center h-full gap-0.5 px-2 md:px-3 lg:px-4 ${
+                      className={`flex items-center justify-center h-full gap-0.5 px-2 md:px-3 lg:px-4 ${
                         pathname === item.path
                           ? "border-b-2 border-b-[#4a58b5] text-[#4a58b5]"
                           : "text-gray-500 hover:text-[#4a58b5]"
                       }`}
                     >
-                      <div className="flex items-center justify-center">
+                      <div className="flex flex-col items-center justify-center relative">
                         {item.icon}
+                        <span className="text-xs md:text-sm">{item.name}</span>
+                        {item.path === '/chat' && hasUnreadMessages && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                        )}
                       </div>
-                      <span className="text-xs md:text-sm">{item.name}</span>
                     </Button>
                   ))}
                 </nav>
               </div>
             )}
-
-            
 
             {/* Right-aligned items */}
             <div className="flex items-center gap-3 ml-4">
@@ -305,8 +314,13 @@ export default function ComponentLayout({
       {/* Mobile Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={toggleSideBar} />
 
+      {/* Notification Toast */}
+      {user && <NotificationToast />}
+
       {/* Main Content */}
-      <main className="min-h-[calc(100vh-3.5rem)] w-full max-w-screen">{children}</main>
+      <main className="min-h-[calc(100vh-3.5rem)] w-full max-w-screen">
+        {children}
+      </main>
     </div>
   );
 }

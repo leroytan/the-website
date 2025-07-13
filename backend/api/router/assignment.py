@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 router = APIRouter()
 
 @router.get("/api/assignments")
-async def search_assignments(request: Request, response: Response, query: str = "", filter_by: str = "", sort_by: str = "", page_size: int = 10, page_number: int = 1) -> SearchResult[AssignmentPublicView]:
+async def search_assignments(request: Request, query: str = "", filter_by: str = "", sort_by: str = "", page_size: int = 10, page_number: int = 1, debug: str = None) -> SearchResult[AssignmentPublicView]:
     if settings.is_use_mock:
         return mock.get_assignments()
     
@@ -45,7 +45,7 @@ async def search_assignments(request: Request, response: Response, query: str = 
         filters=FilterLogic.get_filters(Assignment),
         sorts=SortLogic.get_sorts(Assignment),
         num_pages=res["num_pages"],
-        debug=[assignment.estimated_rate_hourly for assignment in res["results"]],
+        debug=[getattr(assignment, debug, None) for assignment in res["results"]] if debug else [],
     )
 
 

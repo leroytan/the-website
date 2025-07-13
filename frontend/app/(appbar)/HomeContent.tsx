@@ -5,18 +5,15 @@ import {
   CheckCircle,
   MessageCircle,
   CreditCard,
-  Quote,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   motion,
-  useAnimation,
   useMotionValue,
-  useSpring,
   useTransform,
 } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 
 const universityLogos = [

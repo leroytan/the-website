@@ -5,14 +5,14 @@ import { Eye, EyeOff } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { BASE_URL } from "@/utils/constants";
 import { useAuth } from "@/context/authContext";
 import { User, Tutor } from "@/components/types";
 import ErrorMessage from "@/components/ErrorMessage";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import logger from "@/utils/logger";
 
 import { FcGoogle } from "react-icons/fc";
 
@@ -30,9 +30,6 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Login attempted with:", { email, password });
-
-    console.log("Sending login request...");
 
     const res = await fetch(`/api/auth/login`, {
       method: "POST",
@@ -41,19 +38,21 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     });
 
     if (res.ok) {
-      await refetch(); // refresh user and tutor data for authcontext
-      // Fetch user state and set cookies
-      const meRes = await fetchWithTokenCheck(`/api/me`);
-      const { user, tutor }: { user: User; tutor: Tutor | null } =
-        await meRes.json();
+      const { user, tutor }: { user: User | null; tutor: Tutor | null } = await refetch(); // refresh user and tutor data for authcontext
+
+      logger.debug("Manual login refetch completed:", {
+        user: user ? { id: user.id, name: user.name, email: user.email } : null,
+        tutor: tutor ? { id: tutor.id } : null
+      });
 
       // Set helper cookies for middleware
-      if (user.intends_to_be_tutor && !tutor) {
+      if (user?.intends_to_be_tutor && !tutor) {
       document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
       document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
       }
+      
       router.replace(redirectTo);
-      router.refresh();
+      // router.refresh();
     } else {
       const errorData = await res.json();
       setErrorMessage(errorData.message || "Login failed");
@@ -186,7 +185,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
         transition={{ delay: 0.5, duration: 0.5 }}
         className="mt-8 text-center text-xs text-[#4a58b5]"
       >
-        &copy; 2024 Teach . Honour . Excel. All rights reserved.
+        &copy; {new Date().getFullYear()} Teach . Honour . Excel. All rights reserved.
       </motion.p>
     </div>
   );

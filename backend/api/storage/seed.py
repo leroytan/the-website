@@ -113,5 +113,5 @@ def seed_database(db: Session):
     seed_levels(db)
     seed_locations(db)
     
-    # Optionally, you can log the seeding process
+    # Database seeded successfully
     print(f"Database seeded with subjects, levels and locations at {datetime.datetime.now()}.")

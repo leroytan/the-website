@@ -2,12 +2,14 @@ import { motion } from "framer-motion";
 
 function Checkbox({
   defaultChecked,
+  checked,
   className,
   children,
   onChange,
   readonly
 }: {
-  defaultChecked: boolean;
+  defaultChecked?: boolean;
+  checked?: boolean;
   className?: string;
   children?: React.ReactNode;
   onChange?: () => void;
@@ -21,7 +23,8 @@ function Checkbox({
     >
       <input
         type="checkbox"
-        defaultChecked={defaultChecked}
+        checked={checked}
+        defaultChecked={checked === undefined ? defaultChecked : undefined}
         className={`${className} accent-customYellow w-5 h-5 rounded-full`}
         onChange={onChange}
         readOnly={readonly}

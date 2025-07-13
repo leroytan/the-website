@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TutorProfileForm from "./tutorProfileForm"; // Import the TutorProfileForm component
 import { Button } from "@/components/button";
+import next from "next";
 
 export default function TutorOnboarding() {
   const router = useRouter();
@@ -21,6 +22,15 @@ export default function TutorOnboarding() {
       router.push("/dashboard");
       router.refresh();
     }
+  };
+  const cancel = () => {
+    setCurrentStep(2);
+    document.cookie =
+      "tutor_profile_complete=false; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure";
+    document.cookie =
+      "intends_to_be_tutor=false; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax; Secure";
+    router.push("/");
+    router.refresh();
   };
   const steps = [
     {
@@ -50,7 +60,7 @@ export default function TutorOnboarding() {
       ),
     },
     {
-      content: <TutorProfileForm nextStep={nextStep} />,
+      content: <TutorProfileForm nextStep={nextStep} cancel={cancel} />,
     },
     {
       content: (

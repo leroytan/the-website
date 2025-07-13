@@ -17,13 +17,10 @@ type Direction = "left" | "right";
 
 function formatMinutes(minutesString: string) {
   const minutes = parseInt(minutesString, 10);
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  let result = "";
-  if (hours > 0) result += `${hours} hour${hours > 1 ? "s" : ""}`;
-  if (hours > 0 && mins > 0) result += " ";
-  if (mins > 0) result += `${mins} minutes`;
-  return result.trim();
+  if (isNaN(minutes)) return "";
+  const hours = minutes / 60;
+  // Always show as e.g. 1.5 hours, 2 hours, etc.
+  return `${hours % 1 === 0 ? hours : hours.toFixed(1)} hours`;
 }
 
 const AddAssignmentOverlay = ({
@@ -67,14 +64,12 @@ const AddAssignmentOverlay = ({
   const goToPrevSlot = () => {
     if (formData.slots.length <= 1 || currentSlot === 0) return;
     goToSlot(currentSlot - 1);
-    console.log(directionRef.current);
   };
 
   const goToNextSlot = () => {
     if (formData.slots.length <= 1 || currentSlot === formData.slots.length - 1)
       return;
     goToSlot(currentSlot + 1);
-    console.log(directionRef.current);
   };
 
   const handleAddSlot = () => {
@@ -198,13 +193,29 @@ const AddAssignmentOverlay = ({
       setShowOverlay(false);
       setShowSuccessDialog(true);
     } catch (error) {
-      console.log(error);
       alert(error);
     }
   }
 
   // Example fee options
-  const feeOptions = ["25", "30", "35", "40", "45", "50", "55", "60", "65", "70", "75", "80", "85", "90", "95", "100"];
+  const feeOptions = [
+    "25",
+    "30",
+    "35",
+    "40",
+    "45",
+    "50",
+    "55",
+    "60",
+    "65",
+    "70",
+    "75",
+    "80",
+    "85",
+    "90",
+    "95",
+    "100",
+  ];
 
   const locations = [
     "Ang Mo Kio",
@@ -351,7 +362,7 @@ const AddAssignmentOverlay = ({
               {/* Slots Section */}
               <div>
                 <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Available Slots <span className="text-red-500">*</span>
+                  Indicate Availability <span className="text-red-500">*</span>
                 </h3>
                 <div className="flex flex-row items-center justify-center">
                   {/* Shift left button (hide if first slot) */}
@@ -444,9 +455,7 @@ const AddAssignmentOverlay = ({
                                 stringOnDisplay={
                                   formData.slots[currentSlot].minutes
                                 }
-                                iterable={Array.from({ length: 60 }, (_, i) =>
-                                  i.toString().padStart(2, "0")
-                                )}
+                                iterable={["00", "30"]}
                                 stateController={(value) => {
                                   const newSlots = [...formData.slots];
                                   newSlots[currentSlot].minutes = value;
@@ -464,14 +473,17 @@ const AddAssignmentOverlay = ({
                               placeholder="Select Duration"
                               stringOnDisplay={
                                 formData.slots[currentSlot].duration
+                                  ? formatMinutes(
+                                      formData.slots[currentSlot].duration
+                                    )
+                                  : ""
                               }
-                              iterable={[
-                                "1 hour",
-                                "1.5 hours",
-                                "2 hours",
-                                "2.5 hours",
-                                "3 hours",
-                              ]}
+                              iterable={[60, 90, 120, 150, 180].map(
+                                (min) => `${min}`
+                              )}
+                              renderItem={(option) => (
+                                <span>{formatMinutes(option)}</span>
+                              )}
                               stateController={(value) => {
                                 const newSlots = [...formData.slots];
                                 newSlots[currentSlot].duration = value;
@@ -513,8 +525,13 @@ const AddAssignmentOverlay = ({
               {/* Fees Dropdown */}
               <div>
                 <h3 className="text-base font-medium text-customDarkBlue mb-2">
-                  Fees <span className="text-red-500">*</span>
+                  Proposed Fees <span className="text-red-500">*</span>
                 </h3>
+                <h2 className="text-sm text-gray-500 mb-2">
+                  Used only as a reference. <br />
+                  Actual fees will be calculated when you accept a tutor's
+                  request.
+                </h2>
                 <Image
                   src="/images/rates.png"
                   alt="Fees"
@@ -522,17 +539,16 @@ const AddAssignmentOverlay = ({
                   height={1000}
                   className="w-full"
                 />
-                <br/>
+                <br />
                 <DropDown
                   stringOnDisplay={formData.fees}
                   placeholder="- Select One -"
-                  iterable={feeOptions}
+                  iterable={feeOptions.map((fee) => `$${fee}/hour`)}
                   stateController={(value) =>
                     setFormData({ ...formData, fees: value })
                   }
                   className="w-full rounded-md text-sm"
                 />
-                
               </div>
 
               {/* Lesson Duration Field */}
@@ -547,7 +563,9 @@ const AddAssignmentOverlay = ({
                       ? formatMinutes(formData.lesson_duration)
                       : ""
                   }
-                  iterable={[30, 60, 90, 120, 150, 180].map((min) => `${min}`)}
+                  iterable={[60, 90, 120, 150, 180, 210, 240, 270, 300].map(
+                    (min) => `${min}`
+                  )}
                   renderItem={(option) => <span>{formatMinutes(option)}</span>}
                   stateController={(value) =>
                     setFormData({ ...formData, lesson_duration: value })
@@ -573,16 +591,15 @@ const AddAssignmentOverlay = ({
               {/* Submit and Cancel Buttons */}
               <div className="flex justify-end space-x-2">
                 <Button
-                  type="button"
+                  className="px-4 py-2 bg-white border border-customDarkBlue text-customDarkBlue rounded-full hover:bg-customLightYellow transition-colors duration-200"
                   onClick={handleClose}
-                  className="px-4 py-2 bg-gray-200 text-customDarkBlue rounded-md hover:bg-gray-300 transition-colors duration-200"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   type="submit"
-                  className="px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200"
+                  className="px-4 py-2 bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200"
                 >
                   Submit
                 </Button>

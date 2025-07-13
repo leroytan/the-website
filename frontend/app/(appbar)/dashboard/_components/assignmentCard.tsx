@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, ExternalLink, MessageCircleMore } from "lucide-
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { UserImage } from "@/components/userImage"
 
 interface AssignmentCardProps {
   assignment: TuitionListing
@@ -67,12 +68,17 @@ export default function AssignmentCard({
           {view === 'client' && assignment.status === "FILLED" && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-xl">
-                <Image
-                  src={assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_profile_photo_url || "/default-avatar.png"}
-                  alt={assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_name || "Not Assigned"}
+                <UserImage
+                  user={
+                    assignment.requests?.find(r => r.status === "ACCEPTED")
+                      ? {
+                          name: assignment.requests.find(r => r.status === "ACCEPTED")!.tutor_name,
+                          photo_url: assignment.requests.find(r => r.status === "ACCEPTED")!.tutor_profile_photo_url
+                        }
+                      : { name: "Not Assigned" }
+                  }
                   width={32}
                   height={32}
-                  className="rounded-full"
                 />
                 <span className="text-customDarkBlue font-medium">
                   {assignment.requests?.find(r => r.status === "ACCEPTED")?.tutor_name || "Not Assigned"}
