@@ -152,6 +152,7 @@ export function FilterSortBar({
           <div className="min-w-[180px]">
             <MultiSelectButton
               options={subjectOptions}
+              applied={initialSelectedSubjects}
               selected={selectedSubjects}
               onChange={onSubjectsChange}
               placeholder="All Subjects"
@@ -162,6 +163,7 @@ export function FilterSortBar({
           <div className="min-w-[180px]">
             <MultiSelectButton
               options={levelOptions}
+              applied={initialSelectedLevels}
               selected={selectedLevels}
               onChange={onLevelsChange}
               placeholder="All Levels"

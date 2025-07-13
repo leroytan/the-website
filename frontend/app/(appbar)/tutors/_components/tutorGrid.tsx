@@ -1,5 +1,6 @@
 "use client";
 import { Tutor } from "@/components/types";
+import { UserImage } from "@/components/userImage";
 import { motion } from "framer-motion";
 import { Book, GraduationCap, DollarSign, Star } from "lucide-react";
 import Image from "next/image";
@@ -18,15 +19,11 @@ export function TutorGrid({ tutors }: { tutors: Tutor[] }) {
           exit={{ opacity: 0 }}
           className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full"
         >
-          <div className="flex items-center mb-4">
-            <Image
-              src={tutor.photo_url || "/images/THE-guyprofilephoto.png"}
-              alt={tutor.name}
-              width={80}
-              height={80}
-              className="rounded-full mr-4 border-2 border-[#fabb84]"
-            />
-            <div>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-[30%]">
+              <UserImage user={tutor}/>
+            </div>
+            <div className="flex-[70%]">
               <h3 className="text-xl font-semibold text-[#4a58b5]">
                 {tutor.name}
               </h3>
@@ -55,7 +52,7 @@ export function TutorGrid({ tutors }: { tutors: Tutor[] }) {
             </div>
             <div className="flex items-center text-[#4a58b5]">
               <span className="font-medium mr-2">Experience:</span>
-              <span>{tutor.experience}</span>
+              <span>{tutor.experience} years</span>
             </div>
             <div className="flex items-center text-[#4a58b5]">
               <span className="font-medium mr-2">Availability:</span>
@@ -64,8 +61,6 @@ export function TutorGrid({ tutors }: { tutors: Tutor[] }) {
           </div>
           <Link
             href={`/tutors/${tutor.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
             className="mt-auto"
           >
             <motion.button
