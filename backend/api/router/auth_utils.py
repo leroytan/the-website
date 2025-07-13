@@ -72,6 +72,9 @@ class RouterAuthUtils:
         """
         if origin.startswith("http://"):
             origin = None
+        # Strip the protocol from the origin if it starts with http://
+        elif origin.startswith("https://"):
+            origin = origin[8:]
         response.set_cookie(
             key="access_token",
             value=tokens.access_token,
