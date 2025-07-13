@@ -1,5 +1,6 @@
 import { Button } from "@/components/button";
 import { TuitionListing } from "@/components/types";
+import { UserImage } from "@/components/userImage";
 import { timeAgo } from "@/utils/date";
 import { ChevronDown, ChevronUp, Clock, ExternalLink, Hourglass, MessageCircle, X } from "lucide-react";
 import Image from "next/image";
@@ -63,14 +64,10 @@ export default function AppliedTutorsModal({
                 )}
                 {/* Tutor Info */}
                 <div className="flex items-center gap-3">
-                  <Image
-                    src={request.tutor_profile_photo_url || "/default-avatar.png"}
-                    alt={request.tutor_name}
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
+                  <div className="flex-[30%]">
+                    <UserImage user={{ photo_url: request.tutor_profile_photo_url, name: request.tutor_name }} />
+                  </div>
+                  <div className="flex-[70%]">
                     <p className="font-semibold text-customDarkBlue">
                       {request.tutor_name}
                     </p>

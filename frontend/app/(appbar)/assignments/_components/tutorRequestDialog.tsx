@@ -1,7 +1,14 @@
 import { useRef, useState, useEffect } from "react";
 import { Dialog } from "../../../../components/dialog";
 import { Button } from "../../../../components/button";
-import { X, ChevronLeft, ChevronRight, Plus, Clock, Hourglass } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Clock,
+  Hourglass,
+} from "lucide-react";
 import DropDown from "../../../../components/dropdown";
 import { motion, AnimatePresence } from "framer-motion";
 import Checkbox from "../../../../components/checkbox";
@@ -24,7 +31,10 @@ interface ClientTimeSlot {
 interface AvailableSlotsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { requested_rate_hourly: number; available_slots: { day: string; start_time: string; end_time: string }[] }) => void;
+  onSubmit: (data: {
+    requested_rate_hourly: number;
+    available_slots: { day: string; start_time: string; end_time: string }[];
+  }) => void;
   clientSlots?: ClientTimeSlot[];
 }
 
@@ -37,7 +47,17 @@ const DAYS = [
   "Saturday",
   "Sunday",
 ];
-const DURATIONS = ["1 hour", "1.5 hours", "2 hours", "2.5 hours", "3 hours"];
+const DURATIONS = [
+  "1 hour",
+  "1.5 hours",
+  "2 hours",
+  "2.5 hours",
+  "3 hours",
+  "3.5 hours",
+  "4 hours",
+  "4.5 hours",
+  "5 hours",
+];
 
 export const TutorRequestDialog = ({
   isOpen,
@@ -50,7 +70,9 @@ export const TutorRequestDialog = ({
   const [requestedRate, setRequestedRate] = useState("");
   const prevSlotRef = useRef(0);
   const directionRef = useRef<Direction>("right");
-  const [copiedMappings, setCopiedMappings] = useState<Record<number, number>>({});
+  const [copiedMappings, setCopiedMappings] = useState<Record<number, number>>(
+    {}
+  );
 
   const goToSlot = (newIndex: number) => {
     prevSlotRef.current = currentSlot;
@@ -74,10 +96,23 @@ export const TutorRequestDialog = ({
 
   const removeSlot = () => {
     if (slots.length <= 1) return;
+    const removedSlotIdx = currentSlot;
     const newSlotIndex =
       currentSlot === slots.length - 1 ? currentSlot - 1 : currentSlot;
-    const newSlots = slots.filter((_, idx) => idx !== currentSlot);
+    const newSlots = slots.filter((_, idx) => idx !== removedSlotIdx);
+    // Remove any mapping in copiedMappings that points to the removed slot
+    const newMappings: Record<number, number> = {};
+    Object.entries(copiedMappings).forEach(([cIdx, tIdx]) => {
+      const t = tIdx as number;
+      if (t < removedSlotIdx) {
+        newMappings[Number(cIdx)] = t;
+      } else if (t > removedSlotIdx) {
+        newMappings[Number(cIdx)] = t - 1;
+      }
+      // If t === removedSlotIdx, do not copy (removes the mapping)
+    });
     setSlots(newSlots);
+    setCopiedMappings(newMappings);
     goToSlot(newSlotIndex);
   };
 
@@ -148,19 +183,20 @@ export const TutorRequestDialog = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
-      <div className="space-y-4 p-4 sm:p-6">
-        <div className="flex justify-between items-center border-b pb-4">
-          <h2 className="text-xl font-semibold text-customDarkBlue">
-            Select Your Rate & Available Slots
-          </h2>
-          <button
+    <Dialog className="relative">
+      <Button
             onClick={onClose}
-            className="text-gray-500 hover:text-customOrange transition-colors"
+            className="absolute top-4 right-4 text-customOrange hover:text-red-700 transition-colors duration-200 z-10"
+            aria-label="Close"
           >
-            <X size={20} />
-          </button>
-        </div>
+            <X size={24} />
+          </Button>
+      <div>
+        <h2 className="text-xl font-semibold mb-4 text-center sm:text-left text-customDarkBlue">
+          Select Your Rate & Available Slots
+        </h2>
+      </div>
+      <div className="overflow-y-auto max-h-[80vh] p-4 space-y-4">
 
         {/* Requested Rate Dropdown */}
         <div>
@@ -169,8 +205,10 @@ export const TutorRequestDialog = ({
           </h3>
           <DropDown
             placeholder="Select Rate"
-            stringOnDisplay={requestedRate ? `$${requestedRate}/hour` : ''}
-            iterable={[25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100].map((r) => `${r}`)}
+            stringOnDisplay={requestedRate ? `$${requestedRate}/hour` : ""}
+            iterable={[
+              25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100,
+            ].map((r) => `${r}`)}
             renderItem={(option) => <span>${option}/hour</span>}
             stateController={setRequestedRate}
             className="w-full rounded-md text-sm"
@@ -189,12 +227,20 @@ export const TutorRequestDialog = ({
                 const end = slot.end_time;
                 const [sh, sm] = start.split(":").map(Number);
                 const [eh, em] = end.split(":").map(Number);
-                const durationMinutes = (eh * 60 + em) - (sh * 60 + sm);
+                const durationMinutes = eh * 60 + em - (sh * 60 + sm);
                 const durationOptions = [60, 90, 120, 150, 180];
-                const closestDuration = durationOptions.reduce((prev, curr) => Math.abs(curr - durationMinutes) < Math.abs(prev - durationMinutes) ? curr : prev, durationOptions[0]);
+                const closestDuration = durationOptions.reduce(
+                  (prev, curr) =>
+                    Math.abs(curr - durationMinutes) <
+                    Math.abs(prev - durationMinutes)
+                      ? curr
+                      : prev,
+                  durationOptions[0]
+                );
                 const hours = Math.floor(closestDuration / 60);
                 const mins = closestDuration % 60;
-                const durationLabel = mins === 0 ? `${hours} hour` : `${hours}.5 hour`;
+                const durationLabel =
+                  mins === 0 ? `${hours} hour` : `${hours}.5 hour`;
 
                 return (
                   <div
@@ -202,23 +248,29 @@ export const TutorRequestDialog = ({
                     className="flex justify-between items-center bg-customLightYellow px-4 py-2 rounded-xl"
                   >
                     <Checkbox
-                      defaultChecked={copiedMappings.hasOwnProperty(index)}
+                      checked={!!copiedMappings.hasOwnProperty(index)}
                       onChange={() => {
                         if (copiedMappings.hasOwnProperty(index)) {
                           // Uncheck: remove the mapped tutor slot
                           const slotIdx = copiedMappings[index];
-                          const newSlots = slots.filter((_, i) => i !== slotIdx);
+                          const newSlots = slots.filter(
+                            (_, i) => i !== slotIdx
+                          );
                           // Remove mapping and update all mappings after the removed slot
                           const newMappings: Record<number, number> = {};
-                          Object.entries(copiedMappings).forEach(([cIdx, tIdx]) => {
-                            const cIdxNum = Number(cIdx);
-                            const t = tIdx as number;
-                            if (cIdxNum !== index) {
-                              newMappings[cIdxNum] = t > slotIdx ? t - 1 : t;
+                          Object.entries(copiedMappings).forEach(
+                            ([cIdx, tIdx]) => {
+                              const cIdxNum = Number(cIdx);
+                              const t = tIdx as number;
+                              if (cIdxNum !== index) {
+                                newMappings[cIdxNum] = t > slotIdx ? t - 1 : t;
+                              }
                             }
-                          });
+                          );
                           if (newSlots.length === 0) {
-                            setSlots([{ day: "", hours: "", minutes: "", duration: "" }]);
+                            setSlots([
+                              { day: "", hours: "", minutes: "", duration: "" },
+                            ]);
                             setCurrentSlot(0);
                           } else {
                             setSlots(newSlots);
@@ -229,7 +281,11 @@ export const TutorRequestDialog = ({
                           // Check: add new slot or fill current if empty
                           let slotToUse = currentSlot;
                           let newSlots = [...slots];
-                          const isCurrentEmpty = !slots[currentSlot].day && !slots[currentSlot].hours && !slots[currentSlot].minutes && !slots[currentSlot].duration;
+                          const isCurrentEmpty =
+                            !slots[currentSlot].day &&
+                            !slots[currentSlot].hours &&
+                            !slots[currentSlot].minutes &&
+                            !slots[currentSlot].duration;
                           if (isCurrentEmpty) {
                             newSlots[currentSlot] = {
                               day: slot.day,
@@ -251,18 +307,24 @@ export const TutorRequestDialog = ({
                             setCurrentSlot(slotToUse);
                           }
                           setSlots(newSlots);
-                          setCopiedMappings({ ...copiedMappings, [index]: slotToUse });
+                          setCopiedMappings({
+                            ...copiedMappings,
+                            [index]: slotToUse,
+                          });
                         }
                       }}
                       className="mr-2"
                     />
-                    <span className="font-bold text-customDarkBlue">{slot.day}</span>
+                    <span className="font-bold text-customDarkBlue">
+                      {slot.day}
+                    </span>
                     <div className="flex flex-col items-end text-customDarkBlue text-sm">
                       <div className="flex items-center gap-1">
                         <Clock size={14} /> {start} - {end}
                       </div>
                       <div className="flex items-center gap-1">
-                        <Hourglass size={14} /> {(durationMinutes / 60).toFixed(1)} hours
+                        <Hourglass size={14} />{" "}
+                        {(durationMinutes / 60).toFixed(1)} hours
                       </div>
                     </div>
                   </div>
@@ -323,7 +385,15 @@ export const TutorRequestDialog = ({
                           <label className="block text-sm font-medium text-customDarkBlue mb-1">
                             Day <span className="text-red-500">*</span>
                           </label>
-                          <div className={Object.values(copiedMappings).includes(currentSlot) ? 'pointer-events-none opacity-60' : ''}>
+                          <div
+                            className={
+                              Object.values(copiedMappings).includes(
+                                currentSlot
+                              )
+                                ? "pointer-events-none opacity-60"
+                                : ""
+                            }
+                          >
                             <DropDown
                               placeholder="Select Day"
                               stringOnDisplay={slots[currentSlot].day}
@@ -334,7 +404,9 @@ export const TutorRequestDialog = ({
                               }}
                               iterable={DAYS}
                               className="w-full rounded-md text-sm"
-                              disabled={Object.values(copiedMappings).includes(currentSlot)}
+                              disabled={Object.values(copiedMappings).includes(
+                                currentSlot
+                              )}
                             />
                           </div>
                         </div>
@@ -343,7 +415,15 @@ export const TutorRequestDialog = ({
                           <label className="block text-sm font-medium text-customDarkBlue mb-1">
                             Start Time <span className="text-red-500">*</span>
                           </label>
-                          <div className={Object.values(copiedMappings).includes(currentSlot) ? 'pointer-events-none opacity-60' : ''}>
+                          <div
+                            className={
+                              Object.values(copiedMappings).includes(
+                                currentSlot
+                              )
+                                ? "pointer-events-none opacity-60"
+                                : ""
+                            }
+                          >
                             <div className="flex items-center gap-2">
                               <DropDown
                                 placeholder="Hour"
@@ -357,7 +437,9 @@ export const TutorRequestDialog = ({
                                   setSlots(newSlots);
                                 }}
                                 className="w-full rounded-md text-sm"
-                                disabled={Object.values(copiedMappings).includes(currentSlot)}
+                                disabled={Object.values(
+                                  copiedMappings
+                                ).includes(currentSlot)}
                               />
                               <span className="text-customDarkBlue font-medium">
                                 :
@@ -365,16 +447,16 @@ export const TutorRequestDialog = ({
                               <DropDown
                                 placeholder="Minute"
                                 stringOnDisplay={slots[currentSlot].minutes}
-                                iterable={Array.from({ length: 60 }, (_, i) =>
-                                  i.toString().padStart(2, "0")
-                                )}
+                                iterable={["00", "30"]}
                                 stateController={(value) => {
                                   const newSlots = [...slots];
                                   newSlots[currentSlot].minutes = value;
                                   setSlots(newSlots);
                                 }}
                                 className="w-full rounded-md text-sm"
-                                disabled={Object.values(copiedMappings).includes(currentSlot)}
+                                disabled={Object.values(
+                                  copiedMappings
+                                ).includes(currentSlot)}
                               />
                             </div>
                           </div>
@@ -384,7 +466,15 @@ export const TutorRequestDialog = ({
                           <label className="block text-sm font-medium text-customDarkBlue mb-1">
                             Duration <span className="text-red-500">*</span>
                           </label>
-                          <div className={Object.values(copiedMappings).includes(currentSlot) ? 'pointer-events-none opacity-60' : ''}>
+                          <div
+                            className={
+                              Object.values(copiedMappings).includes(
+                                currentSlot
+                              )
+                                ? "pointer-events-none opacity-60"
+                                : ""
+                            }
+                          >
                             <DropDown
                               placeholder="Select Duration"
                               stringOnDisplay={slots[currentSlot].duration}
@@ -395,7 +485,9 @@ export const TutorRequestDialog = ({
                                 setSlots(newSlots);
                               }}
                               className="w-full rounded-md text-sm"
-                              disabled={Object.values(copiedMappings).includes(currentSlot)}
+                              disabled={Object.values(copiedMappings).includes(
+                                currentSlot
+                              )}
                             />
                           </div>
                         </div>

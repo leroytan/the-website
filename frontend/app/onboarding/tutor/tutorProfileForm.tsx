@@ -4,15 +4,15 @@ import { Button } from "@/components/button";
 import DropDown from "@/components/dropdown";
 import Input from "@/components/input";
 import MultiSelectButton from "@/components/multiSelectButton";
-import RangeSlider from "@/components/RangeSlider"
-import Modal from "./_components/modal";
-import { CloudUpload, Save, X } from "lucide-react";
+import { CloudUpload, Save, User, X } from "lucide-react";
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { useError } from "@/context/errorContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import MultiRangeSlider from "@/components/RangeSlider/multiRangeSlider";
+import ProfilePictureUploader from "@/components/ProfilePictureUploader";
 import { useAuth } from "@/context/authContext";
 
 type TutorProfileFormData = {
@@ -25,8 +25,8 @@ type TutorProfileFormData = {
   subjects: string[];
   levels: string[];
   skills: string;
-  min_rate: string;
-  max_rate: string;
+  min_rate: number;
+  max_rate: number;
 };
 
 function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: () => void }) {
@@ -35,34 +35,6 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
   const { refetch } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const oldAvatarUrl = useRef<string>("");
-  const updateAvatar = async (avatarDataUrl: string | null) => {
-    if (!avatarDataUrl) return;
-
-    // Store the current avatar before changing
-    oldAvatarUrl.current = avatarUrl;
-    setAvatarUrl(avatarDataUrl); // Show the new avatar immediately
-
-    // Convert Data URL to Blob
-    const res = await fetch(avatarDataUrl);
-    const blob = await res.blob();
-
-    // Prepare form data
-    const formData = new FormData();
-    formData.append("file", blob, "avatar.png");
-
-    // Upload to your API
-    try {
-      const response = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Upload failed");
-    } catch (err) {
-      setError("Failed to upload avatar. Please try again later.");
-      setAvatarUrl(oldAvatarUrl.current); // Revert to original on error
-    }
-  };
   const [formData, setFormData] = useState<TutorProfileFormData>({
     bio: "",
     education: "",
@@ -73,8 +45,8 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
     subjects: [],
     levels: [],
     skills: "",
-    min_rate: "10",
-    max_rate: "100",
+    min_rate: 10,
+    max_rate: 100,
   });
   const [modalOpen, setModalOpen] = useState(false);
   const handleChange = (
@@ -111,8 +83,8 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
       highest_education: formData.education,
       availability: formData.availability,
       resume_url: formData.resumeUrl,
-      min_rate: parseInt(formData.min_rate, 10),
-      max_rate: parseInt(formData.max_rate, 10),
+      min_rate: formData.min_rate,
+      max_rate: formData.max_rate,
       location: formData.locations,
       about_me: formData.bio,
       experience: formData.experience,
@@ -183,24 +155,7 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
           Create a Tutor Profile
         </h1>
 
-        <div className="flex flex-col items-center gap-2">
-          <Image
-            src={avatarUrl || "/images/THE-girlprofilephoto.png"}
-            alt="Avatar"
-            width={200}
-            height={200}
-            className="rounded-full border-4 border-customYellow"
-          />
-          <Button
-            className="bg-customYellow text-white px-4 py-2 rounded-full text-sm flex items-center gap-2 hover:bg-customOrange transition-colors duration-200"
-            onClick={() => {
-              setModalOpen(true);
-            }}
-          >
-            <CloudUpload className="w-6 h-auto mr-1" />
-            Upload Profile Pic
-          </Button>
-        </div>
+        <ProfilePictureUploader/>
         <div className="flex flex-col gap-2">
           <label className="font-semibold text-customDarkBlue">
             <span className="text-customOrange">* </span>
@@ -334,19 +289,20 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
             <span className="text-red-500">* </span>
             <span>Hourly Rate Range</span>
           </label>
-          <RangeSlider
-            value={{ min: 10, max: 100 }}
+          <div className="relative w-full">
+          <MultiRangeSlider
+            min={10}
+            max={100}
             onChange={(output) => {
               setFormData((prev) => ({
                 ...prev,
-                min_rate: output.min.toString(),
-                max_rate: output.max.toString()
+                min_rate: output.min,
+                max_rate: output.max
               }));
             }}
-            hasSteps={true}
-            tooltipVisibility="always"
             formatter={(x) => `$${x}/hr`}
           />
+          </div>
         </div>
 
         <div className="col-span-full flex justify-end gap-4">
@@ -366,12 +322,6 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
           </Button>
         </div>
       </form>
-      {modalOpen && (
-        <Modal
-          updateAvatar={updateAvatar}
-          closeModal={() => setModalOpen(false)}
-        />
-      )}
     </motion.div>
   );
 }

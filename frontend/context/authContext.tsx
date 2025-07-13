@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return await fetchAuth();
   }, []); // Empty dependency array since fetchAuth uses refs and doesn't depend on state
   // Logout function to clear user and tutor data
-  const logout = async () => {
+  const logout = () => {
     setUser(null);
     setTutor(null);
     setLoading(false);

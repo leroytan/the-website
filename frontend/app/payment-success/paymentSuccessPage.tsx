@@ -1,23 +1,21 @@
-'use client'; // Make sure this is a client-side component
+'use client';
 
-import { motion } from 'framer-motion';
-import Image from 'next/image';
+import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Home } from 'react-feather'; // Assuming you're using React Feather icons
+import { Button } from '@/components/button';
 import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatchClient';
 
 const PaymentSuccess = () => {
   const router = useRouter();
-
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const tutorId = searchParams.get('tutor_id');
   const chatId = searchParams.get('chat_id');
 
   const [isLoading, setIsLoading] = useState(true);
-  const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState('');
 
   useEffect(() => {
     if (sessionId) {
@@ -30,8 +28,8 @@ const PaymentSuccess = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#fff2de] flex flex-col items-center justify-center">
-        <h2 className="text-3xl font-semibold text-[#4a58b5]">Loading...</h2>
+      <div className="min-h-screen bg-gradient-to-br from-[#fff2de] via-[#fabb84]/30 to-[#4a58b5]/10 flex flex-col items-center justify-center">
+        <h2 className="text-3xl font-semibold text-[#4a58b5] animate-pulse">Loading...</h2>
       </div>
     );
   }
@@ -39,9 +37,10 @@ const PaymentSuccess = () => {
   const handleStartChat = async () => {
     if (chatId) {
       router.push(`/chat?chatId=${chatId}`);
+      return;
     }
     if (!tutorId) {
-      console.error("Tutor ID is required to start a chat.");
+      console.error('Tutor ID is required to start a chat.');
       return;
     }
     // Fetching the chat creation or retrieval
@@ -50,7 +49,7 @@ const PaymentSuccess = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ other_user_id: tutorId }), // Assuming tutor_id is the "other_user_id"
+      body: JSON.stringify({ other_user_id: tutorId }),
       credentials: 'include',
     });
 
@@ -64,60 +63,30 @@ const PaymentSuccess = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-[#fff2de] flex flex-col`}>
-      <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-[#4a58b5] hover:text-[#fabb84] transition-colors">
-            <Home size={24} />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fff2de] via-[#fabb84]/30 to-[#4a58b5]/10">
+      <div className="bg-white/90 rounded-3xl shadow-2xl px-8 py-12 flex flex-col items-center max-w-md w-full">
+        <div className="mb-6">
+          <CheckCircle2 size={72} className="text-[#4a58b5] drop-shadow-lg" />
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#4a58b5] mb-2 text-center">Payment Successful!</h1>
+        <h2 className="text-lg sm:text-xl font-medium text-[#4a58b5] mb-4 text-center">{paymentStatus}</h2>
+        <p className="text-[#4a58b5] mb-8 text-base sm:text-lg text-center">
+          Your payment was successfully processed.<br />Your conversation with the tutor is now fully unlocked!
+        </p>
+        <div className="flex gap-3 w-full justify-center">
+          <Button
+            onClick={handleStartChat}
+            className="px-4 py-2 bg-customYellow text-white rounded-full hover:bg-customOrange transition-colors duration-200 w-36"
+          >
+            Open Chat
+          </Button>
+          <Link href="/" className="w-36">
+            <Button className="px-4 py-2 flex items-center bg-white text-customDarkBlue border border-customDarkBlue rounded-full hover:bg-orange-50 transition-colors duration-200 shadow-sm">
+              Back to Home
+            </Button>
           </Link>
-          <Image
-            src="/images/logo.png"
-            alt="THE Logo"
-            width={100}
-            height={50}
-            className="w-20 sm:w-24 md:w-28 lg:w-32"
-          />
-          <div className="w-6"></div>
         </div>
-      </header>
-
-      <main className="flex-grow flex items-center justify-center pt-16 pb-12 px-4">
-        <div className="max-w-2xl w-full">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <h1 className="text-6xl font-bold text-[#4a58b5] mb-4">Payment Successful</h1>
-            <h2 className="text-2xl font-semibold text-[#4a58b5] mb-6">{paymentStatus}</h2>
-            <p className="text-[#4a58b5] mb-8">
-              Your payment was successfully processed. You can now start your conversation with the tutor!
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <div className="text-center">
-              <button
-                onClick={handleStartChat}
-                className="inline-block bg-[#fabb84] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#fc6453] transition-colors duration-200"
-              >
-                Start Chat
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </main>
-
-      <footer className="bg-[#4a58b5] text-white py-6">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm">&copy; 2024 Teach . Honour . Excel. All rights reserved.</p>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 };
