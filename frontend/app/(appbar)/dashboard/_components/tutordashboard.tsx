@@ -8,7 +8,7 @@ import AssignmentCard from "./assignmentCard";
 import { Repeat } from "lucide-react";
 import AppliedTutorsModal from "./appliedTutorsModal";
 import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 
 export default function TutorDashboard({
   assignments,
@@ -44,7 +44,7 @@ export default function TutorDashboard({
     }
   };
   const openApplicantsModal = async (assignment: TuitionListing) => {
-    const response = await fetchWithTokenCheck(`/api/assignments/${assignment.id}`, {
+    const response = await fetchClient(`/api/assignments/${assignment.id}`, {
       method: "GET",
       credentials: "include",
     });
@@ -58,7 +58,7 @@ export default function TutorDashboard({
   };
   const handleChat = async (tutorId: number) => {
     try {
-      const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
+      const response = await fetchClient(`/api/chat/get-or-create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

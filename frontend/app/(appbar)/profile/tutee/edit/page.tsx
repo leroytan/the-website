@@ -15,7 +15,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import ProfilePictureUploader from "@/components/ProfilePictureUploader";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 
 interface UserProfile {
   id: number;
@@ -43,7 +43,7 @@ export default function TuteeProfileEditPage() {
       // Fetch user profile data
       const fetchProfile = async () => {
         try {
-          const response = await fetchWithTokenCheck(`/api/me`);
+          const response = await fetchClient(`/api/me`);
           if (!response.ok) throw new Error("Failed to fetch profile");
           const data = await response.json();
           setProfile(data.user);
@@ -73,7 +73,7 @@ export default function TuteeProfileEditPage() {
       const formData = new FormData();
       if (newImage) {
         formData.append('file', newImage)
-        const uploadResponse = await fetchWithTokenCheck(`/api/me/upload-profile-photo`, {
+        const uploadResponse = await fetchClient(`/api/me/upload-profile-photo`, {
           method: 'POST',
           body: formData,
           credentials: 'include',
@@ -82,7 +82,7 @@ export default function TuteeProfileEditPage() {
       }
 
       // Update profile data
-      const response = await fetchWithTokenCheck(`/api/me`, {
+      const response = await fetchClient(`/api/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

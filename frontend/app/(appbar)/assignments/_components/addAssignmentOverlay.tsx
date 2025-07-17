@@ -10,7 +10,7 @@ import Input from "../../../../components/input";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Plus, X, CheckCircle2 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import Image from "next/image";
 
 type Direction = "left" | "right";
@@ -178,7 +178,7 @@ const AddAssignmentOverlay = ({
     };
 
     try {
-      const data = await fetchWithTokenCheck(`/api/assignments/new`, {
+      const data = await fetchClient(`/api/assignments/new`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

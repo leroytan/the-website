@@ -4,7 +4,7 @@ import ClientDashboard from "./_components/clientdashboard"
 import TutorDashboard from "./_components/tutordashboard"
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatch"
+import { fetchServer } from "@/utils/fetch/fetchServer"
 
 // Force dynamic to ensure fresh data
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,7 @@ interface AssignmentResponse {
 async function getAssignments(isTutor: boolean, accessToken: string): Promise<AssignmentResponse> {
   let tutorResponse: Response | null = null
   if (isTutor) {
-    tutorResponse = await fetchWithTokenCheck(`${BASE_URL}/me/applied-assignments`, {
+    tutorResponse = await fetchServer(`${BASE_URL}/me/applied-assignments`, {
       headers: {
         Cookie: accessToken ? `access_token=${accessToken}` : "",
       },
@@ -27,7 +27,7 @@ async function getAssignments(isTutor: boolean, accessToken: string): Promise<As
       throw new Error('Failed to fetch tutor assignments')
     }
   }
-  const clientResponse = await fetchWithTokenCheck(`${BASE_URL}/me/created-assignments`, {
+  const clientResponse = await fetchServer(`${BASE_URL}/me/created-assignments`, {
     headers: {
       Cookie: accessToken ? `access_token=${accessToken}` : "",
     },
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   }
 
   // Get user and tutor info
-  const meResponse = await fetchWithTokenCheck(`${BASE_URL}/me`, {
+  const meResponse = await fetchServer(`${BASE_URL}/me`, {
     headers: {
       Cookie: accessToken ? `access_token=${accessToken}` : "",
     },

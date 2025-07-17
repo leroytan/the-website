@@ -112,6 +112,17 @@ class Logic:
                 if not user:
                     raise HTTPException(status_code=401, detail="User not found")
                 
+                # Validate token version
+                if token_data.token_version != user.token_version:
+                    raise HTTPException(
+                        status_code=401,
+                        detail={
+                            "code": "TOKEN_VERSION_MISMATCH",
+                            "message": "Token is no longer valid due to password change."
+                        },
+                        headers={"WWW-Authenticate": "Bearer"}
+                    )
+                
                 # Generate new tokens with the current token_version
                 new_access_token = AuthService.create_access_token(token_data, token_version=user.token_version)
                 new_refresh_token = AuthService.create_refresh_token(token_data, token_version=user.token_version)

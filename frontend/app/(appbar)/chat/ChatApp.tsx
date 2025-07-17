@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 import { useError } from "@/context/errorContext";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import { useWebSocket } from "@/context/WebSocketContext";
 import logger from "@/utils/logger";
 
@@ -372,7 +372,7 @@ const ChatApp = () => {
 
   const fetchChats = async () => {
     try {
-      const response = await fetchWithTokenCheck(`/api/chats`, {
+      const response = await fetchClient(`/api/chats`, {
         credentials: "include",
       });
       if (!response.ok) {
@@ -412,7 +412,7 @@ const ChatApp = () => {
         params.append("created_before", createdBefore);
       }
 
-      const response = await fetchWithTokenCheck(`/api/chat/${chatId}?${params}`, {
+      const response = await fetchClient(`/api/chat/${chatId}?${params}`, {
         method: "GET",
         credentials: "include",
       });
@@ -502,7 +502,7 @@ const ChatApp = () => {
   }, [chatData, selectedChat]);
 
   const initWebSocket = async () => {
-    const response = await fetchWithTokenCheck(`/api/chat/jwt`, {
+    const response = await fetchClient(`/api/chat/jwt`, {
       credentials: "include",
     });
     if (!response.ok) {
@@ -610,7 +610,7 @@ const ChatApp = () => {
     if (chatMessages.length < 10) {
       fetchHistoricalMessages(chatId);
     }
-    const response = await fetchWithTokenCheck(`/api/chat/${chatId}/read`, {
+    const response = await fetchClient(`/api/chat/${chatId}/read`, {
       method: "POST",
       credentials: "include",
     });
@@ -787,7 +787,7 @@ const ChatApp = () => {
                       logger.error("New message has to be a valid user ID");
                       return;
                     }
-                    const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
+                    const response = await fetchClient(`/api/chat/get-or-create`, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",

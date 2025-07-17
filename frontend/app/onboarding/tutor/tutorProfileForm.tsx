@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useError } from "@/context/errorContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import MultiRangeSlider from "@/components/RangeSlider/multiRangeSlider";
 import ProfilePictureUploader from "@/components/ProfilePictureUploader";
 import { useAuth } from "@/context/authContext";
@@ -99,7 +99,7 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
       rating: 0, //remove later
     };
     try {
-      const response = await fetchWithTokenCheck(`/api/tutors/new`, {
+      const response = await fetchClient(`/api/tutors/new`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -120,7 +120,7 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
   const handleCancel = async () => {
     try {
       // Update backend to indicate user no longer intends to be a tutor
-      const response = await fetchWithTokenCheck(`/api/me`, {
+      const response = await fetchClient(`/api/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

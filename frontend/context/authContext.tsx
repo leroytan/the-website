@@ -2,7 +2,7 @@
 
 import { Tutor, User } from "@/components/types";
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatch";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import logger from "@/utils/logger";
 
 interface AuthContextType {
@@ -43,12 +43,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       
       try {
-        const refreshRes = await fetch(`/api/auth/refresh`, {
+        const refreshRes = await fetchClient(`/api/auth/refresh`, {
           method: "POST",
           credentials: "include",
         });
         if (!refreshRes.ok) throw new Error("Not authenticated");
-        const res = await fetchWithTokenCheck(`/api/me`, {
+        const res = await fetchClient(`/api/me`, {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Not authenticated");
