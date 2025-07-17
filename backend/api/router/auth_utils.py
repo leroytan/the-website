@@ -60,15 +60,18 @@ class RouterAuthUtils:
         """Helper method to get consistent cookie parameters"""
         if origin.startswith("http://"):
             domain = None
+            is_https = False
         elif origin.startswith("https://"):
             domain = origin[8:]
+            is_https = True
         else:
             domain = origin
+            is_https = True
         
         return {
             "domain": domain,
             "httponly": True,
-            "secure": True,
+            "secure": is_https,
             "samesite": "strict"
         }
 

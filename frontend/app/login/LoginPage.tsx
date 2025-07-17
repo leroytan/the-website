@@ -14,6 +14,21 @@ export default function LoginPage() {
   const [showLogin, setShowLogin] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  type tokensWrapper = {
+    access_token: string;
+    refresh_token: string;
+    access_cookie_params: cookieParams;
+    refresh_cookie_params: cookieParams;
+  }
+
+  type cookieParams = {
+    domain: string;
+    path: string;
+    httponly: boolean;
+    secure: boolean;
+    samesite: 'strict' | 'lax' | 'none';
+  }
+
   useEffect(() => {
     logger.debug("LoginPage: useEffect triggered", {
       authLoading,
@@ -23,18 +38,61 @@ export default function LoginPage() {
       timestamp: new Date().toISOString()
     });
 
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
+    // Decode tokens from the single query parameter
+    const encodedTokens = searchParams.get("tokens");
 
     const handleAuthCallback = async () => {
-      if (accessToken && refreshToken) {
+      if (encodedTokens) {
+        const decodedTokens: tokensWrapper = (()=>{
+          try {
+            // Add padding back for base64 decoding
+            const paddingLength = 4 - (encodedTokens.length % 4);
+            const paddedTokens = paddingLength > 0
+              ? encodedTokens + '='.repeat(paddingLength)
+              : encodedTokens;
+            
+            return JSON.parse(
+              Buffer.from(paddedTokens, 'base64').toString('utf-8')
+            );
+
+          } catch (error) {
+            logger.error("Failed to decode tokens", error);
+            return {};
+          }
+        })();
+
+        const accessToken: string = decodedTokens.access_token;
+        const refreshToken: string = decodedTokens.refresh_token;
+        const accessCookieParams: cookieParams = decodedTokens.access_cookie_params;
+        const refreshCookieParams: cookieParams = decodedTokens.refresh_cookie_params;
+        logger.debug(accessToken);
+        logger.debug(refreshToken);
+        logger.debug(accessCookieParams);
+        logger.debug(refreshCookieParams);
+
+        // HttpOnly; Max-Age=7200; Path=/; SameSite=strict; Secure
+        const params2Str = (params: cookieParams): string => {
+          return [
+            params.domain && `Domain=${params.domain}`,
+            params.path && `Path=${params.path}`,
+            params.httponly && `HttpOnly`,
+            params.secure && `Secure`,
+            params.samesite && `SameSite=${params.samesite}`
+          ]
+            .filter(Boolean)     // removes falsy values (e.g., false or empty strings)
+            .join('; ');
+        };
         
-        // Set tokens in cookies
-        document.cookie = `access_token=${accessToken}; path=/; SameSite=Lax; Secure`;
-        document.cookie = `refresh_token=${refreshToken}; path=/; SameSite=Lax; Secure`;
+        const accessCookieString = params2Str(accessCookieParams);
+        const refreshCookieString = params2Str(refreshCookieParams);
+
+        logger.debug(accessCookieString);
+        logger.debug(refreshCookieString);
+
+        document.cookie = `access_token=${accessToken}; ${accessCookieString}`;
+        document.cookie = `refresh_token=${refreshToken}; ${refreshCookieString}`;
 
         await new Promise(r => setTimeout(r, 50));
-        
         
         // Clear the tokens from the URL
         const { user, tutor } = await refetch(); // Refresh user and tutor data for authcontext
