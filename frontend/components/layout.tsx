@@ -20,7 +20,7 @@ import { Button } from "./button";
 import { usePathname, useRouter } from "next/navigation";
 import AddAssignmentButton from "../app/(appbar)/assignments/_components/addAssignmentButton";
 import { useError } from "@/context/errorContext";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import { UserImage } from "./userImage";
 import NotificationToast from "./NotificationToast";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
@@ -105,7 +105,7 @@ const UserMenu = () => {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetchWithTokenCheck(`/api/me`, {
+                        const response = await fetchClient(`/api/me`, {
                           method: "PUT",
                           headers: {
                             "Content-Type": "application/json",

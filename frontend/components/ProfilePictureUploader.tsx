@@ -16,7 +16,7 @@ import ReactCrop, {
   makeAspectCrop,
   type PercentCrop,
 } from "react-image-crop";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import { useAuth } from "@/context/authContext";
 
 const ASPECT_RATIO = 1;
@@ -52,7 +52,7 @@ const ProfilePictureUploader = ({ photoUrl }: ProfilePictureUploaderProps) => {
 
     // Upload to your API
     try {
-      const response = await fetchWithTokenCheck(
+      const response = await fetchClient(
         `/api/me/upload-profile-photo/`,
         {
           method: "POST",

@@ -54,11 +54,45 @@ class RouterAuthUtils:
                 status_code=200,
                 detail="User is already logged out",
             )
+        
+    @staticmethod
+    def _get_cookie_params(origin: str) -> dict:
+        """Helper method to get consistent cookie parameters"""
+        if origin.startswith("http://"):
+            domain = None
+            is_https = False
+        elif origin.startswith("https://"):
+            domain = origin[8:]
+            is_https = True
+        else:
+            domain = origin
+            is_https = True
+        
+        return {
+            "domain": domain,
+            "httponly": True,
+            "secure": is_https,
+            "samesite": "strict"
+        }
 
     @staticmethod
-    def clear_tokens(response: Response) -> None:
-        response.delete_cookie("access_token")
-        response.delete_cookie("refresh_token")
+    def clear_tokens(response: Response, origin: str) -> None:
+        """
+        Clear access and refresh tokens from cookies.
+        Args:
+            response (Response): The response object to clear cookies from.
+            origin (str): The origin URL to determine cookie domain (must match set_cookie).
+        """
+        cookie_params = RouterAuthUtils._get_cookie_params(origin)
+        
+        response.delete_cookie(
+            key="access_token",
+            **cookie_params
+        )
+        response.delete_cookie(
+            key="refresh_token",
+            **cookie_params
+        )
 
     @staticmethod
     def update_tokens(tokens: TokenPair, response: Response, origin: str) -> None:
@@ -67,29 +101,25 @@ class RouterAuthUtils:
         This method sets the tokens as HTTP-only cookies in the response,
         which helps prevent JavaScript access and enhances security.
         Args:
-            tokens (dict): A dictionary containing the new access and refresh tokens.
+            tokens (TokenPair): A TokenPair containing the new access and refresh tokens.
             response (Response): The response object to update with the new tokens.
+            origin (str): The origin URL to determine cookie domain.
         """
-        if origin.startswith("http://"):
-            origin = None
+        cookie_params = RouterAuthUtils._get_cookie_params(origin)
+        
         response.set_cookie(
             key="access_token",
             value=tokens.access_token,
-            httponly=True,  # Prevent JavaScript access
-            secure=True,    # Use HTTPS in production
-            samesite="strict",  # CSRF protection
-            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
-            domain=origin,  # 👈 This makes the cookie usable by your frontend
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            **cookie_params
         )
         response.set_cookie(
             key="refresh_token",
             value=tokens.refresh_token,
-            httponly=True,  # Prevent JavaScript access
-            secure=True,    # Use HTTPS in production
-            samesite="strict",  # CSRF protection
-            max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,  # Token expiration
-            domain=origin,  # 👈 This makes the cookie usable by your frontend
+            max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+            **cookie_params
         )
+
 
     @staticmethod
     def get_jwt(request: Request) -> str:

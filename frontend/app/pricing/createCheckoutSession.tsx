@@ -1,4 +1,4 @@
-import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatch';
+import { fetchServer } from '@/utils/fetch/fetchServer';
 
 export async function createCheckoutSession(data: {
     mode: 'payment' | 'subscription';
@@ -8,7 +8,7 @@ export async function createCheckoutSession(data: {
     tutor_id: number;
     chat_id?: number;
 }) {
-  const response = await fetchWithTokenCheck(`/api/payment/create-checkout-session`, {
+  const response = await fetchServer(`/api/payment/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

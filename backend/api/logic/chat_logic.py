@@ -1,14 +1,18 @@
 import asyncio
 import json
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from api.router.models import ChatPreview, NewChatMessage
-from api.storage.models import ChatMessage, ChatReadStatus, PrivateChat, User, ChatMessageType, TutorRequestStatus
+from api.storage.models import (
+    ChatMessage, ChatReadStatus, PrivateChat, User,
+    ChatMessageType, TutorRequestStatus, ChatNotificationTracker
+)
+from api.services.email_service import GmailEmailService
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException, WebSocket
 from psycopg2.errors import ForeignKeyViolation
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -250,13 +254,100 @@ class ChatLogic:
                 await ChatLogic.send_notification_to_user(receiver_id, notification_data)
 
     @staticmethod
+    async def check_and_send_delayed_notification(chat_id: int, receiver_id: int) -> None:
+        """
+        Check if a chat message is unread after 30 minutes and send a delayed notification.
+        
+        Args:
+            chat_id (int): The ID of the chat to check
+            receiver_id (int): The ID of the message receiver
+        """
+        with Session(StorageService.engine) as session:
+            # Check if message is still unread
+            read_status = session.query(ChatReadStatus).filter_by(
+                chat_id=chat_id,
+                user_id=receiver_id,
+                is_read=False
+            ).first()
+
+            if not read_status:
+                return  # Message was read
+
+            # Check notification tracker
+            notification_tracker = session.query(ChatNotificationTracker).filter_by(
+                chat_id=chat_id
+            ).first()
+
+            # Check daily notification limit
+            now = datetime.now()
+            if (notification_tracker and
+                notification_tracker.notification_count >= 2 and
+                notification_tracker.last_notification_timestamp and
+                (now - notification_tracker.last_notification_timestamp).days < 1):
+                return  # Already sent 2 notifications today
+
+            # Get sender and last message details
+            last_message = session.query(ChatMessage).filter_by(
+                chat_id=chat_id
+            ).order_by(ChatMessage.created_at.desc()).first()
+
+            if not last_message:
+                return  # No message found
+
+            # Get sender and receiver details
+            sender = session.query(User).filter_by(id=last_message.sender_id).first()
+            receiver = session.query(User).filter_by(id=receiver_id).first()
+
+            if not sender or not receiver:
+                return  # User not found
+
+            # Send email notification
+            email_result = GmailEmailService.send_email(
+                recipient_email=receiver.email,
+                subject=f"Unread Message from {sender.name}",
+                content=f"""
+                You have an unread message from {sender.name} in your chat.
+                
+                Message preview: {last_message.content[:100]}...
+                
+                Please check your messages.
+                """
+            )
+
+            # Update or create notification tracker
+            if not notification_tracker:
+                notification_tracker = ChatNotificationTracker(
+                    chat_id=chat_id,
+                    notification_count=1,
+                    last_notification_timestamp=now
+                )
+                session.add(notification_tracker)
+            else:
+                notification_tracker.notification_count += 1
+                notification_tracker.last_notification_timestamp = now
+
+            session.commit()
+
+    @staticmethod
+    async def schedule_delayed_notification(chat_id: int, receiver_id: int) -> None:
+        """
+        Schedule a delayed notification check after 30 minutes.
+        
+        Args:
+            chat_id (int): The ID of the chat
+            receiver_id (int): The ID of the message receiver
+        """
+        await asyncio.sleep(1800)  # 30 minutes
+        await ChatLogic.check_and_send_delayed_notification(chat_id, receiver_id)
+
+    @staticmethod
     async def handle_private_message(new_chat_message: NewChatMessage, sender_id: int) -> None:
         """
         Handles the incoming chat message, processes it, and returns a ChatMessage object.
 
         Args:
             new_chat_message (NewChatMessage): The new chat message to be processed.
-            user_id (int): The ID of the user sending the message.
+            sender_id (int): The ID of the user sending the message.
 
         Returns:
             ChatMessage: The processed chat message object.
@@ -264,6 +355,10 @@ class ChatLogic:
         with Session(StorageService.engine, expire_on_commit=False) as session:
             chat_message = ChatLogic.store_private_message(session, new_chat_message, sender_id)
             await ChatLogic.send_private_message(chat_message)
+            
+            # Schedule delayed notification
+            receiver_id = chat_message.receiver_id
+            asyncio.create_task(ChatLogic.schedule_delayed_notification(chat_message.chat_id, receiver_id))
 
     @staticmethod
     def get_private_chat_history(chat_id: int, user_id: int, created_before: str, limit: int) -> dict:

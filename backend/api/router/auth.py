@@ -26,6 +26,7 @@ async def google_login(request: Request):
     """
     # Get the origin from the request
     origin = request.headers.get("origin") or request.headers.get("referer")
+    origin = origin.rstrip('/')
 
     # Create state parameter with origin information
     state_data = {
@@ -81,8 +82,24 @@ async def google_callback(code: str = None, error: str = None, state: str = None
 
         # Use the origin from state if available, otherwise fall back to default
         redirect_url = origin or settings.frontend_domain
-
-        return RedirectResponse(url=f"{redirect_url}/login?access_token={tokens.access_token}&refresh_token={tokens.refresh_token}")
+        
+        # Encode tokens and their cookie parameters ONLY for Google login
+        tokens_dict = {
+            "access_token": tokens.access_token,
+            "refresh_token": tokens.refresh_token,
+            "access_cookie_params": RouterAuthUtils._get_cookie_params(redirect_url),
+            "refresh_cookie_params": RouterAuthUtils._get_cookie_params(redirect_url)
+        }
+        
+        # Modify cookie params to not be HTTP-only for frontend
+        tokens_dict["access_cookie_params"]["httponly"] = False
+        tokens_dict["refresh_cookie_params"]["httponly"] = False
+        
+        encoded_tokens = base64.urlsafe_b64encode(
+            json.dumps(tokens_dict).encode()
+        ).decode().rstrip('=')
+        
+        return RedirectResponse(url=f"{redirect_url}/login?tokens={encoded_tokens}")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Google login failed: {str(e)}")
 
@@ -148,8 +165,9 @@ async def signup(
     
 
 @router.post("/api/auth/logout")
-async def logout(response: Response, _ = Depends(RouterAuthUtils.assert_not_logged_out)):
-    RouterAuthUtils.clear_tokens(response)
+async def logout(request: Request, response: Response, _ = Depends(RouterAuthUtils.assert_not_logged_out)):
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
+    RouterAuthUtils.clear_tokens(response, origin)
     return {"message": "Logged out successfully"}
 
 @router.get("/api/protected")

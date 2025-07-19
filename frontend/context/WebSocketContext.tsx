@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useAuth } from './authContext';
-import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatch';
+import { fetchClient } from '@/utils/fetch/fetchClient';
 import { BASE_URL } from '@/utils/constants';
 import logger from '@/utils/logger';
 
@@ -64,7 +64,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
     
     try {
-      const response = await fetchWithTokenCheck(`/api/ws/jwt`, {
+      const response = await fetchClient(`/api/ws/jwt`, {
         credentials: "include",
       });
       if (!response.ok) {

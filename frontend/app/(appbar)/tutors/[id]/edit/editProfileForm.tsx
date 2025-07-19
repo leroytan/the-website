@@ -23,7 +23,7 @@ import DropDown from "@/components/dropdown";
 import MultiSelectButton from "@/components/multiSelectButton";
 import { Tutor } from "@/components/types";
 import TagInput from "@/components/tagInput";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatchClient";
+import { fetchClient } from "@/utils/fetch/fetchClient";
 import MultiRangeSlider from "@/components/RangeSlider/multiRangeSlider";
 import { useAuth } from "@/context/authContext";
 import { ErrorProvider } from "@/context/errorContext";
@@ -75,7 +75,7 @@ export default function EditTutorProfile({ tutor }: { tutor: Tutor }) {
     };
 
 
-    const res = await fetchWithTokenCheck(`/api/tutors/${tutor.id}`, {
+    const res = await fetchClient(`/api/tutors/${tutor.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

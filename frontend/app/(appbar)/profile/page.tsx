@@ -1,10 +1,10 @@
 import { BASE_URL } from "@/utils/constants";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { fetchWithTokenCheck } from "@/utils/tokenVersionMismatch";
+import { fetchServer } from "@/utils/fetch/fetchServer";
 
 async function getMe(accessToken?: string) {
-  const res = await fetchWithTokenCheck(`${BASE_URL}/me`, {
+  const res = await fetchServer(`${BASE_URL}/me`, {
     cache: "no-store", // Disable caching to always get fresh data
     headers: {
       Cookie: accessToken ? `access_token=${accessToken}` : "",

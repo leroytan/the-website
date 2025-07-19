@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/button';
-import { fetchWithTokenCheck } from '@/utils/tokenVersionMismatchClient';
+import { fetchClient } from '@/utils/fetch/fetchClient';
 
 const PaymentSuccess = () => {
   const router = useRouter();
@@ -44,7 +44,7 @@ const PaymentSuccess = () => {
       return;
     }
     // Fetching the chat creation or retrieval
-    const response = await fetchWithTokenCheck(`/api/chat/get-or-create`, {
+    const response = await fetchClient(`/api/chat/get-or-create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
