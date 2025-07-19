@@ -167,7 +167,7 @@ const AddAssignmentOverlay = ({
 
     const listingToAdd = {
       title,
-      estimated_rate_hourly: parseInt(formData.fees, 10),
+      estimated_rate_hourly: parseInt(formData.fees.replace(/[^0-9]/g, ""), 10),
       lesson_duration: parseInt(formData.lesson_duration, 10),
       weekly_frequency: formData.slots.length,
       available_slots,
