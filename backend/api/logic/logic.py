@@ -31,15 +31,9 @@ class Logic:
             if not user or not user.password_hash or not AuthService.verify_password(login_data.password, user.password_hash):
                 raise HTTPException(status_code=401, detail="Incorrect email or password. Did you previously sign in with Google?")
     
-        token_data = TokenData(email=login_data.email)
+        token_data = TokenData(email=login_data.email, token_version=user.token_version)
         
-        access_token = AuthService.create_access_token(token_data, token_version=user.token_version)
-        refresh_token = AuthService.create_refresh_token(token_data, token_version=user.token_version)
-
-        return TokenPair(
-            access_token=access_token,
-            refresh_token=refresh_token
-        )
+        return AuthService.create_token_pair(token_data=token_data)
 
     @staticmethod
     def handle_signup(signup_data: SignupRequest) -> TokenPair:
@@ -59,15 +53,9 @@ class Logic:
                 session.rollback()
                 raise HTTPException(status_code=409, detail="User already exists")
             
-            token_data = TokenData(email=signup_data.email)
+            token_data = TokenData(email=signup_data.email, token_version=user.token_version)
             
-            access_token = AuthService.create_access_token(token_data, token_version=user.token_version)
-            refresh_token = AuthService.create_refresh_token(token_data, token_version=user.token_version)
-
-            return TokenPair(
-                access_token=access_token,
-                refresh_token=refresh_token
-            )
+            return AuthService.create_token_pair(token_data=token_data)
 
     @staticmethod
     def get_current_user(access_token: str, credentials_exception: HTTPException) -> User:
@@ -124,13 +112,7 @@ class Logic:
                     )
                 
                 # Generate new tokens with the current token_version
-                new_access_token = AuthService.create_access_token(token_data, token_version=user.token_version)
-                new_refresh_token = AuthService.create_refresh_token(token_data, token_version=user.token_version)
-                
-                return TokenPair(
-                    access_token=new_access_token,
-                    refresh_token=new_refresh_token
-                )
+                return AuthService.create_token_pair(token_data=token_data)
         except (JWTError, ValueError, ValidationError) as e:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
         
