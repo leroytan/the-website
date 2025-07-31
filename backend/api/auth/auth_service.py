@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import httpx
 import bcrypt
-from api.auth.auth_interface import AuthInterface
 from api.auth.models import TokenData, TokenPair
 from api.common.utils import Utils
 from api.config import settings
@@ -18,7 +17,7 @@ REFRESH_TOKEN_EXPIRE_MINUTES = settings.refresh_token_expire_minutes
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USER_INFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-class AuthService(AuthInterface):
+class AuthService:
     
     @staticmethod
     def hash_password(password: str) -> str:
@@ -34,28 +33,33 @@ class AuthService(AuthInterface):
         return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
     
     @staticmethod
-    def create_access_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)) -> str:
+    def create_access_token(token_data: TokenData, expires_delta: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)) -> str:
         Utils.validate_non_empty(token_data=token_data)
         to_encode = token_data.model_dump()
         expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({
             "exp": expire,
             "type": "access",
-            "token_version": token_version
         })
         return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
     @staticmethod
-    def create_refresh_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)) -> str:
+    def create_refresh_token(token_data: TokenData, expires_delta: timedelta = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)) -> str:
         Utils.validate_non_empty(token_data=token_data)
         to_encode = token_data.model_dump()
         expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({
             "exp": expire,
             "type": "refresh",
-            "token_version": token_version
         })
         return jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    
+    @staticmethod
+    def create_token_pair(token_data: TokenData) -> TokenPair:
+        return TokenPair(
+            access_token=AuthService.create_access_token(token_data=token_data),
+            refresh_token=AuthService.create_refresh_token(token_data=token_data),
+        )
 
     @staticmethod
     def verify_token(token: str, is_refresh: bool = False) -> TokenData:
@@ -76,25 +80,7 @@ class AuthService(AuthInterface):
         token_payload.pop("exp")
         token_payload.pop("type")
         
-        # Ensure token_version is preserved
-        if "token_version" in payload:
-            token_payload["token_version"] = payload["token_version"]
-        
         return TokenData(**token_payload)
-
-    @staticmethod
-    def refresh_tokens(refresh_token: str) -> TokenPair:
-        # Verify refresh token
-        token_data = AuthService.verify_token(refresh_token, is_refresh=True)
-        
-        # Generate new access and refresh tokens
-        new_access_token = AuthService.create_access_token(token_data)
-        new_refresh_token = AuthService.create_refresh_token(token_data)
-        
-        return TokenPair(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token
-        )
 
     @staticmethod
     def create_password_reset_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(hours=1)) -> str:
@@ -195,22 +181,15 @@ class AuthService(AuthInterface):
         user = StorageService.get_user_by_google_id(google_id)
         if user:
             # User exists with google_id, log them in
-            token_data = TokenData(user_id=user.id, email=user.email)
-            return TokenPair(
-                access_token=AuthService.create_access_token(token_data),
-                refresh_token=AuthService.create_refresh_token(token_data),
-            )
-
+            token_data = TokenData(email=user.email, token_version=user.token_version)
+            return AuthService.create_token_pair(token_data=token_data)
         # Check if user exists by email (for linking accounts)
         user = StorageService.get_user_by_email(email)
         if user:
             # User exists with email, link google_id and log them in
             StorageService.update_user_google_id(user.id, google_id)
-            token_data = TokenData(user_id=user.id, email=user.email)
-            return TokenPair(
-                access_token=AuthService.create_access_token(token_data),
-                refresh_token=AuthService.create_refresh_token(token_data),
-            )
+            token_data = TokenData(email=user.email, token_version=user.token_version)
+            return AuthService.create_token_pair(token_data=token_data)
 
         # If no user found, create a new one
         new_user = StorageService.create_user(
@@ -220,8 +199,5 @@ class AuthService(AuthInterface):
             google_id=google_id,
             intends_to_be_tutor=False # Default, can be changed later
         )
-        token_data = TokenData(user_id=new_user.id, email=new_user.email)
-        return TokenPair(
-            access_token=AuthService.create_access_token(token_data),
-            refresh_token=AuthService.create_refresh_token(token_data),
-        )
+        token_data = TokenData(email=new_user.email, token_version=new_user.token_version)
+        return AuthService.create_token_pair(token_data=token_data)

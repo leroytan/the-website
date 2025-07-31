@@ -3,7 +3,7 @@ from typing import Type
 from api.config import settings
 from api.exceptions import TableEmptyError
 from api.storage.connection import engine as default_engine
-from api.storage.models import Base
+from api.storage.models import Base, User
 from api.storage.populate import insert_test_data
 # from api.storage.validate import check_data
 from sqlalchemy import (ColumnElement, Engine, and_, inspect, or_, select,
@@ -114,14 +114,12 @@ class StorageService:
         session.commit()
 
     @staticmethod
-    def get_user_by_google_id(google_id: str) -> DeclarativeMeta | None:
-        from api.storage.models import User
+    def get_user_by_google_id(google_id: str) -> User:
         with Session(StorageService.engine) as session:
             return session.query(User).filter(User.google_id == google_id).first()
 
     @staticmethod
-    def update_user_google_id(user_id: int, google_id: str) -> DeclarativeMeta:
-        from api.storage.models import User
+    def update_user_google_id(user_id: int, google_id: str) -> User:
         with Session(StorageService.engine) as session:
             user = session.query(User).filter(User.id == user_id).first()
             if user:
@@ -131,8 +129,7 @@ class StorageService:
             return user
 
     @staticmethod
-    def create_user(name: str, email: str, password_hash: str | None, google_id: str | None, intends_to_be_tutor: bool) -> DeclarativeMeta:
-        from api.storage.models import User
+    def create_user(name: str, email: str, password_hash: str | None, google_id: str | None, intends_to_be_tutor: bool) -> User:
         with Session(StorageService.engine) as session:
             new_user = User(
                 name=name,
@@ -147,7 +144,6 @@ class StorageService:
             return new_user
 
     @staticmethod
-    def get_user_by_email(email: str) -> DeclarativeMeta | None:
-        from api.storage.models import User
+    def get_user_by_email(email: str) -> User | None:
         with Session(StorageService.engine) as session:
             return session.query(User).filter(User.email == email).first()

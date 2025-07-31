@@ -120,32 +120,7 @@ class TestAuthService(unittest.TestCase):
         data = {}
         with self.assertRaises(ValueError):
             AuthService.create_access_token(data)
-
-    @patch('api.auth.auth_service.AuthService.verify_token')
-    @patch('api.auth.auth_service.AuthService.create_access_token')
-    @patch('api.auth.auth_service.AuthService.create_refresh_token')
-    def test_refresh_tokens(self, mock_create_refresh_token, mock_create_access_token, mock_verify_token):
-        # Setup mock return values
-        mock_verify_token.return_value = {'user_id': 123, 'username': 'testuser'}
-        mock_create_access_token.return_value = 'new_access_token'
-        mock_create_refresh_token.return_value = 'new_refresh_token'
-
-        # Existing refresh token
-        existing_refresh_token = 'old_refresh_token'
-
-        # Call the method
-        result = AuthService.refresh_tokens(existing_refresh_token)
-
-        # Assertions
-        mock_verify_token.assert_called_once_with(existing_refresh_token, is_refresh=True)
-        mock_create_access_token.assert_called_once_with({'user_id': 123, 'username': 'testuser'})
-        mock_create_refresh_token.assert_called_once_with({'user_id': 123, 'username': 'testuser'})
-        
-        # Check return value
-        self.assertEqual(result, {
-            'access_token': 'new_access_token', 
-            'refresh_token': 'new_refresh_token'
-        })
+            
 
 if __name__ == '__main__':
     unittest.main()
