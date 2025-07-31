@@ -115,7 +115,7 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
 
         <div className="w-full sm:w-3/4 bg-white shadow-lg rounded-xl p-4 sm:p-6 max-w-full break-words">
           <div className="flex flex-wrap justify-center sm:justify-start space-x-3 sm:space-x-6 border-b border-gray-200 pb-2 mb-4">
-            {["Tutor Information", ...(user ? ["Message"] : [])].map((tab) => (
+            {["Tutor Information", ...((user && loggedinTutor && tutor.id !== loggedinTutor.id)|| (user && !loggedinTutor) ? ["Message"] : [])].map((tab) => (
               <div key={tab} className="flex items-center gap-4">
                 <Button
                   className={`pb-2 text-gray-700 ${

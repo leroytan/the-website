@@ -168,7 +168,7 @@ export default function ComponentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, tutor, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -288,7 +288,7 @@ export default function ComponentLayout({
 
             {/* Right-aligned items */}
             <div className="flex items-center gap-3 ml-4">
-              {user && (
+              {user && !tutor && (
                 <div className="md:flex items-center">
                   <AddAssignmentButton />
                 </div>
