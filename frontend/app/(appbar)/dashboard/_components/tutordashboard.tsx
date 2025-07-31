@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/button";
 import { TuitionListing } from "@/components/types";
 import { useRouter } from "next/navigation";
 import AssignmentCard from "./assignmentCard";
-import { Repeat } from "lucide-react";
 import AppliedTutorsModal from "./appliedTutorsModal";
 import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import { fetchClient } from "@/utils/fetch/fetchClient";
@@ -106,13 +104,13 @@ export default function TutorDashboard({
               applications
             </p>
           </div>
-          <Button
+          {/* <Button
             onClick={() => setIsTutorView(!isTutorView)}
             className="flex items-center gap-2 bg-customDarkBlue text-white px-4 py-2 rounded-lg hover:bg-customDarkBlue/90 transition-colors duration-200 shadow-sm"
           >
             <Repeat size={20} />
             <span>Switch to {isTutorView ? "Client" : "Tutor"} View</span>
-          </Button>
+          </Button> */}
         </div>
 
         {/* Main Content */}
