@@ -539,7 +539,7 @@ class AssignmentLogic:
             )
         
     @staticmethod
-    def update_assignment_request_by_id(assignment_request_id: int, req: ModifiedAssignmentRequest, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
+    async def update_assignment_request_by_id(assignment_request_id: int, req: ModifiedAssignmentRequest, assert_user_authorized: Callable[[int], None]) -> AssignmentRequestView:
         with Session(StorageService.engine) as session:
             assignment_request = session.query(AssignmentRequest).filter_by(
                 id=assignment_request_id
@@ -572,7 +572,7 @@ class AssignmentLogic:
             session.commit()
             session.refresh(assignment_request, ["assignment", "available_slots"])
 
-            chat_message = AssignmentLogic.create_and_store_message(session, assignment_request)
+            chat_message = await AssignmentLogic.create_and_store_message(session, assignment_request)
             
             # Update the assigment request with the chat message ID
             assignment_request.chat_message_id = chat_message.id
@@ -585,7 +585,7 @@ class AssignmentLogic:
             return AssignmentLogic.get_assignment_request_by_id(assignment_request.id, assert_user_authorized)
         
     @staticmethod
-    def create_and_store_message(session: Session, assignment_request: AssignmentRequest) -> ChatMessage:
+    async def create_and_store_message(session: Session, assignment_request: AssignmentRequest) -> ChatMessage:
         # Send a chat message to the assignment owner
         assignment = assignment_request.assignment
         chat = ChatLogic.get_or_create_private_chat(assignment.owner_id, assignment_request.tutor_id)
@@ -611,7 +611,7 @@ class AssignmentLogic:
         )
 
         # Store the chat message and get the message ID
-        chat_message = ChatLogic.store_private_message(session, new_chat_message, assignment_request.tutor_id)
+        chat_message = await ChatLogic.store_private_message(session, new_chat_message, assignment_request.tutor_id)
 
         return chat_message
 

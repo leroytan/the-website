@@ -100,7 +100,7 @@ async def update_assignment_request(id: int, assignment_request: ModifiedAssignm
         return mock.get_assignments()[0]
     
     assert_user_authorized = Logic.create_assert_user_authorized(user.id)
-    return AssignmentLogic.update_assignment_request_by_id(id, assignment_request, assert_user_authorized)
+    return await AssignmentLogic.update_assignment_request_by_id(id, assignment_request, assert_user_authorized)
 
 @router.put("/api/assignment-requests/{id}/change-status")
 async def change_assignment_request_status(id: int, status: str, user: User = Depends(RouterAuthUtils.get_current_user)) -> Response:

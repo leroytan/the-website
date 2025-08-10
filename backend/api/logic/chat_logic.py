@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
@@ -9,13 +10,13 @@ from api.storage.models import (
     ChatMessageType, TutorRequestStatus, ChatNotificationTracker
 )
 from api.services.email_service import GmailEmailService
+from api.services.content_filter_service import content_filter_service
 from api.storage.storage_service import StorageService
 from fastapi import HTTPException, WebSocket
 from psycopg2.errors import ForeignKeyViolation
 from sqlalchemy import and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
-
 
 class ChatLogic:
     active_connections: dict[str|int, WebSocket] = {}
@@ -127,7 +128,7 @@ class ChatLogic:
             return ChatLogic.get_chat_preview(session, current_user_id, chat)
         
     @staticmethod
-    def store_private_message(session: Session, new_chat_message: NewChatMessage, sender_id: int) -> ChatMessage:
+    async def store_private_message(session: Session, new_chat_message: NewChatMessage, sender_id: int) -> ChatMessage:
         """
         Stores a new chat message in the database and returns the stored ChatMessage object.
 
@@ -147,10 +148,26 @@ class ChatLogic:
         elif chat.user1_id != sender_id and chat.user2_id != sender_id:
             raise HTTPException(status_code=403, detail="You are not authorized to send messages in this chatroom.")
 
-        # Check if the chatroom is locked
+        # Check if the chatroom is locked and apply content filtering
         if chat.is_locked:
-            # Do some content filtering
-            pass
+            # Apply content filtering for locked chats
+            try:
+                filter_result = await content_filter_service.filter_message(new_chat_message.content)
+                
+                if filter_result["filtered"]:
+                    # Log the filtering action
+                    logging.info(f"Message filtered in chat {chat_id}: {filter_result['reasoning']}")
+                    
+                    # Replace the message content with the filtered version
+                    new_chat_message.content = filter_result["content"]
+                    
+                    # Optionally, you could also store metadata about the filtering
+                    # or send a notification to moderators
+                    
+            except Exception as e:
+                # If filtering fails, log the error but don't block the message
+                # This ensures chat functionality continues even if the filter is down
+                logging.error(f"Content filtering failed for chat {chat_id}: {e}")
 
         # Create a ChatMessage object
         chat_message = ChatMessage(
@@ -353,7 +370,7 @@ class ChatLogic:
             ChatMessage: The processed chat message object.
         """
         with Session(StorageService.engine, expire_on_commit=False) as session:
-            chat_message = ChatLogic.store_private_message(session, new_chat_message, sender_id)
+            chat_message = await ChatLogic.store_private_message(session, new_chat_message, sender_id)
             await ChatLogic.send_private_message(chat_message)
             
             # Schedule delayed notification
