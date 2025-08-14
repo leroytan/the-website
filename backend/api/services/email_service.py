@@ -159,6 +159,102 @@ class GmailEmailService:
         return f"{url}?token={reset_token}"
     
     @staticmethod
+    def create_email_confirmation_link(
+        confirmation_token: str, 
+        url: str = "https://yourwebsite.com/confirm-email"
+    ) -> str:
+        """
+        Create an email confirmation link
+        
+        :param confirmation_token: Unique confirmation token
+        :param url: Base URL for email confirmation page
+        :return: Complete confirmation link
+        """
+        return f"{url}?token={confirmation_token}"
+    
+    @staticmethod
+    def send_email_confirmation_email(
+        recipient_email: str,
+        confirmation_link: str,
+        user_name: str,
+        sender_email: Optional[str] = None,
+        refresh_token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Send an email confirmation email via Gmail API
+        
+        :param recipient_email: Email address of the recipient
+        :param confirmation_link: Secure email confirmation link
+        :param user_name: Name of the user
+        :param sender_email: Optional sender email (defaults to authenticated user)
+        :param refresh_token: OAuth refresh token
+        :param client_id: OAuth client ID
+        :param client_secret: OAuth client secret
+        :return: Email sending result
+        """
+        try:
+            # Use settings credentials if not provided
+            refresh_token = refresh_token or settings.gmail_refresh_token
+            client_id = client_id or settings.gmail_client_id
+            client_secret = client_secret or settings.gmail_client_secret
+            
+            if not (refresh_token and client_id and client_secret):
+                raise ValueError("Gmail OAuth credentials must be provided")
+            
+            # Get credentials and service
+            credentials = GmailEmailService._get_credentials(
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+            service = GmailEmailService._get_gmail_service(credentials)
+            
+            sender = sender_email or 'me'  # 'me' refers to authenticated user
+            
+            message = MIMEText(
+                f"""
+                Hello {user_name},
+                
+                Welcome to our platform! Please confirm your email address by clicking the link below:
+                
+                {confirmation_link}
+                
+                This link will expire in 24 hours. If you did not create an account, please ignore this email.
+                
+                Best regards,
+                The Team
+                """, 
+                'plain'
+            )
+            
+            message['to'] = recipient_email
+            message['subject'] = 'Confirm Your Email Address'
+            
+            # Encode message
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            
+            # Send message
+            result = service.users().messages().send(
+                userId=sender, 
+                body={'raw': raw_message}
+            ).execute()
+            
+            return {
+                'success': True, 
+                'message_id': result.get('id'),
+                'thread_id': result.get('threadId')
+            }
+        
+        except HttpError as error:
+            print(f'An error occurred: {error}')
+            return {
+                'success': False, 
+                'error': str(error)
+            }
+    
+    @staticmethod
     def send_email(
         recipient_email: str,
         subject: str,

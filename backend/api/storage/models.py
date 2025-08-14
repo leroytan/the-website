@@ -38,6 +38,11 @@ class User(Base, SerializerMixin):
     token_version = Column(Integer, default=0)
     intends_to_be_tutor = Column(Boolean, default=False)
     
+    # Email confirmation fields
+    email_verified = Column(Boolean, default=False)
+    email_confirmation_token = Column(String, nullable=True)
+    email_confirmation_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    
     # Password reset fields
     password_reset_token = Column(String, nullable=True)
     password_reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)

@@ -271,12 +271,22 @@ class VerifyPasswordResetTokenRequest(BaseModel):
     """
     Model for verifying a password reset token
     """
-    reset_token: str = Field(
-        ...,
-        description="Unique reset token",
-        min_length=32,
-        max_length=1024
-    )
+    reset_token: str
+
+class EmailConfirmationRequest(BaseModel):
+    """
+    Model for email confirmation request
+    """
+    confirmation_token: str
+
+    @validator('confirmation_token')
+    def validate_token(cls, token):
+        """
+        Validate confirmation token is not empty
+        """
+        if not token or not token.strip():
+            raise ValueError("Confirmation token is required")
+        return token.strip()
 
 class ResetPasswordRequest(BaseModel):
     """

@@ -149,6 +149,46 @@ class AuthService:
             raise ValueError("Invalid password reset token format or signature")
 
     @staticmethod
+    def create_email_confirmation_token(token_data: TokenData, token_version: int = 0, expires_delta: timedelta = timedelta(hours=24)) -> str:
+        """
+        Create an email confirmation token with a specific expiration time
+        """
+        Utils.validate_non_empty(token_data=token_data)
+        to_encode = token_data.model_dump()
+        expire = datetime.now(timezone.utc) + expires_delta
+        to_encode.update({
+            "exp": expire,
+            "type": "email_confirmation",
+            "token_version": token_version
+        })
+        return jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+    @staticmethod
+    def verify_email_confirmation_token(token: str) -> TokenData:
+        """
+        Verify an email confirmation token and return the token data
+        """
+        Utils.validate_non_empty(token=token)
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            
+            # Validate token type
+            if payload.get("type") != "email_confirmation":
+                raise ValueError("Invalid email confirmation token")
+            
+            # Create a copy of the payload to modify
+            token_payload = payload.copy()
+            
+            # Remove time-related fields
+            token_payload.pop("exp")
+            token_payload.pop("type")
+            
+            # Preserve any additional fields like token_version if present
+            return TokenData(**token_payload)
+        except jwt.JWTError as e:
+            raise ValueError("Invalid or expired email confirmation token")
+
+    @staticmethod
     async def authenticate_google_user(code: str) -> TokenPair:
         # Exchange authorization code for tokens
         token_response = await httpx.AsyncClient().post(

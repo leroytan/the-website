@@ -7,7 +7,8 @@ from api.router.models import (
     SignupRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
-    VerifyPasswordResetTokenRequest
+    VerifyPasswordResetTokenRequest,
+    EmailConfirmationRequest
 )
 from api.logic.logic import Logic
 from api.router.auth_utils import RouterAuthUtils
@@ -155,13 +156,19 @@ async def signup(
                         raised with an appropriate status code.
     """
     
-    tokens = Logic.handle_signup(signup_request)
     origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
-    RouterAuthUtils.update_tokens(tokens, response, origin)
-
-    response.status_code = 201
-
-    return {"message": "Signed up successfully"}
+    result = Logic.handle_signup(signup_request, origin)
+    
+    # Check if result is a token pair (for verified users) or a message (for unverified users)
+    if isinstance(result, dict) and "access_token" in result:
+        # User is verified (example.com), set tokens and log them in
+        RouterAuthUtils.update_tokens(result, response, origin)
+        response.status_code = 201
+        return {"message": "Signed up successfully"}
+    else:
+        # User needs email verification, don't set tokens
+        response.status_code = 201
+        return result
     
 
 @router.post("/api/auth/logout")
@@ -237,12 +244,45 @@ async def verify_password_reset_token(
     verify_password_reset_token_request: VerifyPasswordResetTokenRequest,
 ):
     """
-    Verify the validity of a password reset token.
+    Verify a password reset token for validation purposes.
     
     Args:
-        verify_password_reset_token_request (VerifyPasswordResetTokenRequest): Contains the reset token.
+        verify_password_reset_token_request (VerifyPasswordResetTokenRequest): Contains the reset token to verify.
     
     Returns:
-        dict: A message indicating the validity of the token.
+        dict: A message indicating the validity of the reset token.
     """
     return Logic.verify_password_reset_token(verify_password_reset_token_request)
+
+@router.post("/api/auth/confirm-email")
+async def confirm_email(
+    confirmation_request: EmailConfirmationRequest,
+):
+    """
+    Confirm user email by validating the confirmation token.
+    
+    Args:
+        confirmation_request (EmailConfirmationRequest): Contains the confirmation token.
+    
+    Returns:
+        dict: A message indicating the success of email confirmation.
+    """
+    return Logic.confirm_email(confirmation_request)
+
+@router.post("/api/auth/resend-confirmation-email")
+async def resend_confirmation_email(
+    request: Request,
+    email: str,
+):
+    """
+    Resend email confirmation link to the user's email address.
+    
+    Args:
+        email (str): The email address to resend confirmation to.
+    
+    Returns:
+        dict: A message indicating the status of the confirmation email request.
+    """
+    # Use the request's origin to generate the confirmation link
+    origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
+    return Logic.resend_confirmation_email(email, origin)
