@@ -138,42 +138,50 @@ def insert_test_data(engine: object) -> bool:
         User(
             name="John Doe",
             email="john@example.com",
-            password_hash="$2b$12$mZzAAXmyGtilH5mlwosyNuz5v56iacPnXAfo0v6XPhNLCgzAQBsTC"
+            password_hash="$2b$12$mZzAAXmyGtilH5mlwosyNuz5v56iacPnXAfo0v6XPhNLCgzAQBsTC",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="Jane Smith",
             email="jane@example.com",
-            password_hash="$2b$12$evEA25gWMQM.wXxgc0BNmua4AMzXY5HeJHZv1ARI7PqAxBNKoOIrW"
+            password_hash="$2b$12$evEA25gWMQM.wXxgc0BNmua4AMzXY5HeJHZv1ARI7PqAxBNKoOIrW",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="Alice Johnson",
             email="alice@example.com",
-            password_hash="$2b$12$TaklfiCGynwG22JiBxL3v.xJrZ4Xj3P3jWV.O9gjf3DYxNmqJ18xe"
+            password_hash="$2b$12$TaklfiCGynwG22JiBxL3v.xJrZ4Xj3P3jWV.O9gjf3DYxNmqJ18xe",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="Bob Williams",
             email="bob@example.com",
-            password_hash="$2b$12$eycYqtvIeFMU2UcHokCVQuzKvQVoIN32gSnU2wWlzI6.RRCVPWLpK"
+            password_hash="$2b$12$eycYqtvIeFMU2UcHokCVQuzKvQVoIN32gSnU2wWlzI6.RRCVPWLpK",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="Carol Brown",
             email="carol@example.com",
-            password_hash="$2b$12$Hx2sLVhoiwYrqBC4fTkrC.HHsI3YS73QEvyUDNzYak4yoKWeSIgCi"
+            password_hash="$2b$12$Hx2sLVhoiwYrqBC4fTkrC.HHsI3YS73QEvyUDNzYak4yoKWeSIgCi",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="David Miller",
             email="david@example.com",
-            password_hash="$2b$12$r6ENReONet3RHULZrCGiqOhdESByFdHLrDAdsCU97mILx4wpFjSVa"
+            password_hash="$2b$12$r6ENReONet3RHULZrCGiqOhdESByFdHLrDAdsCU97mILx4wpFjSVa",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="Eva Garcia",
             email="eva@example.com",
-            password_hash="$2b$12$f/2ZDD/EeIMKn6OXo.a2GeWsNWVcI/KZLmsIoeMUCEKhaU.14DXBW"
+            password_hash="$2b$12$f/2ZDD/EeIMKn6OXo.a2GeWsNWVcI/KZLmsIoeMUCEKhaU.14DXBW",
+            email_verification_status="VERIFIED",
         ),
         User(
             name="Frank Rodriguez",
             email="frank@example.com",
-            password_hash="$2b$12$ojmyO9IQEu4EDmpRuOykEuRl6Lu3pN9dkuMyUn6NDNNWTCfP37HE6"
+            password_hash="$2b$12$ojmyO9IQEu4EDmpRuOykEuRl6Lu3pN9dkuMyUn6NDNNWTCfP37HE6",
+            email_verification_status="VERIFIED",
         )
     ]
     session.add_all(users)

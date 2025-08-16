@@ -237,10 +237,14 @@ class Logic:
             url = f"{origin}/login/reset-password"
             
             reset_link = GmailEmailService.create_reset_link(reset_token, url)
-            GmailEmailService.send_password_reset_email(
+            
+            print(f"Attempting to send password reset email to {forgot_password_request.email}")
+
+            res = GmailEmailService.send_password_reset_email(
                 recipient_email=forgot_password_request.email,
                 reset_link=reset_link
             )
+            print(res)
             
             return {"message": "If the email is registered, a reset link has been sent."}
 

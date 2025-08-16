@@ -1,9 +1,11 @@
 import base64
 import os
 from typing import Optional, Dict, Any, List, Union
+from jinja2 import Template
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from email.mime.application import MIMEApplication
 
 from google.oauth2.credentials import Credentials
@@ -67,7 +69,35 @@ class GmailEmailService:
         :return: Gmail service object
         """
         return build('gmail', 'v1', credentials=credentials)
+
+    @staticmethod
+    def _read_template(template_name: str) -> Template:
+        """
+        Read and compile a Jinja2 template from the templates directory.
+        """
+        template_path = os.path.join(os.path.dirname(__file__), '..', 'templates', template_name)
+        with open(template_path, 'r') as f:
+            template_string = f.read()
+        return Template(template_string)
     
+    @staticmethod
+    def _attach_banner_image(message: MIMEMultipart) -> None:
+        """
+        Load and attach banner image from local filesystem to email message
+        
+        :param message: MIMEMultipart message to attach image to
+        """
+        # Get path to banner image relative to this file
+        banner_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'images', 'banner.png')
+        
+        with open(banner_path, 'rb') as f:
+            image_data = f.read()
+        
+        image = MIMEImage(image_data)
+        image.add_header('Content-ID', '<banner>')
+        image.add_header('Content-Disposition', 'inline', filename='banner.png')
+        message.attach(image)
+
     @staticmethod
     def send_password_reset_email(
         recipient_email: str,
@@ -106,33 +136,114 @@ class GmailEmailService:
             service = GmailEmailService._get_gmail_service(credentials)
             
             sender = sender_email or 'me'  # 'me' refers to authenticated user
-            
-            message = MIMEText(
-                f"""
-                You have requested a password reset.
-                
-                Click the following link to reset your password:
-                {reset_link}
-                
-                If you did not request this, please ignore this email.
-                """, 
-                'plain'
-            )
-            
+
+            # Create multipart message with related content for embedded images
+            message = MIMEMultipart('related')
             message['to'] = recipient_email
             message['subject'] = 'Password Reset Request'
+            
+            # Generate and attach HTML content FIRST
+            template = GmailEmailService._read_template('reset_password.html')
+            html_content = template.render(reset_link=reset_link)
+            html_part = MIMEText(html_content, 'html')
+            message.attach(html_part)
+            
+            # Then attach banner image
+            GmailEmailService._attach_banner_image(message)
             
             # Encode message
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
             
             # Send message
             result = service.users().messages().send(
-                userId=sender, 
+                userId=sender,
                 body={'raw': raw_message}
             ).execute()
             
             return {
-                'success': True, 
+                'success': True,
+                'message_id': result.get('id'),
+                'thread_id': result.get('threadId')
+            }
+        
+        except HttpError as error:
+            return {
+                'success': False,
+                'error': str(error)
+            }
+
+    @staticmethod
+    def send_unread_message_email(
+        recipient_email: str,
+        sender_name: str,
+        message_preview: str,
+        chat_url: str,
+        sender_email: Optional[str] = None,
+        refresh_token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Send an unread message notification email via Gmail API
+        
+        :param recipient_email: Email address of the recipient
+        :param sender_name: Name of the message sender
+        :param message_preview: A short preview of the message
+        :param chat_url: The URL to the chat
+        :param sender_email: Optional sender email (defaults to authenticated user)
+        :param refresh_token: OAuth refresh token
+        :param client_id: OAuth client ID
+        :param client_secret: OAuth client secret
+        :return: Email sending result
+        """
+        try:
+            # Use settings credentials if not provided
+            refresh_token = refresh_token or settings.gmail_refresh_token
+            client_id = client_id or settings.gmail_client_id
+            client_secret = client_secret or settings.gmail_client_secret
+            
+            if not (refresh_token and client_id and client_secret):
+                raise ValueError("Gmail OAuth credentials must be provided")
+            
+            # Get credentials and service
+            credentials = GmailEmailService._get_credentials(
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+            service = GmailEmailService._get_gmail_service(credentials)
+            
+            sender = sender_email or 'me'  # 'me' refers to authenticated user
+            
+            # Create multipart message with related content for embedded images
+            message = MIMEMultipart('related')
+            message['to'] = recipient_email
+            message['subject'] = f'You have a new message from {sender_name}'
+            
+            # Generate and attach HTML content FIRST
+            template = GmailEmailService._read_template('unread_message.html')
+            html_content = template.render(
+                sender_name=sender_name,
+                message_preview=message_preview,
+                chat_url=chat_url
+            )
+            html_part = MIMEText(html_content, 'html')
+            message.attach(html_part)
+            
+            # Then attach banner image
+            GmailEmailService._attach_banner_image(message)
+            
+            # Encode message
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            
+            # Send message
+            result = service.users().messages().send(
+                userId=sender,
+                body={'raw': raw_message}
+            ).execute()
+            
+            return {
+                'success': True,
                 'message_id': result.get('id'),
                 'thread_id': result.get('threadId')
             }
@@ -140,7 +251,7 @@ class GmailEmailService:
         except HttpError as error:
             print(f'An error occurred: {error}')
             return {
-                'success': False, 
+                'success': False,
                 'error': str(error)
             }
     
@@ -213,24 +324,22 @@ class GmailEmailService:
             
             sender = sender_email or 'me'  # 'me' refers to authenticated user
             
-            message = MIMEText(
-                f"""
-                Hello {user_name},
-                
-                Welcome to our platform! Please confirm your email address by clicking the link below:
-                
-                {confirmation_link}
-                
-                This link will expire in 24 hours. If you did not create an account, please ignore this email.
-                
-                Best regards,
-                The Team
-                """, 
-                'plain'
-            )
-            
+            # Create multipart message with related content for embedded images
+            message = MIMEMultipart('related')
             message['to'] = recipient_email
             message['subject'] = 'Confirm Your Email Address'
+            
+            # Generate and attach HTML content FIRST
+            template = GmailEmailService._read_template('email_confirmation.html')
+            html_content = template.render(
+                user_name=user_name,
+                confirmation_link=confirmation_link
+            )
+            html_part = MIMEText(html_content, 'html')
+            message.attach(html_part)
+            
+            # Then attach banner image
+            GmailEmailService._attach_banner_image(message)
             
             # Encode message
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
@@ -387,19 +496,70 @@ class GmailEmailService:
         """
         Notify about a new assignment request via email
         :param recipient_email: Email address of the recipient
-        :param assignment_details: Details of the assignment request
+        :param assignment: Assignment object with details
+        :param origin: Origin URL for dashboard link
         :return: Email sending result
         """
-        subject = f"New Assignment Application: {assignment.title}"
-        content = f"""
-        You have a new assignment application for your posted assignment "{assignment.title}".
-
-        You may view pending applications at {origin}/dashboard 
-        """
+        try:
+            # Use settings credentials
+            refresh_token = settings.gmail_refresh_token
+            client_id = settings.gmail_client_id
+            client_secret = settings.gmail_client_secret
+            
+            if not (refresh_token and client_id and client_secret):
+                raise ValueError("Gmail OAuth credentials must be provided")
+            
+            # Get credentials and service
+            credentials = GmailEmailService._get_credentials(
+                refresh_token=refresh_token,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+            service = GmailEmailService._get_gmail_service(credentials)
+            
+            sender = 'me'  # 'me' refers to authenticated user
+            
+            # Create multipart message with related content for embedded images
+            message = MIMEMultipart('related')
+            message['to'] = recipient_email
+            message['subject'] = f"New Assignment Application: {assignment.title}"
+            
+            # Generate and attach HTML content FIRST
+            template = GmailEmailService._read_template('assignment_notification.html')
+            html_content = template.render(
+                assignment=assignment,
+                origin=origin
+            )
+            html_part = MIMEText(html_content, 'html')
+            message.attach(html_part)
+            
+            # Then attach banner image
+            GmailEmailService._attach_banner_image(message)
+            
+            # Encode message
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            
+            # Send message
+            result = service.users().messages().send(
+                userId=sender,
+                body={'raw': raw_message}
+            ).execute()
+            
+            return {
+                'success': True,
+                'message_id': result.get('id'),
+                'thread_id': result.get('threadId')
+            }
         
-        return GmailEmailService.send_email(
-            recipient_email=recipient_email,
-            subject=subject,
-            content=content,
-        )
-    
+        except HttpError as error:
+            print(f'An error occurred: {error}')
+            return {
+                'success': False,
+                'error': str(error)
+            }
+        except Exception as error:
+            print(f'An error occurred: {error}')
+            return {
+                'success': False,
+                'error': str(error)
+            }

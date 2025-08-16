@@ -35,6 +35,7 @@ async def get_jwt(request: Request, user: User = Depends(RouterAuthUtils.get_cur
 @router.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
     user = RouterAuthUtils.get_user_from_jwt(access_token)
+    origin = websocket.headers.get("origin")
     await websocket.accept()
     async with ChatLogic.mutex:
         ChatLogic.active_connections[user.id] = websocket
@@ -52,7 +53,7 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
                 message_type=message_type
             )
  
-            await ChatLogic.handle_private_message(message, user.id)
+            await ChatLogic.handle_private_message(message, user.id, origin)
     except WebSocketDisconnect:
         async with ChatLogic.mutex:
             if user.id in ChatLogic.active_connections:
