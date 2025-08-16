@@ -28,11 +28,8 @@ class ChatLogic:
         Get a preview of the chat.
         """
         chat_id = chat.id
-        if chat.is_locked:  # TODO: Implement alias names for locked chats
-            other_name = "Anonymous User"
-        else:
-            other_id = chat.user1_id if chat.user1_id != user_id else chat.user2_id
-            other_name = session.query(User).filter(User.id == other_id).first().name
+        other_id = chat.user1_id if chat.user1_id != user_id else chat.user2_id
+        other_name = session.query(User).filter(User.id == other_id).first().name
         # Get the last message in the chat
         res = session.query(ChatMessage).filter(ChatMessage.chat_id == chat_id).order_by(ChatMessage.created_at.desc()).first()
         # Get message content and created_at
@@ -65,16 +62,10 @@ class ChatLogic:
             """
             sent_by_user = message.sender_id == user_id
             
-            # Check if the chat is locked to determine sender name display
-            sender_name = message.sender.name
-            if hasattr(message, 'chat') and message.chat and message.chat.is_locked and not sent_by_user:
-                # Hide sender name for locked chats (except for messages sent by the current user)
-                sender_name = "Anonymous User"
-            
             message_dict = {
                 "id": message.id,
                 "chat_id": message.chat_id,
-                "sender": sender_name,
+                "sender": message.sender.name,
                 "content": message.content,
                 "message_type": message.message_type.value,
                 "created_at": message.created_at.isoformat(),
@@ -248,15 +239,10 @@ class ChatLogic:
                 # Get the chat to check if it's locked
                 chat = session.query(PrivateChat).filter(PrivateChat.id == chat_message.chat_id).first()
                 
-                if chat and chat.is_locked:
-                    # Hide sender name for locked chats
-                    sender_name = "Anonymous User"
-                    display_message = "New message from Anonymous User"
-                else:
-                    # Show real sender name for unlocked chats
-                    sender = session.query(User).filter(User.id == sender_id).first()
-                    sender_name = sender.name if sender else "Unknown User"
-                    display_message = f"New message from {sender_name}"
+                # Show real sender name for unlocked chats
+                sender = session.query(User).filter(User.id == sender_id).first()
+                sender_name = sender.name if sender else "Unknown User"
+                display_message = f"New message from {sender_name}"
                 
                 notification_data = {
                     "type": "new_message",
