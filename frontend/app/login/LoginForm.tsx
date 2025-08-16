@@ -87,10 +87,16 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       const errorData = await res.json();
       
       // Handle email verification error specifically
-      if (res.status === 403 && errorData.detail?.code === "EMAIL_NOT_VERIFIED") {
-        setErrorMessageSafe(errorData.detail.message || "Please verify your email address before logging in.");
-        setNeedsEmailVerification(true);
-        return;
+      if (res.status === 403) {
+        if (errorData.detail?.code === "EMAIL_NOT_VERIFIED") {
+          setErrorMessageSafe(errorData.detail.message || "Please verify your email address before logging in.");
+          setNeedsEmailVerification(true);
+          return;
+        } else if (errorData.detail?.code === "USER_WAITLISTED") {
+          setErrorMessageSafe(errorData.detail.message || "You are currently on our waitlist.");
+          setNeedsEmailVerification(false);
+          return;
+        }
       }
       
       // Reset email verification state for other errors

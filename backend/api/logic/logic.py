@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
+from api.common.constants import AUTONOMOUS_UNIVERSITIES_EMAIL_DOMAINS
 from api.router.models import (
     LoginRequest,
     SignupRequest,
@@ -11,7 +12,7 @@ from api.router.models import (
     VerifyPasswordResetTokenRequest,
     EmailConfirmationRequest
 )
-from api.storage.models import User
+from api.storage.models import EmailVerificationStatus, User
 from api.storage.storage_service import StorageService
 from api.services.email_service import GmailEmailService
 from fastapi import HTTPException
@@ -32,13 +33,21 @@ class Logic:
             if not user or not user.password_hash or not AuthService.verify_password(login_data.password, user.password_hash):
                 raise HTTPException(status_code=401, detail="Incorrect email or password. Did you previously sign in with Google?")
             
-            # Check if email is verified (only for non-example.com emails)
-            if not login_data.email.endswith('@example.com') and not user.email_verified:
+            # Check email verification status
+            if user.email_verification_status == EmailVerificationStatus.PENDING:
                 raise HTTPException(
-                    status_code=403, 
+                    status_code=403,
                     detail={
                         "code": "EMAIL_NOT_VERIFIED",
                         "message": "Please verify your email address before logging in. Check your inbox for a confirmation link."
+                    }
+                )
+            elif user.email_verification_status == EmailVerificationStatus.WAITLISTED:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "code": "USER_WAITLISTED",
+                        "message": "You are currently on our waitlist. We will notify you once we expand to more universities."
                     }
                 )
     
@@ -60,8 +69,8 @@ class Logic:
             
             if existing_user:
                 # If user exists but email is not verified, allow them to sign up again
-                if not existing_user.email_verified and not signup_data.email.endswith('@example.com'):
-                    # Delete the existing unverified user
+                if existing_user.email_verification_status == EmailVerificationStatus.PENDING:
+                    # Delete the existing unverified user to allow re-signup
                     session.delete(existing_user)
                     session.commit()
                 else:
@@ -75,9 +84,29 @@ class Logic:
             except IntegrityError as e:
                 session.rollback()
                 raise HTTPException(status_code=409, detail="User already exists")
-            
-            # Check if email needs confirmation (not example.com)
-            if not signup_data.email.endswith('@example.com'):
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+            # Set initial email verification status
+            if signup_data.intends_to_be_tutor:
+                import re
+                is_valid_email = any(re.search(domain, signup_data.email) for domain in AUTONOMOUS_UNIVERSITIES_EMAIL_DOMAINS)
+                if not is_valid_email:
+                    user.email_verification_status = EmailVerificationStatus.WAITLISTED
+                    session.add(user)
+                    session.commit()
+                    return {
+                        "status": "waitlisted",
+                        "message": "It looks like your university isn't included in our current sign-up list yet. You have been added to our waitlist and we'll notify you as soon as we open registrations for more universities!"
+                    }
+
+            if signup_data.email.endswith('@example.com'):
+                user.email_verification_status = EmailVerificationStatus.VERIFIED
+            else:
+                user.email_verification_status = EmailVerificationStatus.PENDING
+
+            # Send confirmation email if pending
+            if user.email_verification_status == EmailVerificationStatus.PENDING:
                 # Generate email confirmation token
                 confirmation_token = AuthService.create_email_confirmation_token(
                     TokenData(email=signup_data.email),
@@ -98,18 +127,19 @@ class Logic:
                     user_name=signup_data.name
                 )
                 
-                # Set email as unverified initially
-                user.email_verified = False
                 session.add(user)
                 session.commit()
-            
-            # Only return tokens for verified users (example.com emails)
-            if signup_data.email.endswith('@example.com'):
+
+            # Return tokens only for immediately verified users
+            if user.email_verification_status == EmailVerificationStatus.VERIFIED:
                 token_data = TokenData(email=signup_data.email, token_version=user.token_version)
                 return AuthService.create_token_pair(token_data=token_data)
             else:
                 # For non-example.com emails, return a message indicating verification is needed
-                return {"message": "Account created successfully! Please check your email for a confirmation link to verify your account."}
+                return {
+                    "status": "pending_verification",
+                    "message": "Account created successfully! Please check your email for a confirmation link to verify your account."
+                }
 
     @staticmethod
     def get_current_user(access_token: str, credentials_exception: HTTPException) -> User:
@@ -313,11 +343,11 @@ class Logic:
                     raise HTTPException(status_code=400, detail="Invalid confirmation token")
                 
                 # Check if email is already verified
-                if user.email_verified:
+                if user.email_verification_status == EmailVerificationStatus.VERIFIED:
                     return {"message": "Email is already verified"}
                 
                 # Mark email as verified and clear the token
-                user.email_verified = True
+                user.email_verification_status = EmailVerificationStatus.VERIFIED
                 user.email_confirmation_token = None
                 user.email_confirmation_token_expires_at = None
                 
@@ -346,7 +376,7 @@ class Logic:
                 return {"message": "If the email is registered, a confirmation link has been sent."}
             
             # Check if email is already verified
-            if user.email_verified:
+            if user.email_verification_status == EmailVerificationStatus.VERIFIED:
                 return {"message": "Email is already verified"}
             
             # Generate new confirmation token

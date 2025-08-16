@@ -64,10 +64,8 @@ export default function SignupPage() {
     if (res.ok) {
       const resData = await res.json();
       
-      // Check if user needs email verification based on response
-      if (resData.message && resData.message.includes("confirmation link")) {
-        // User needs email verification
-        setErrorMessage(""); // Clear any existing error
+      // Check for different success scenarios
+      if (resData.status === "waitlisted" || resData.status === "pending_verification") {
         alert(resData.message);
         router.push("/login");
       } else {

@@ -2,6 +2,7 @@ import base64
 import json
 from urllib.parse import quote
 
+from api.auth.models import TokenPair
 from api.router.models import (
     LoginRequest,
     SignupRequest,
@@ -159,16 +160,16 @@ async def signup(
     origin = request.headers.get("origin") or request.headers.get("referer") or settings.frontend_domain
     result = Logic.handle_signup(signup_request, origin)
     
-    # Check if result is a token pair (for verified users) or a message (for unverified users)
-    if isinstance(result, dict) and "access_token" in result:
-        # User is verified (example.com), set tokens and log them in
+    # Check if result is a token pair (for verified users)
+    if isinstance(result, TokenPair):
+        # User is verified (e.g., @example.com), set tokens and log them in
         RouterAuthUtils.update_tokens(result, response, origin)
         response.status_code = 201
         return {"message": "Signed up successfully"}
-    else:
-        # User needs email verification, don't set tokens
-        response.status_code = 201
-        return result
+    
+    # For all other cases (waitlist, email verification needed), just return the message
+    response.status_code = 201
+    return result
     
 
 @router.post("/api/auth/logout")

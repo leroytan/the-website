@@ -25,6 +25,14 @@ class SortableMixin:
         return Column(Integer, nullable=False)
 
 
+class EmailVerificationStatus(enum.Enum):
+    """
+    Enum for email verification status
+    """
+    VERIFIED = 'verified'
+    PENDING = 'pending'
+    WAITLISTED = 'waitlisted'
+
 class User(Base, SerializerMixin):
     """Base User model"""
     __tablename__ = 'User'
@@ -39,7 +47,7 @@ class User(Base, SerializerMixin):
     intends_to_be_tutor = Column(Boolean, default=False)
     
     # Email confirmation fields
-    email_verified = Column(Boolean, default=False)
+    email_verification_status = Column(ENUM(EmailVerificationStatus), default=EmailVerificationStatus.PENDING)
     email_confirmation_token = Column(String, nullable=True)
     email_confirmation_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     
