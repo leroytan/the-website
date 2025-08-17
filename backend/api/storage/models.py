@@ -330,6 +330,8 @@ class ChatMessage(Base, SerializerMixin):
     # Columns
     id = Column(Integer, primary_key=True, autoincrement=True)
     content = Column(String, nullable=False)
+    filtered_content = Column(String, nullable=True)
+    is_flagged = Column(Boolean, default=False)
     message_type = Column(ENUM(ChatMessageType), nullable=False, default=ChatMessageType.TEXT_MESSAGE)
     sender_id = Column(Integer, ForeignKey('User.id'), nullable=False)  # Foreign key to User
     chat_id = Column(Integer, ForeignKey('PrivateChat.id'), nullable=False)  # Foreign key to PrivateChat

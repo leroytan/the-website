@@ -71,7 +71,10 @@ class ChatLogic:
                 "created_at": message.created_at.isoformat(),
                 "updated_at": message.updated_at.isoformat(),
                 "sent_by_user": sent_by_user,
+                "is_flagged": message.is_flagged,
             }
+            if not sent_by_user and message.is_flagged:
+                message_dict["content"] = message.filtered_content
             if message.message_type == ChatMessageType.TUTOR_REQUEST:
                 content = json.loads(message_dict.get("content"))  # Ensure content is valid JSON
                 if message.assignment_request:
@@ -140,6 +143,12 @@ class ChatLogic:
             raise HTTPException(status_code=403, detail="You are not authorized to send messages in this chatroom.")
 
         # Check if the chatroom is locked and apply content filtering
+        chat_message = ChatMessage(
+            content=new_chat_message.content,
+            sender_id=sender_id,
+            chat_id=chat_id,
+            message_type=new_chat_message.message_type
+        )
         if chat.is_locked:
             # Apply content filtering for locked chats
             try:
@@ -150,7 +159,8 @@ class ChatLogic:
                     logging.info(f"Message filtered in chat {chat_id}: {filter_result['reasoning']}")
                     
                     # Replace the message content with the filtered version
-                    new_chat_message.content = filter_result["content"]
+                    chat_message.filtered_content = filter_result["content"]
+                    chat_message.is_flagged = True
                     
                     # Optionally, you could also store metadata about the filtering
                     # or send a notification to moderators
@@ -160,25 +170,18 @@ class ChatLogic:
                 # This ensures chat functionality continues even if the filter is down
                 logging.error(f"Content filtering failed for chat {chat_id}: {e}")
 
-        # Create a ChatMessage object
-        chat_message = ChatMessage(
-            content=new_chat_message.content,
-            sender_id=sender_id,
-            chat_id=chat_id,
-            message_type=new_chat_message.message_type
-        )
-
         # Add the message to the session
         session.add(chat_message)
         receiver_id = chat_message.receiver_id_from_chat(chat)
 
-        # Update the read status for the receiver
-        read_status = session.query(ChatReadStatus).filter_by(chat_id=chat_id, user_id=receiver_id).first()
-        if not read_status:
-            read_status = ChatReadStatus(chat_id=chat_id, user_id=receiver_id, is_read=False)
-            session.add(read_status)
-        else:
-            read_status.is_read = False
+        # Update the read status for the receiver only if the message is not flagged
+        if not chat_message.is_flagged:
+            read_status = session.query(ChatReadStatus).filter_by(chat_id=chat_id, user_id=receiver_id).first()
+            if not read_status:
+                read_status = ChatReadStatus(chat_id=chat_id, user_id=receiver_id, is_read=False)
+                session.add(read_status)
+            else:
+                read_status.is_read = False
         session.commit()
         
         # Refresh the chat message and load the chat relationship
@@ -212,7 +215,7 @@ class ChatLogic:
         sender_id = chat_message.sender_id
 
         # Send the message to the receiver via WebSocket
-        if receiver_id in ChatLogic.active_connections:
+        if receiver_id in ChatLogic.active_connections and not (chat_message.is_flagged and chat_message.chat.is_locked):
             # Send the message to the receiver's WebSocket
             # Ensure that the receiver is connected
             try:
@@ -234,7 +237,7 @@ class ChatLogic:
                     ChatLogic.active_connections.pop(sender_id, None)
 
         # Send notification to receiver via root WebSocket if they're not connected to chat
-        if receiver_id not in ChatLogic.active_connections:
+        if receiver_id not in ChatLogic.active_connections and not (chat_message.is_flagged and chat_message.chat.is_locked):
             with Session(StorageService.engine) as session:
                 # Get the chat to check if it's locked
                 chat = session.query(PrivateChat).filter(PrivateChat.id == chat_message.chat_id).first()
@@ -358,9 +361,10 @@ class ChatLogic:
             chat_message = await ChatLogic.store_private_message(session, new_chat_message, sender_id)
             await ChatLogic.send_private_message(chat_message)
             
-            # Schedule delayed notification
-            receiver_id = chat_message.receiver_id
-            asyncio.create_task(ChatLogic.schedule_delayed_notification(chat_message.chat_id, receiver_id, origin))
+            # Schedule delayed notification only if the message is not flagged
+            if not (chat_message.is_flagged and chat_message.chat.is_locked):
+                receiver_id = chat_message.receiver_id
+                asyncio.create_task(ChatLogic.schedule_delayed_notification(chat_message.chat_id, receiver_id, origin))
 
     @staticmethod
     def get_private_chat_history(chat_id: int, user_id: int, created_before: str, limit: int) -> dict:
@@ -373,9 +377,14 @@ class ChatLogic:
             elif chatroom.user1_id != user_id and chatroom.user2_id != user_id:
                 raise HTTPException(status_code=403, detail="You are not authorized to view this chatroom.")
 
-            query = session.query(ChatMessage).filter(
+            query = session.query(ChatMessage).join(PrivateChat).filter(
                 ChatMessage.chat_id == chat_id,
             )
+            # For the receiver, filter out flagged messages
+            if chatroom.user1_id == user_id or chatroom.user2_id == user_id:
+                query = query.filter(
+                    (ChatMessage.sender_id == user_id) | (ChatMessage.is_flagged == False) | (PrivateChat.is_locked == False)
+                )
 
             if created_before:
                 created_before_dt = datetime.fromisoformat(created_before)
