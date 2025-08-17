@@ -21,24 +21,6 @@ class StorageService:
     @staticmethod
     def init_db(db_engine=default_engine):
         print("Initializing database")
-        exists = database_exists(db_engine.url)
-        if not exists or not inspect(db_engine).get_table_names():
-            if not exists:
-                print("Creating database")
-                create_database(db_engine.url)
-                print("Database created")
-            # SQLAlchemy automatically creates tables from the Base metadata
-            Base.metadata.create_all(db_engine)
-            print("Tables created")
-            with Session(db_engine) as session:
-                print("Seeding database")
-                seed_database(session)
-                print("Database seeded")
-            if settings.db_populate_check:
-                print("Inserting test data")
-                success = insert_test_data(db_engine)
-                # check_data(db_engine)
-                print("Test data inserted")
         StorageService.engine = db_engine
         print("Database initialized")
     
