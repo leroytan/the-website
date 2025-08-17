@@ -707,27 +707,52 @@ def insert_test_data(engine: object) -> bool:
             content="Yes, please! That would help a lot.",
             message_type=ChatMessageType.TEXT_MESSAGE,
             created_at=utc_now() - datetime.timedelta(hours=1, minutes=20)),
-        ChatMessage(
-            chat_id=tutor_request_chat.id,
-            sender_id=users[0].id, # John Doe (tutee)
-            content='{"hourlyRate": 50, "lessonDuration": 90}',
-            message_type=ChatMessageType.TUTOR_REQUEST,
-            created_at=utc_now() - datetime.timedelta(minutes=10)),
-        ChatMessage(
-            chat_id=tutor_request_chat.id,
-            sender_id=users[2].id, # Alice Johnson (tutor)
-            content="I've received your request. Let me know if you have any questions.",
-            message_type=ChatMessageType.TEXT_MESSAGE,
-            created_at=utc_now() - datetime.timedelta(minutes=5)),
-        ChatMessage(
-            chat_id=tutor_request_chat.id,
-            sender_id=users[0].id, # John Doe (tutee)
-            content='{"hourlyRate": 60, "lessonDuration": 120}',
-            message_type=ChatMessageType.TUTOR_REQUEST,
-            created_at=utc_now() - datetime.timedelta(minutes=0)),
     ]
-
     session.add_all(chat_messages)
+
+    import json
+    # Create a tutor request from John to Alice for the first assignment
+    assignment_request = AssignmentRequest(
+        assignment_id=assignments[0].id,
+        tutor_id=tutors[0].id, # Alice
+        requested_rate_hourly=50,
+        requested_duration=90,
+        status=AssignmentRequestStatus.PENDING,
+    )
+    session.add(assignment_request)
+    session.flush()
+
+    # Create the chat message for the tutor request
+    tutor_request_message = ChatMessage(
+        chat_id=tutor_request_chat.id,
+        sender_id=users[0].id, # John Doe (tutee)
+        message_type=ChatMessageType.TUTOR_REQUEST,
+        content="", # Set a temporary non-null value
+        created_at=utc_now() - datetime.timedelta(minutes=10)
+    )
+    session.add(tutor_request_message)
+    session.flush()
+
+    # Link the assignment request to the chat message
+    assignment_request.chat_message_id = tutor_request_message.id
+    tutor_request_message.content = json.dumps({
+        "hourlyRate": assignment_request.requested_rate_hourly,
+        "lessonDuration": assignment_request.requested_duration,
+        "assignmentRequestId": assignment_request.id,
+        "assignmentId": assignment_request.assignment_id,
+        "tutorId": assignment_request.tutor_id,
+        "assignmentTitle": assignment_request.assignment.title,
+    })
+    session.add(assignment_request)
+    
+    # Add a follow-up message from Alice
+    session.add(ChatMessage(
+        chat_id=tutor_request_chat.id,
+        sender_id=users[2].id, # Alice Johnson (tutor)
+        content="I've received your request. Let me know if you have any questions.",
+        message_type=ChatMessageType.TEXT_MESSAGE,
+        created_at=utc_now() - datetime.timedelta(minutes=5))
+    )
 
     subjects = session.query(Subject).all()
     levels = session.query(Level).all()
