@@ -1,58 +1,69 @@
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 
+from fastapi import HTTPException
+from jose import JWTError
+from pydantic import ValidationError
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from api.auth.auth_service import AuthService
 from api.auth.models import TokenData, TokenPair
 from api.common.constants import AUTONOMOUS_UNIVERSITIES_EMAIL_DOMAINS
 from api.router.models import (
-    LoginRequest,
-    SignupRequest,
+    EmailConfirmationRequest,
     ForgotPasswordRequest,
+    LoginRequest,
     ResetPasswordRequest,
+    SignupRequest,
     VerifyPasswordResetTokenRequest,
-    EmailConfirmationRequest
 )
+from api.services.email_service import GmailEmailService
 from api.storage.models import EmailVerificationStatus, User
 from api.storage.storage_service import StorageService
-from api.services.email_service import GmailEmailService
-from fastapi import HTTPException
-from jose import JWTError
-from pydantic import ValidationError
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from api.config import settings
 
-class Logic:
 
+class AuthLogic:
     @staticmethod
     def handle_login(login_data: LoginRequest) -> TokenPair:
         with Session(StorageService.engine) as session:
             # Check if user exists
-            user = session.execute(select(User).filter_by(email=login_data.email)).scalar_one_or_none()
-            if not user or not user.password_hash or not AuthService.verify_password(login_data.password, user.password_hash):
-                raise HTTPException(status_code=401, detail="Incorrect email or password. Did you previously sign in with Google?")
-            
+            user = session.execute(
+                select(User).filter_by(email=login_data.email)
+            ).scalar_one_or_none()
+            if (
+                not user
+                or not user.password_hash
+                or not AuthService.verify_password(
+                    login_data.password, user.password_hash
+                )
+            ):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Incorrect email or password. Did you previously sign in with Google?",
+                )
+
             # Check email verification status
             if user.email_verification_status == EmailVerificationStatus.PENDING:
                 raise HTTPException(
                     status_code=403,
                     detail={
                         "code": "EMAIL_NOT_VERIFIED",
-                        "message": "Please verify your email address before logging in. Check your inbox for a confirmation link."
-                    }
+                        "message": "Please verify your email address before logging in. Check your inbox for a confirmation link.",
+                    },
                 )
             elif user.email_verification_status == EmailVerificationStatus.WAITLISTED:
                 raise HTTPException(
                     status_code=403,
                     detail={
                         "code": "USER_WAITLISTED",
-                        "message": "You are currently on our waitlist. We will notify you once we expand to more universities."
-                    }
+                        "message": "You are currently on our waitlist. We will notify you once we expand to more universities.",
+                    },
                 )
-    
+
         token_data = TokenData(email=login_data.email, token_version=user.token_version)
-        
+
         return AuthService.create_token_pair(token_data=token_data)
 
     @staticmethod
@@ -65,23 +76,28 @@ class Logic:
 
         with Session(StorageService.engine) as session:
             # Check if user already exists
-            existing_user = session.execute(select(User).filter_by(email=signup_data.email)).scalar_one_or_none()
-            
+            existing_user = session.execute(
+                select(User).filter_by(email=signup_data.email)
+            ).scalar_one_or_none()
+
             if existing_user:
                 # If user exists but email is not verified, allow them to sign up again
-                if existing_user.email_verification_status == EmailVerificationStatus.PENDING:
+                if (
+                    existing_user.email_verification_status
+                    == EmailVerificationStatus.PENDING
+                ):
                     # Delete the existing unverified user to allow re-signup
                     session.delete(existing_user)
                     session.commit()
                 else:
                     session.rollback()
                     raise HTTPException(status_code=409, detail="User already exists")
-            
+
             try:
                 user = User(**signup_data_dict)
                 session.add(user)
                 session.commit()
-            except IntegrityError as e:
+            except IntegrityError:
                 session.rollback()
                 raise HTTPException(status_code=409, detail="User already exists")
             except ValueError as e:
@@ -90,17 +106,21 @@ class Logic:
             # Set initial email verification status
             if signup_data.intends_to_be_tutor:
                 import re
-                is_valid_email = any(re.search(domain, signup_data.email) for domain in AUTONOMOUS_UNIVERSITIES_EMAIL_DOMAINS)
+
+                is_valid_email = any(
+                    re.search(domain, signup_data.email)
+                    for domain in AUTONOMOUS_UNIVERSITIES_EMAIL_DOMAINS
+                )
                 if not is_valid_email:
                     user.email_verification_status = EmailVerificationStatus.WAITLISTED
                     session.add(user)
                     session.commit()
                     return {
                         "status": "waitlisted",
-                        "message": "It looks like your university isn't included in our current sign-up list yet. You have been added to our waitlist and we'll notify you as soon as we open registrations for more universities!"
+                        "message": "It looks like your university isn't included in our current sign-up list yet. You have been added to our waitlist and we'll notify you as soon as we open registrations for more universities!",
                     }
 
-            if signup_data.email.endswith('@example.com'):
+            if signup_data.email.endswith("@example.com"):
                 user.email_verification_status = EmailVerificationStatus.VERIFIED
             else:
                 user.email_verification_status = EmailVerificationStatus.PENDING
@@ -109,40 +129,47 @@ class Logic:
             if user.email_verification_status == EmailVerificationStatus.PENDING:
                 # Generate email confirmation token
                 confirmation_token = AuthService.create_email_confirmation_token(
-                    TokenData(email=signup_data.email),
-                    token_version=user.token_version
+                    TokenData(email=signup_data.email), token_version=user.token_version
                 )
-                
+
                 # Store the confirmation token and its expiration
                 user.email_confirmation_token = confirmation_token
-                user.email_confirmation_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-                
+                user.email_confirmation_token_expires_at = datetime.now(
+                    timezone.utc
+                ) + timedelta(hours=24)
+
                 # Send confirmation email
                 confirmation_url = f"{origin}/confirm-email"
-                confirmation_link = GmailEmailService.create_email_confirmation_link(confirmation_token, confirmation_url)
-                
+                confirmation_link = GmailEmailService.create_email_confirmation_link(
+                    confirmation_token, confirmation_url
+                )
+
                 GmailEmailService.send_email_confirmation_email(
                     recipient_email=signup_data.email,
                     confirmation_link=confirmation_link,
-                    user_name=signup_data.name
+                    user_name=signup_data.name,
                 )
-                
+
                 session.add(user)
                 session.commit()
 
             # Return tokens only for immediately verified users
             if user.email_verification_status == EmailVerificationStatus.VERIFIED:
-                token_data = TokenData(email=signup_data.email, token_version=user.token_version)
+                token_data = TokenData(
+                    email=signup_data.email, token_version=user.token_version
+                )
                 return AuthService.create_token_pair(token_data=token_data)
             else:
                 # For non-example.com emails, return a message indicating verification is needed
                 return {
                     "status": "pending_verification",
-                    "message": "Account created successfully! Please check your email for a confirmation link to verify your account."
+                    "message": "Account created successfully! Please check your email for a confirmation link to verify your account.",
                 }
 
     @staticmethod
-    def get_current_user(access_token: str, credentials_exception: HTTPException) -> User:
+    def get_current_user(
+        access_token: str, credentials_exception: HTTPException
+    ) -> User:
         try:
             if access_token is None:
                 raise credentials_exception
@@ -150,26 +177,28 @@ class Logic:
 
             if payload.email is None:
                 raise credentials_exception
-            
+
             with Session(StorageService.engine) as session:
-                user = session.execute(select(User).filter_by(email=payload.email)).scalar_one_or_none()
+                user = session.execute(
+                    select(User).filter_by(email=payload.email)
+                ).scalar_one_or_none()
                 if user is None:
                     raise credentials_exception
-                
+
                 # Validate token version
                 if payload.token_version != user.token_version:
                     raise HTTPException(
                         status_code=401,
                         detail={
                             "code": "TOKEN_VERSION_MISMATCH",
-                            "message": "Token is no longer valid due to password change."
+                            "message": "Token is no longer valid due to password change.",
                         },
-                        headers={"WWW-Authenticate": "Bearer"}
+                        headers={"WWW-Authenticate": "Bearer"},
                     )
-                                
+
                 return user
-        
-        except (JWTError, ValueError, ValidationError) as e:
+
+        except (JWTError, ValueError, ValidationError):
             raise credentials_exception
 
     @staticmethod
@@ -177,76 +206,89 @@ class Logic:
         try:
             # Verify the refresh token and get the token data
             token_data = AuthService.verify_token(refresh_token, is_refresh=True)
-            
+
             # Find the user to get the current token_version
             with Session(StorageService.engine) as session:
-                user = session.execute(select(User).filter_by(email=token_data.email)).scalar_one_or_none()
+                user = session.execute(
+                    select(User).filter_by(email=token_data.email)
+                ).scalar_one_or_none()
                 if not user:
                     raise HTTPException(status_code=401, detail="User not found")
-                
+
                 # Validate token version
                 if token_data.token_version != user.token_version:
                     raise HTTPException(
                         status_code=401,
                         detail={
                             "code": "TOKEN_VERSION_MISMATCH",
-                            "message": "Token is no longer valid due to password change."
+                            "message": "Token is no longer valid due to password change.",
                         },
-                        headers={"WWW-Authenticate": "Bearer"}
+                        headers={"WWW-Authenticate": "Bearer"},
                     )
-                
+
                 # Generate new tokens with the current token_version
                 return AuthService.create_token_pair(token_data=token_data)
-        except (JWTError, ValueError, ValidationError) as e:
+        except (JWTError, ValueError, ValidationError):
             raise HTTPException(status_code=401, detail="Invalid refresh token")
-        
+
     @staticmethod
     def create_assert_user_authorized(user_id: int) -> Callable[[int], None]:
         def assert_user_authorized(correct_id: int) -> None:
             if user_id != correct_id:
                 raise HTTPException(status_code=403, detail="Unauthorized action")
+
         return assert_user_authorized
 
     @staticmethod
-    def forgot_password(origin: str, forgot_password_request: ForgotPasswordRequest) -> dict:
+    def forgot_password(
+        origin: str, forgot_password_request: ForgotPasswordRequest
+    ) -> dict:
         """
         Initiate password reset process by generating a reset token
         """
         with Session(StorageService.engine) as session:
             # Find user by email
-            user = session.execute(select(User).filter_by(email=forgot_password_request.email)).scalar_one_or_none()
-            
+            user = session.execute(
+                select(User).filter_by(email=forgot_password_request.email)
+            ).scalar_one_or_none()
+
             # Always return success to prevent email enumeration
             if not user:
-                return {"message": "If the email is registered, a reset link has been sent."}
-            
+                return {
+                    "message": "If the email is registered, a reset link has been sent."
+                }
+
             # Generate a secure reset token (JWT)
             reset_token = AuthService.create_password_reset_token(
-                TokenData(email=user.email),
-                token_version=user.token_version
+                TokenData(email=user.email), token_version=user.token_version
             )
-            
+
             # Store the reset token and its expiration on the user
             user.password_reset_token = reset_token
-            user.password_reset_token_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-            
+            user.password_reset_token_expires_at = datetime.now(
+                timezone.utc
+            ) + timedelta(minutes=10)
+
             # Commit changes
             session.add(user)
             session.commit()
-            
+
             url = f"{origin}/login/reset-password"
-            
+
             reset_link = GmailEmailService.create_reset_link(reset_token, url)
-            
-            print(f"Attempting to send password reset email to {forgot_password_request.email}")
+
+            print(
+                f"Attempting to send password reset email to {forgot_password_request.email}"
+            )
 
             res = GmailEmailService.send_password_reset_email(
-                recipient_email=forgot_password_request.email,
-                reset_link=reset_link
+                recipient_email=forgot_password_request.email, reset_link=reset_link
             )
             print(res)
-            
-            return {"message": "If the email is registered, a reset link has been sent."}
+
+            return {
+                "message": "If the email is registered, a reset link has been sent."
+            }
 
     @staticmethod
     def reset_password(reset_password_request: ResetPasswordRequest) -> dict:
@@ -256,63 +298,84 @@ class Logic:
         with Session(StorageService.engine) as session:
             try:
                 # Verify the reset token
-                payload = AuthService.verify_password_reset_token(reset_password_request.reset_token)
-                
+                payload = AuthService.verify_password_reset_token(
+                    reset_password_request.reset_token
+                )
+
                 # Find the user
-                user = session.execute(select(User).filter_by(email=payload.email)).scalar_one_or_none()
+                user = session.execute(
+                    select(User).filter_by(email=payload.email)
+                ).scalar_one_or_none()
                 if not user:
                     raise HTTPException(status_code=404, detail="User not found")
-                
+
                 # Validate token against stored token and expiration
-                if (user.password_reset_token != reset_password_request.reset_token or
-                    user.password_reset_token_expires_at < datetime.now(timezone.utc)):
-                    raise HTTPException(status_code=400, detail="Invalid or expired reset token")
-                
+                if (
+                    user.password_reset_token != reset_password_request.reset_token
+                    or user.password_reset_token_expires_at < datetime.now(timezone.utc)
+                ):
+                    raise HTTPException(
+                        status_code=400, detail="Invalid or expired reset token"
+                    )
+
                 # Update user's password
-                user.password_hash = AuthService.hash_password(reset_password_request.new_password)
-                
+                user.password_hash = AuthService.hash_password(
+                    reset_password_request.new_password
+                )
+
                 # Increment token version to invalidate existing tokens
                 user.token_version += 1
-                
+
                 # Clear the reset token
                 user.password_reset_token = None
                 user.password_reset_token_expires_at = None
-                
+
                 # Commit changes
                 session.add(user)
                 session.commit()
-                
+
                 return {
                     "message": "Password successfully updated",
-                    "token_version": user.token_version
+                    "token_version": user.token_version,
                 }
-            
-            except (JWTError, ValueError) as e:
+
+            except (JWTError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid reset token")
 
     @staticmethod
-    def verify_password_reset_token(verify_password_reset_token_request: VerifyPasswordResetTokenRequest) -> dict:
+    def verify_password_reset_token(
+        verify_password_reset_token_request: VerifyPasswordResetTokenRequest,
+    ) -> dict:
         """
         Verify the validity of a password reset token.
         """
         with Session(StorageService.engine) as session:
             try:
                 # Verify the reset token
-                payload = AuthService.verify_password_reset_token(verify_password_reset_token_request.reset_token)
-                
+                payload = AuthService.verify_password_reset_token(
+                    verify_password_reset_token_request.reset_token
+                )
+
                 # Find the user
-                user = session.execute(select(User).filter_by(email=payload.email)).scalar_one_or_none()
+                user = session.execute(
+                    select(User).filter_by(email=payload.email)
+                ).scalar_one_or_none()
                 if not user:
                     raise HTTPException(status_code=404, detail="User not found")
-                
+
                 # Validate token against stored token and expiration
-                if (user.password_reset_token != verify_password_reset_token_request.reset_token or
-                    user.password_reset_token_expires_at < datetime.now(timezone.utc)):
-                    raise HTTPException(status_code=400, detail="Invalid or expired reset token")
-                
+                if (
+                    user.password_reset_token
+                    != verify_password_reset_token_request.reset_token
+                    or user.password_reset_token_expires_at < datetime.now(timezone.utc)
+                ):
+                    raise HTTPException(
+                        status_code=400, detail="Invalid or expired reset token"
+                    )
+
                 return {"message": "Password reset token is valid"}
-            
-            except (JWTError, ValueError) as e:
+
+            except (JWTError, ValueError):
                 raise HTTPException(status_code=400, detail="Invalid reset token")
 
     @staticmethod
@@ -324,7 +387,9 @@ class Logic:
             tokens = await AuthService.authenticate_google_user(code)
             return tokens
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Google authentication failed: {str(e)}"
+            )
 
     @staticmethod
     def confirm_email(confirmation_request: EmailConfirmationRequest) -> dict:
@@ -334,35 +399,41 @@ class Logic:
         with Session(StorageService.engine) as session:
             try:
                 # Verify the confirmation token
-                token_data = AuthService.verify_email_confirmation_token(confirmation_request.confirmation_token)
-                
+                token_data = AuthService.verify_email_confirmation_token(
+                    confirmation_request.confirmation_token
+                )
+
                 # Find user by email
-                user = session.execute(select(User).filter_by(email=token_data.email)).scalar_one_or_none()
-                
+                user = session.execute(
+                    select(User).filter_by(email=token_data.email)
+                ).scalar_one_or_none()
+
                 if not user:
                     raise HTTPException(status_code=404, detail="User not found")
-                
+
                 # Check if token version matches
                 if user.token_version != token_data.token_version:
-                    raise HTTPException(status_code=400, detail="Invalid confirmation token")
-                
+                    raise HTTPException(
+                        status_code=400, detail="Invalid confirmation token"
+                    )
+
                 # Check if email is already verified
                 if user.email_verification_status == EmailVerificationStatus.VERIFIED:
                     return {"message": "Email is already verified"}
-                
+
                 # Mark email as verified and clear the token
                 user.email_verification_status = EmailVerificationStatus.VERIFIED
                 user.email_confirmation_token = None
                 user.email_confirmation_token_expires_at = None
-                
+
                 session.add(user)
                 session.commit()
-                
+
                 return {"message": "Email confirmed successfully"}
-                
+
             except ValueError as e:
                 raise HTTPException(status_code=400, detail=str(e))
-            except Exception as e:
+            except Exception:
                 session.rollback()
                 raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -373,37 +444,46 @@ class Logic:
         """
         with Session(StorageService.engine) as session:
             # Find user by email
-            user = session.execute(select(User).filter_by(email=email)).scalar_one_or_none()
-            
+            user = session.execute(
+                select(User).filter_by(email=email)
+            ).scalar_one_or_none()
+
             # Always return success to prevent email enumeration
             if not user:
-                return {"message": "If the email is registered, a confirmation link has been sent."}
-            
+                return {
+                    "message": "If the email is registered, a confirmation link has been sent."
+                }
+
             # Check if email is already verified
             if user.email_verification_status == EmailVerificationStatus.VERIFIED:
                 return {"message": "Email is already verified"}
-            
+
             # Generate new confirmation token
             confirmation_token = AuthService.create_email_confirmation_token(
-                TokenData(email=user.email),
-                token_version=user.token_version
+                TokenData(email=user.email), token_version=user.token_version
             )
-            
+
             # Store the new confirmation token and its expiration
             user.email_confirmation_token = confirmation_token
-            user.email_confirmation_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
-            
+            user.email_confirmation_token_expires_at = datetime.now(
+                timezone.utc
+            ) + timedelta(hours=24)
+
             # Send confirmation email
             confirmation_url = f"{origin}/confirm-email"
-            confirmation_link = GmailEmailService.create_email_confirmation_link(confirmation_token, confirmation_url)
-            
+            confirmation_link = GmailEmailService.create_email_confirmation_link(
+                confirmation_token, confirmation_url
+            )
+
             GmailEmailService.send_email_confirmation_email(
                 recipient_email=user.email,
                 confirmation_link=confirmation_link,
-                user_name=user.name
+                user_name=user.name,
             )
-            
+
             session.add(user)
             session.commit()
-            
-            return {"message": "If the email is registered, a confirmation link has been sent."}
+
+            return {
+                "message": "If the email is registered, a confirmation link has been sent."
+            }

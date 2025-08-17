@@ -1,7 +1,6 @@
 # contains all the mock data for each endpoint
 
-from api.router.models import (AssignmentPublicView, TutorProfile,
-                               TutorPublicSummary)
+from api.router.models import AssignmentPublicView, TutorProfile, TutorPublicSummary
 
 
 def search_tutors():
@@ -15,7 +14,7 @@ def search_tutors():
             subjects_teachable=["Math", "Physics"],
             levels_teachable=["Lower Primary", "Upper Primary"],
             experience="5 years of tutoring experience.",
-            availability="Mon-Fri, 9 AM - 5 PM"
+            availability="Mon-Fri, 9 AM - 5 PM",
         ),
         TutorPublicSummary(
             id=2,
@@ -26,7 +25,7 @@ def search_tutors():
             subjects_teachable=["Chemistry", "Biology"],
             levels_teachable=["Lower Secondary", "Upper Secondary"],
             experience="8 years of teaching and research experience.",
-            availability="Mon, Wed, Fri, 10 AM - 2 PM"
+            availability="Mon, Wed, Fri, 10 AM - 2 PM",
         ),
         TutorPublicSummary(
             id=3,
@@ -37,9 +36,10 @@ def search_tutors():
             subjects_teachable=["English", "History"],
             levels_teachable=["Junior College"],
             experience="2 years of tutoring experience.",
-            availability="Sat-Sun, 10 AM - 4 PM"
-        )
+            availability="Sat-Sun, 10 AM - 4 PM",
+        ),
     ]
+
 
 def new_tutor():
     return TutorProfile(
@@ -59,8 +59,9 @@ def new_tutor():
         resume_url="",
         experience="10 years of teaching math at high school and university level.",
         availability="Mon-Fri, 9 AM - 6 PM",
-        isProfileComplete=True
+        isProfileComplete=True,
     )
+
 
 def get_tutor_profile():
     return TutorProfile(
@@ -80,8 +81,9 @@ def get_tutor_profile():
         resume_url="",
         experience="10 years of teaching math at high school and university level.",
         availability="Mon-Fri, 9 AM - 6 PM",
-        isProfileComplete=True
+        isProfileComplete=True,
     )
+
 
 def update_tutor_profile():
     return TutorProfile(
@@ -101,8 +103,9 @@ def update_tutor_profile():
         resume_url="",
         experience="10 years of teaching math at high school and university level.",
         availability="Mon-Fri, 9 AM - 6 PM",
-        isProfileComplete=True
+        isProfileComplete=True,
     )
+
 
 def get_assignments():
     return [
@@ -114,7 +117,7 @@ def get_assignments():
             available_slots=["Mon 2 PM", "Wed 4 PM", "Fri 6 PM"],
             datetime="2022-01-01T10:00:00",
             special_requests="Please bring additional materials for the lesson.",
-            status="Pending"
+            status="Pending",
         ),
         AssignmentPublicView(
             id=2,
@@ -124,7 +127,7 @@ def get_assignments():
             available_slots=["Tue 3 PM", "Thu 5 PM"],
             datetime="2022-01-01T14:00:00",
             special_requests="Student requires additional help with homework.",
-            status="Confirmed"
+            status="Confirmed",
         ),
         AssignmentPublicView(
             id=3,
@@ -134,6 +137,6 @@ def get_assignments():
             available_slots=["Sat 10 AM", "Sun 2 PM"],
             datetime="2022-01-01T16:00:00",
             special_requests="Student has upcoming exams and needs intensive tutoring.",
-            status="Completed"
-        )
+            status="Completed",
+        ),
     ]

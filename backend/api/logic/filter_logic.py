@@ -1,10 +1,11 @@
 from typing import Type
 
-from api.router.models import FilterChoice
-from api.storage.models import Assignment, Level, Subject, Tutor, Location
-from api.storage.storage_service import StorageService
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.decl_api import DeclarativeMeta
+
+from api.router.models import FilterChoice
+from api.storage.models import Assignment, Level, Location, Subject, Tutor
+from api.storage.storage_service import StorageService
 
 
 class FilterLogic:
@@ -33,16 +34,10 @@ class FilterLogic:
         """
         with Session(StorageService.engine) as session:
             rows = StorageService.find(
-                session=session,
-                query={},
-                TableClass=TableClass,
-                find_one=False
+                session=session, query={}, TableClass=TableClass, find_one=False
             )
             items = [
-                FilterChoice(
-                    id=getattr(row, "filter_id"),
-                    name=getattr(row, "name")
-                )
+                FilterChoice(id=getattr(row, "filter_id"), name=getattr(row, "name"))
                 for row in rows
             ]
             return items
@@ -64,7 +59,5 @@ class FilterLogic:
                 "locations": FilterLogic.get_filter(Location),
                 "courses": [],
             }
-        
+
         return {}
-
-

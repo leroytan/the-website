@@ -1,23 +1,33 @@
-import random
 import json
+import random
 import re
 from typing import Dict, List
 
-from groq import Groq
 import google.generativeai as genai
+from groq import Groq
 from huggingface_hub import InferenceClient
 from mistralai import Mistral
 
 from api.config import settings
 
+
 class PIIDetection:
-    def __init__(self, has_pii: bool, detected_types: List[str], confidence: float, filtered_message: str, reasoning: str, provider: str):
+    def __init__(
+        self,
+        has_pii: bool,
+        detected_types: List[str],
+        confidence: float,
+        filtered_message: str,
+        reasoning: str,
+        provider: str,
+    ):
         self.has_pii = has_pii
         self.detected_types = detected_types
         self.confidence = confidence
         self.filtered_message = filtered_message
         self.reasoning = reasoning
         self.provider = provider
+
 
 class ContentFilterService:
     _instance = None
@@ -42,28 +52,34 @@ class ContentFilterService:
     def _manual_filter(self, message: str) -> Dict:
         normalized_message = "".join(message.split())
         # Email
-        if re.search(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}', normalized_message):
+        if re.search(
+            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}", normalized_message
+        ):
             return {"filtered": True, "reason": "EMAIL_ADDRESS"}
         # More specific phone number
-        if re.search(r'(\+65)?[689]\d{7}', normalized_message):
+        if re.search(r"(\+65)?[689]\d{7}", normalized_message):
             return {"filtered": True, "reason": "PHONE_NUMBER"}
         # Unit number
-        if re.search(r'#\d{2,}-\d{2,}|unit#\d{2,}-\d{2,}', normalized_message, re.IGNORECASE):
+        if re.search(
+            r"#\d{2,}-\d{2,}|unit#\d{2,}-\d{2,}", normalized_message, re.IGNORECASE
+        ):
             return {"filtered": True, "reason": "UNIT_NUMBER"}
         # Postal code with context
-        if re.search(r'(singapore|s)\d{6}', normalized_message, re.IGNORECASE):
+        if re.search(r"(singapore|s)\d{6}", normalized_message, re.IGNORECASE):
             return {"filtered": True, "reason": "POSTAL_CODE"}
         # Postal code
-        if re.search(r'\d{6}', normalized_message):
+        if re.search(r"\d{6}", normalized_message):
             return {"filtered": True, "reason": "POSTAL_CODE"}
         # Phone number
-        if re.search(r'\d{8}', normalized_message):
+        if re.search(r"\d{8}", normalized_message):
             return {"filtered": True, "reason": "PHONE_NUMBER"}
         # Address keywords with number
-        if re.search(r'\b(road|rd|blk|block|street|st)\b', message, re.IGNORECASE) and re.search(r'\d', message):
+        if re.search(
+            r"\b(road|rd|blk|block|street|st)\b", message, re.IGNORECASE
+        ) and re.search(r"\d", message):
             return {"filtered": True, "reason": "ADDRESS"}
         # NRIC
-        if re.search(r'[STFGstfg]\d{7}[A-Za-z]', normalized_message):
+        if re.search(r"[STFGstfg]\d{7}[A-Za-z]", normalized_message):
             return {"filtered": True, "reason": "SG_NRIC"}
         return {"filtered": False}
 
@@ -73,7 +89,7 @@ class ContentFilterService:
             return {
                 "filtered": True,
                 "content": f"Message filtered due to potential PII: {manual_filter_result['reason']}",
-                "detected": [manual_filter_result['reason']],
+                "detected": [manual_filter_result["reason"]],
                 "confidence": 1.0,
                 "reasoning": "Message flagged by manual filter.",
                 "provider": "manual_filter",
@@ -90,44 +106,54 @@ class ContentFilterService:
             }
 
         random.shuffle(self.llm_providers)
-        
+
         last_exception = None
         for provider in self.llm_providers:
             try:
                 result = await provider(message, threshold)
                 if "Failed to parse" in result.get("reasoning", ""):
-                    last_exception = Exception(f"Provider {result.get('provider')} failed to parse output.")
+                    last_exception = Exception(
+                        f"Provider {result.get('provider')} failed to parse output."
+                    )
                     continue
                 return result
             except Exception as e:
                 last_exception = e
                 continue
-        
+
         if last_exception:
             raise last_exception
-        
+
         raise Exception("All LLM providers failed to filter the message.")
 
     async def _groq_provider(self, message: str, threshold: float) -> Dict:
         client = Groq(api_key=settings.groq_api_key)
-        return self._get_llm_response(client, message, "llama-3.1-8b-instant", threshold)
+        return self._get_llm_response(
+            client, message, "llama-3.1-8b-instant", threshold
+        )
 
     async def _gemini_provider(self, message: str, threshold: float) -> Dict:
         genai.configure(api_key=settings.gemini_api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel("gemini-1.5-flash")
         return self._get_llm_response(model, message, "gemini-1.5-flash", threshold)
 
     async def _huggingface_provider(self, message: str, threshold: float) -> Dict:
         client = InferenceClient(token=settings.hf_token)
-        return self._get_llm_response(client, message, "meta-llama/Llama-3.1-8B-Instruct", threshold)
+        return self._get_llm_response(
+            client, message, "meta-llama/Llama-3.1-8B-Instruct", threshold
+        )
 
     async def _mistral_provider(self, message: str, threshold: float) -> Dict:
         client = Mistral(api_key=settings.mistral_api_key)
-        return self._get_llm_response(client, message, "mistral-small-latest", threshold)
+        return self._get_llm_response(
+            client, message, "mistral-small-latest", threshold
+        )
 
-    def _get_llm_response(self, client, message: str, model: str, threshold: float) -> Dict:
+    def _get_llm_response(
+        self, client, message: str, model: str, threshold: float
+    ) -> Dict:
         prompt = self._build_prompt(message)
-        
+
         if isinstance(client, Groq):
             response = client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
@@ -173,10 +199,12 @@ class ContentFilterService:
         Message: "{message}"
         """
 
-    def _parse_llm_output(self, content: str, original_message: str, provider: str, threshold: float) -> Dict:
+    def _parse_llm_output(
+        self, content: str, original_message: str, provider: str, threshold: float
+    ) -> Dict:
         try:
-            if '```json' in content:
-                content = content.split('```json')[1].split('```')[0]
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0]
             data = json.loads(content)
             pii_detection = PIIDetection(
                 has_pii=data.get("has_pii", False),
@@ -214,5 +242,6 @@ class ContentFilterService:
                 "reasoning": "Failed to parse LLM output.",
                 "provider": provider,
             }
+
 
 content_filter_service = ContentFilterService()

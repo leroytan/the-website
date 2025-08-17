@@ -1,14 +1,13 @@
-from fastapi import APIRouter
 from api.router import (
-    auth,
-    user,
-    course,
     assignment,
+    auth,
     chat,
-    tutor,
-    reviews,
+    course,
     me,
     payment,
+    reviews,
+    tutor,
+    user,
     websocket,
 )
 

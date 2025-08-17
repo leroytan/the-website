@@ -18,8 +18,10 @@ match ENV:
     case "production":
         load_dotenv(".env.production")
     case _:
-        raise ValueError(f"Unknown environment: {ENV}. Please set APP_ENV to 'local', 'development', 'test', or 'production'.")
-    
+        raise ValueError(
+            f"Unknown environment: {ENV}. Please set APP_ENV to 'local', 'development', 'test', or 'production'."
+        )
+
 
 # Define the settings model
 class Settings(BaseSettings):
@@ -56,25 +58,28 @@ class Settings(BaseSettings):
     @property
     def env(self):
         return ENV
-    
+
     @property
     def is_database_local(self):
         return self.database_url.split("@")[-1].startswith("localhost")
-            
+
     def make_engine(self, create_engine: callable):
         if self.database_url == "":
-            raise ValueError("Database URL is not set. Please check your configuration.")
+            raise ValueError(
+                "Database URL is not set. Please check your configuration."
+            )
         if self.is_database_local:
             return create_engine(self.database_url)
         else:
             return create_engine(
                 self.database_url,
-                client_encoding='utf8',
-                pool_size=5,           # Persistent connections
-                max_overflow=10,       # Extra connections when needed
-                pool_pre_ping=True,    # Validate connections
-                pool_recycle=3600      # Recycle every hour
+                client_encoding="utf8",
+                pool_size=5,  # Persistent connections
+                max_overflow=10,  # Extra connections when needed
+                pool_pre_ping=True,  # Validate connections
+                pool_recycle=3600,  # Recycle every hour
             )
+
 
 # Instantiate the settings object
 settings = Settings()

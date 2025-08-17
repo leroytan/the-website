@@ -1,7 +1,9 @@
 import datetime
 
-from api.storage.models import Level, Subject
 from sqlalchemy.orm import Session
+
+from api.storage.models import Level, Subject
+
 
 def seed_subjects(db: Session):
     subjects = [
@@ -14,10 +16,11 @@ def seed_subjects(db: Session):
         Subject(name="History"),
         Subject(name="Spanish"),
         Subject(name="Economics"),
-        Subject(name="Music")
+        Subject(name="Music"),
     ]
     db.add_all(subjects)
     db.commit()
+
 
 def seed_levels(db: Session):
     # Create test levels
@@ -105,13 +108,17 @@ def seed_locations(db: Session):
     ]
 
     from api.storage.models import Location
+
     db.add_all([Location(name=location) for location in locations])
     db.commit()
+
 
 def seed_database(db: Session):
     seed_subjects(db)
     seed_levels(db)
     seed_locations(db)
-    
+
     # Database seeded successfully
-    print(f"Database seeded with subjects, levels and locations at {datetime.datetime.now()}.")
+    print(
+        f"Database seeded with subjects, levels and locations at {datetime.datetime.now()}."
+    )
