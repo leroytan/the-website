@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     google_client_secret: str
     google_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
     frontend_domain: str = "https://teachhonourexcel.com"
+    groq_api_key: str
+    gemini_api_key: str
+    hf_token: str
+    mistral_api_key: str
 
     @property
     def env(self):

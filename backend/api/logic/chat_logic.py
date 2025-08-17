@@ -285,7 +285,7 @@ class ChatLogic:
             # Check daily notification limit
             now = datetime.now(timezone.utc)
             if (notification_tracker and
-                notification_tracker.notification_count < 2 and
+                notification_tracker.notification_count >= 2 and
                 notification_tracker.last_notification_timestamp and
                 (now - notification_tracker.last_notification_timestamp).days < 1):
                 return  # Already sent 2 notifications today
@@ -338,8 +338,7 @@ class ChatLogic:
             receiver_id (int): The ID of the message receiver
             origin (str): The origin of the request
         """
-        # await asyncio.sleep(1800)  # 30 minutes
-        print(f"Scheduling delayed notification for chat {chat_id} to receiver {receiver_id} after 30 minutes.")
+        await asyncio.sleep(1800)  # 30 minutes
         await ChatLogic.check_and_send_delayed_notification(chat_id, receiver_id, origin)
 
     @staticmethod
