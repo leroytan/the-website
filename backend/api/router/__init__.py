@@ -1,7 +1,13 @@
 import api.router.assignment
 import api.router.auth
+import api.router.auth_utils
+import api.router.chat
 import api.router.course
+import api.router.me
 import api.router.mock
 import api.router.models
+import api.router.payment
 import api.router.reviews
 import api.router.tutor
+import api.router.user
+import api.router.websocket

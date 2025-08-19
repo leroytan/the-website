@@ -27,4 +27,9 @@ poetry install
 
 # Set app environment and run the server
 export APP_ENV=${APP_ENV:-development}
+
+# Apply database migrations
+poetry run alembic upgrade head
+
+# Run the server
 poetry run python -m uvicorn api.index:app --reload

@@ -1,15 +1,15 @@
+from fastapi import HTTPException, Request, Response, WebSocket
+
 from api.auth.models import TokenPair
 from api.config import settings
-from api.logic.logic import Logic
+from api.logic.auth_logic import AuthLogic
 from api.storage.models import User
-from fastapi import HTTPException, Request, WebSocket, Response
-from typing import Optional
 
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = settings.refresh_token_expire_minutes
 
-class RouterAuthUtils:
 
+class RouterAuthUtils:
     @staticmethod
     def assert_logged_out(request: Request) -> None:
         """
@@ -31,14 +31,14 @@ class RouterAuthUtils:
             # could be internal server error or other issues
             raise e
         # if we reach this point, it means the user is logged in
-            
+
         # if get_current_user does not raise an exception, it means the user is logged in
         # and we should not allow login/signup
         raise HTTPException(
             status_code=403,
             detail="User is already logged in",
         )
-        
+
     @staticmethod
     def assert_not_logged_out(request: Request) -> None:
         """
@@ -49,12 +49,14 @@ class RouterAuthUtils:
         Returns:
             bool: True if the user is logged out (both tokens are missing), False otherwise.
         """
-        if not request.cookies.get("access_token") and not request.cookies.get("refresh_token"):
+        if not request.cookies.get("access_token") and not request.cookies.get(
+            "refresh_token"
+        ):
             raise HTTPException(
                 status_code=200,
                 detail="User is already logged out",
             )
-        
+
     @staticmethod
     def _get_cookie_params(origin: str) -> dict:
         """Helper method to get consistent cookie parameters"""
@@ -67,12 +69,12 @@ class RouterAuthUtils:
         else:
             domain = origin
             is_https = True
-        
+
         return {
             "domain": domain,
             "httponly": True,
             "secure": is_https,
-            "samesite": "strict"
+            "samesite": "strict",
         }
 
     @staticmethod
@@ -84,15 +86,9 @@ class RouterAuthUtils:
             origin (str): The origin URL to determine cookie domain (must match set_cookie).
         """
         cookie_params = RouterAuthUtils._get_cookie_params(origin)
-        
-        response.delete_cookie(
-            key="access_token",
-            **cookie_params
-        )
-        response.delete_cookie(
-            key="refresh_token",
-            **cookie_params
-        )
+
+        response.delete_cookie(key="access_token", **cookie_params)
+        response.delete_cookie(key="refresh_token", **cookie_params)
 
     @staticmethod
     def update_tokens(tokens: TokenPair, response: Response, origin: str) -> None:
@@ -106,20 +102,19 @@ class RouterAuthUtils:
             origin (str): The origin URL to determine cookie domain.
         """
         cookie_params = RouterAuthUtils._get_cookie_params(origin)
-        
+
         response.set_cookie(
             key="access_token",
             value=tokens.access_token,
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            **cookie_params
+            **cookie_params,
         )
         response.set_cookie(
             key="refresh_token",
             value=tokens.refresh_token,
             max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
-            **cookie_params
+            **cookie_params,
         )
-
 
     @staticmethod
     def get_jwt(request: Request) -> str:
@@ -138,7 +133,7 @@ class RouterAuthUtils:
     def get_current_user(request: Request) -> User:
         access_token = RouterAuthUtils.get_jwt(request)
         return RouterAuthUtils.get_user_from_jwt(access_token)
-    
+
     @staticmethod
     def get_user_from_jwt(token: str) -> User:
         """
@@ -155,10 +150,10 @@ class RouterAuthUtils:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-        return Logic.get_current_user(token, credentials_exception)
-    
+        return AuthLogic.get_current_user(token, credentials_exception)
+
     @staticmethod
     def get_current_user_ws(websocket: WebSocket) -> tuple[User, WebSocket]:
         token = websocket.cookies.get("access_token")
-        user = Logic.get_current_user(token)
+        user = AuthLogic.get_current_user(token)
         return user, websocket

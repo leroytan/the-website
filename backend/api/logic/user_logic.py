@@ -1,15 +1,15 @@
 import botocore
-from api.config import settings
-from api.router.models import UserView
-from api.storage.models import Assignment, User
-from api.storage.object_storage import s3_client
-from api.storage.storage_service import StorageService
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from api.config import settings
+from api.router.models import UserView
+from api.storage.models import User
+from api.storage.object_storage import s3_client
+from api.storage.storage_service import StorageService
+
 
 class UserLogic:
-
     @staticmethod
     def convert_user_to_view(user: User) -> UserView:
         """
@@ -18,17 +18,17 @@ class UserLogic:
         :return: Dictionary view of the user
         """
         photo_url = UserLogic.get_profile_photo_url(user.id)
-        
+
         return UserView(
-            id = user.id,
-            name = user.name,
-            email = user.email,
-            profile_photo_url = photo_url,
-            intends_to_be_tutor = user.intends_to_be_tutor,
-            created_at = user.created_at.isoformat(),
-            updated_at = user.updated_at.isoformat(),
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            profile_photo_url=photo_url,
+            intends_to_be_tutor=user.intends_to_be_tutor,
+            created_at=user.created_at.isoformat(),
+            updated_at=user.updated_at.isoformat(),
         )
-    
+
     @staticmethod
     def upload_profile_photo(file_data: bytes, user_id: int, content_type: str) -> None:
         try:
@@ -40,13 +40,13 @@ class UserLogic:
                 Bucket=settings.r2_bucket_name,
                 Key=object_key,
                 Body=file_data,
-                ContentType=content_type
+                ContentType=content_type,
             )
 
             # Return R2 object path or URL (optional)
             return {
                 "message": "Profile photo uploaded successfully",
-                "url": UserLogic.get_profile_photo_url(user_id)
+                "url": UserLogic.get_profile_photo_url(user_id),
             }
 
         except botocore.exceptions.ClientError as error:
@@ -54,9 +54,10 @@ class UserLogic:
             raise error
 
         except botocore.exceptions.ParamValidationError as error:
-            raise ValueError('The parameters you provided are incorrect: {}'.format(error))
-    
-    
+            raise ValueError(
+                "The parameters you provided are incorrect: {}".format(error)
+            )
+
     @staticmethod
     def get_profile_photo_url(user_id: int) -> str:
         try:
@@ -68,18 +69,20 @@ class UserLogic:
 
             # Generate a pre-signed URL for the object
             url = s3_client.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': settings.r2_bucket_name, 'Key': object_key},
-                ExpiresIn=3600  # URL expiration time in seconds
+                "get_object",
+                Params={"Bucket": settings.r2_bucket_name, "Key": object_key},
+                ExpiresIn=3600,  # URL expiration time in seconds
             )
             return url
         except botocore.exceptions.ClientError as error:
-            if error.response['Error']['Code'] == '404':
+            if error.response["Error"]["Code"] == "404":
                 return ""
             else:
                 raise error
         except botocore.exceptions.ParamValidationError as error:
-            raise ValueError('The parameters you provided are incorrect: {}'.format(error))
+            raise ValueError(
+                "The parameters you provided are incorrect: {}".format(error)
+            )
 
     @staticmethod
     def get_user_by_id(user_id: int) -> UserView:
@@ -88,9 +91,11 @@ class UserLogic:
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             return UserLogic.convert_user_to_view(user)
-        
+
     @staticmethod
-    def update_user_details(user_id: int, name: str | None = None, intends_to_be_tutor: bool | None = None) -> UserView:
+    def update_user_details(
+        user_id: int, name: str | None = None, intends_to_be_tutor: bool | None = None
+    ) -> UserView:
         with Session(StorageService.engine) as session:
             user = StorageService.find(session, {"id": user_id}, User, find_one=True)
             if not user:

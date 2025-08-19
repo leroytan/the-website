@@ -62,12 +62,21 @@ export default function SignupPage() {
       return;
     }
     if (res.ok) {
-      if (userType === "Tutor") {
-            document.cookie = `intends_to_be_tutor=${userType === "Tutor"}; path=/; SameSite=Lax; Secure`;
-            document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
-          }
-      await refetch(); // refresh user and tutor data for authcontext
-      router.push("/login");
+      const resData = await res.json();
+      
+      // Check for different success scenarios
+      if (resData.status === "waitlisted" || resData.status === "pending_verification") {
+        alert(resData.message);
+        router.push("/login");
+      } else {
+        // User is verified (example.com), proceed as before
+        if (userType === "Tutor") {
+          document.cookie = `intends_to_be_tutor=${userType === "Tutor"}; path=/; SameSite=Lax; Secure`;
+          document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
+        }
+        await refetch(); // refresh user and tutor data for authcontext
+        router.push("/login");
+      }
       router.refresh();
     } else {
       const resData = await res.json();

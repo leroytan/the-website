@@ -56,6 +56,7 @@ const ChatApp = () => {
         createdAt: dto.created_at,
         updatedAt: dto.updated_at,
         sentByUser: dto.sent_by_user,
+        isFlagged: dto.is_flagged,
       }];
       // Ideally, these fields should be emitted by the backend when creating a new chat
       // For now, we assume the chat is locked and the sender is the first message's sender
@@ -92,6 +93,7 @@ const ChatApp = () => {
         type: message.type,
         time: to12HourTime(message.createdAt),
         sentByUser: message.sentByUser,
+        isFlagged: message.isFlagged,
       }));
     }
 
@@ -117,6 +119,7 @@ const ChatApp = () => {
         createdAt: msg.created_at,
         updatedAt: msg.updated_at,
         sentByUser: msg.sent_by_user,
+        isFlagged: msg.is_flagged,
       })).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
 
@@ -177,6 +180,7 @@ const ChatApp = () => {
         createdAt: msg.createdAt,
         updatedAt: msg.updatedAt,
         sentByUser: msg.sentByUser,
+        isFlagged: msg.isFlagged,
       }));
       const copiedPreview = this.initialPreview
         ? { ...this.initialPreview }
@@ -231,6 +235,7 @@ const ChatApp = () => {
     created_at: string; // ISO 8601 format
     updated_at: string; // ISO 8601 format
     sent_by_user: boolean; // true if sent by the user, false if sent by the other party
+    is_flagged: boolean;
   }
 
   type TutorRequest = {
@@ -252,6 +257,7 @@ const ChatApp = () => {
     createdAt: string; // ISO 8601 format
     updatedAt: string; // ISO 8601 format
     sentByUser: boolean; // true if sent by the user, false if sent by the other party
+    isFlagged: boolean;
   }
 
   type MessageDisplay = {
@@ -260,6 +266,7 @@ const ChatApp = () => {
     type: string; // "textMessage" or "tutorRequest"
     time: string;
     sentByUser: boolean;
+    isFlagged: boolean;
   };
 
   const messageDTOsForAlice: MessageBackendDTO[] = [
@@ -272,6 +279,7 @@ const ChatApp = () => {
       created_at: new Date(Date.now() - 3600000).toISOString(), // 1h ago
       updated_at: new Date(Date.now() - 3600000).toISOString(),
       sent_by_user: false,
+      is_flagged: false,
     },
     {
       id: 2,
@@ -282,6 +290,7 @@ const ChatApp = () => {
       created_at: new Date(Date.now() - 3500000).toISOString(),
       updated_at: new Date(Date.now() - 3500000).toISOString(),
       sent_by_user: true,
+      is_flagged: false,
     },
     {
       id: 3,
@@ -292,6 +301,7 @@ const ChatApp = () => {
       created_at: new Date(Date.now() - 3400000).toISOString(),
       updated_at: new Date(Date.now() - 3400000).toISOString(),
       sent_by_user: false,
+      is_flagged: false,
     },
   ];
 
@@ -305,6 +315,7 @@ const ChatApp = () => {
       created_at: new Date(Date.now() - 7200000).toISOString(), // 2h ago
       updated_at: new Date(Date.now() - 7200000).toISOString(),
       sent_by_user: true,
+      is_flagged: false,
     },
     {
       id: 5,
@@ -315,6 +326,7 @@ const ChatApp = () => {
       created_at: new Date(Date.now() - 7100000).toISOString(),
       updated_at: new Date(Date.now() - 7100000).toISOString(),
       sent_by_user: false,
+      is_flagged: false,
     },
   ];
 
@@ -328,6 +340,7 @@ const ChatApp = () => {
       created_at: new Date(Date.now() - 10800000).toISOString(), // 3h ago
       updated_at: new Date(Date.now() - 10800000).toISOString(),
       sent_by_user: false,
+      is_flagged: false,
     }
   ];
 
@@ -888,9 +901,23 @@ const ChatApp = () => {
                         <p>{message.content}</p>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-1 flex justify-end">
-                      {message.time}
-                    </p>
+                    <div className="flex items-center justify-end mt-1">
+                      {message.isFlagged && message.sentByUser && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="orange"
+                          className="w-4 h-4 mr-1"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.752a3.25 3.25 0 01-2.598 4.875H4.644a3.25 3.25 0 01-2.598-4.875L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                      <p className="text-xs text-gray-400">{message.time}</p>
+                    </div>
                   </div>
                 ))}
                 <div ref={messagesEndRef} />

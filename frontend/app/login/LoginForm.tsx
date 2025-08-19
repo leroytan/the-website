@@ -26,10 +26,40 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
+
+  // Helper function to ensure error message is always a string
+  const setErrorMessageSafe = (message: any) => {
+    if (typeof message === 'string') {
+      setErrorMessage(message);
+    } else if (message && typeof message === 'object' && message.message) {
+      setErrorMessage(message.message);
+    } else {
+      setErrorMessage('An unexpected error occurred');
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    try {
+      const res = await fetch(`/api/auth/resend-confirmation-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setErrorMessageSafe("Confirmation email sent! Please check your inbox.");
+        setNeedsEmailVerification(false);
+      } else {
+        setErrorMessageSafe("Failed to send confirmation email. Please try again.");
+      }
+    } catch (error) {
+      setErrorMessageSafe("An error occurred. Please try again.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
 
     const res = await fetch(`/api/auth/login`, {
       method: "POST",
@@ -55,7 +85,25 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       // router.refresh();
     } else {
       const errorData = await res.json();
-      setErrorMessage(errorData.message || "Login failed");
+      
+      // Handle email verification error specifically
+      if (res.status === 403) {
+        if (errorData.detail?.code === "EMAIL_NOT_VERIFIED") {
+          setErrorMessageSafe(errorData.detail.message || "Please verify your email address before logging in.");
+          setNeedsEmailVerification(true);
+          return;
+        } else if (errorData.detail?.code === "USER_WAITLISTED") {
+          setErrorMessageSafe(errorData.detail.message || "You are currently on our waitlist.");
+          setNeedsEmailVerification(false);
+          return;
+        }
+      }
+      
+      // Reset email verification state for other errors
+      setNeedsEmailVerification(false);
+      
+      // Ensure we always set a string message
+      setErrorMessageSafe(errorData.message || errorData.detail?.message || "Login failed");
     }
   };
 
@@ -131,8 +179,24 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
               </button>
             </div>
           </div>
-          {errorMessage && (
-            <ErrorMessage message={errorMessage} />
+          {errorMessage && typeof errorMessage === 'string' && (
+            <div className="mb-4">
+              <ErrorMessage message={errorMessage} />
+              {needsEmailVerification && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 mb-2">
+                    Need a new confirmation link?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Resend confirmation email
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           <div className="flex justify-between items-center mb-4">
             <Link

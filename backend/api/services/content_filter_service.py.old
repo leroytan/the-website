@@ -1,0 +1,698 @@
+import re
+import json
+import os
+from typing import Dict, List, Optional, Union
+from pydantic import BaseModel
+from abc import ABC, abstractmethod
+from enum import Enum
+import logging
+
+# OpenAI
+try:
+    import openai
+    _OPENAI_AVAILABLE = True
+except ImportError:
+    logging.warning("OpenAI not available. Install with: pip install openai")
+    _OPENAI_AVAILABLE = False
+
+# Google Generative AI
+try:
+    import google.generativeai as genai
+    _GEMINI_AVAILABLE = True
+except ImportError:
+    logging.warning("Google Generative AI not available. Install with: pip install google-generativeai")
+    _GEMINI_AVAILABLE = False
+
+# Anthropic Claude
+try:
+    import anthropic
+    _ANTHROPIC_AVAILABLE = True
+except ImportError:
+    logging.warning("Anthropic not available. Install with: pip install anthropic")
+    _ANTHROPIC_AVAILABLE = False
+
+# Presidio engines
+try:
+    from presidio_analyzer import AnalyzerEngine, PatternRecognizer, Pattern
+    from presidio_anonymizer import AnonymizerEngine
+    _PRESIDIO_AVAILABLE = True
+except Exception as e:
+    logging.warning(f"Presidio not available: {e}")
+    _PRESIDIO_AVAILABLE = False
+
+from api.config import settings
+
+class PIIDetection(BaseModel):
+    has_pii: bool
+    detected_types: List[str]
+    confidence: float
+    filtered_message: str
+    reasoning: str
+    provider: str
+
+class ProviderType(Enum):
+    OPENAI = "openai"
+    GEMINI = "gemini"
+    ANTHROPIC = "anthropic"
+
+class LLMProvider(ABC):
+    """Abstract base class for LLM providers"""
+    
+    def __init__(self, name: str):
+        self.name = name
+        self.is_available = True
+    
+    @abstractmethod
+    async def analyze_pii(self, message: str, prompt: str) -> PIIDetection:
+        """Analyze message for PII using the provider's API"""
+        pass
+    
+    def mark_unavailable(self):
+        """Mark provider as unavailable due to errors"""
+        self.is_available = False
+        logging.warning(f"Provider {self.name} marked as unavailable")
+    
+    def mark_available(self):
+        """Mark provider as available again"""
+        self.is_available = True
+
+class OpenAIProvider(LLMProvider):
+    def __init__(self, api_key: str, model: str = "gpt-5-nano"):
+        super().__init__("openai")
+        if not _OPENAI_AVAILABLE:
+            raise ImportError("OpenAI library not available. Install with: pip install openai")
+        self.client = openai.AsyncOpenAI(api_key=api_key)
+        self.model = model
+    
+    async def analyze_pii(self, message: str, prompt: str) -> PIIDetection:
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                max_tokens=500
+            )
+            
+            result_text = response.choices[0].message.content.strip()
+            result = json.loads(result_text)
+            result["provider"] = self.name
+            
+            return PIIDetection(**result)
+            
+        except Exception as e:
+            logging.error(f"OpenAI analysis failed: {e}")
+            raise
+
+class GeminiProvider(LLMProvider):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash-lite-preview-06-17"):
+        super().__init__("gemini")
+        if not _GEMINI_AVAILABLE:
+            raise ImportError("Google Generative AI library not available. Install with: pip install google-generativeai")
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel(model)
+        
+        # Configure generation settings for consistent JSON output
+        self.generation_config = genai.types.GenerationConfig(
+            temperature=0,
+            max_output_tokens=500,
+        )
+    
+    async def analyze_pii(self, message: str, prompt: str) -> PIIDetection:
+        try:
+            response = await self.model.generate_content_async(
+                prompt,
+                generation_config=self.generation_config
+            )
+            
+            result_text = response.text.strip()
+            # Clean up potential markdown formatting from Gemini
+            if result_text.startswith("```json"):
+                result_text = result_text.replace("```json", "").replace("```", "").strip()
+            
+            result = json.loads(result_text)
+            result["provider"] = self.name
+            
+            return PIIDetection(**result)
+            
+        except Exception as e:
+            logging.error(f"Gemini analysis failed: {e}")
+            raise
+
+class AnthropicProvider(LLMProvider):
+    def __init__(self, api_key: str):
+        super().__init__("anthropic")
+        if not _ANTHROPIC_AVAILABLE:
+            raise ImportError("Anthropic library not available. Install with: pip install anthropic")
+        self.client = anthropic.AsyncAnthropic(api_key=api_key)
+        self.model = "claude-3-haiku-20240307"  # Fixed model for content filtering
+    
+    async def analyze_pii(self, message: str, prompt: str) -> PIIDetection:
+        try:
+            response = await self.client.messages.create(
+                model=self.model,
+                max_tokens=500,
+                temperature=0,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            result_text = response.content[0].text.strip()
+            # Clean up potential markdown formatting from Claude
+            if result_text.startswith("```json"):
+                result_text = result_text.replace("```json", "").replace("```", "").strip()
+            
+            result = json.loads(result_text)
+            result["provider"] = self.name
+            
+            return PIIDetection(**result)
+            
+        except Exception as e:
+            logging.error(f"Anthropic analysis failed: {e}")
+            raise
+
+class ContentFilterService:
+    """
+    Content filtering service for detecting and filtering PII in chat messages.
+    Uses a hybrid approach with Presidio for first-line detection and LLMs for confirmation.
+    """
+    
+    _instance = None
+    _initialized = False
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ContentFilterService, cls).__new__(cls)
+        return cls._instance
+    
+    def __init__(self):
+        if not self._initialized:
+            self.providers: List[LLMProvider] = []
+            self._initialize_providers()
+            self._initialize_presidio()
+            self._initialize_regex_patterns()
+            ContentFilterService._initialized = True
+    
+    def _initialize_providers(self):
+        """Initialize LLM providers from settings"""
+        provider_configs = {}
+        
+        # Get API keys from settings/environment
+        openai_key = settings.openai_api_key
+        gemini_key = settings.gemini_api_key
+        anthropic_key = settings.anthropic_api_key
+        
+        if openai_key:
+            provider_configs["openai"] = {
+                "api_key": openai_key,
+                "model": "gpt-5-nano"
+            }
+        
+        if gemini_key:
+            provider_configs["gemini"] = {
+                "api_key": gemini_key,
+                "model": "gemini-2.5-flash-lite-preview-06-17"
+            }
+        
+        if anthropic_key:
+            provider_configs["anthropic"] = {
+                "api_key": anthropic_key,
+                "model": "claude-3-haiku-20240307"
+            }
+        
+        # Initialize providers
+        for provider_name, config in provider_configs.items():
+            try:
+                if provider_name.lower() == "openai":
+                    provider = OpenAIProvider(api_key=config["api_key"])
+                elif provider_name.lower() == "gemini":
+                    provider = GeminiProvider(api_key=config["api_key"])
+                elif provider_name.lower() == "anthropic":
+                    provider = AnthropicProvider(api_key=config["api_key"])
+                else:
+                    continue
+
+                self.providers.append(provider)
+                logging.info(f"Initialized content filter provider: {provider_name}")
+
+            except Exception as e:
+                logging.error(f"Failed to initialize content filter provider {provider_name}: {e}")
+    
+    def _initialize_presidio(self):
+        """Initialize Presidio for first-line PII detection"""
+        self.presidio_enabled = False
+        self.analyzer: Optional["AnalyzerEngine"] = None
+        self.anonymizer: Optional["AnonymizerEngine"] = None
+        
+        if _PRESIDIO_AVAILABLE:
+            try:
+                self.analyzer = AnalyzerEngine()
+                self.anonymizer = AnonymizerEngine()
+                self._add_presidio_custom_recognizers()
+                self.presidio_enabled = True
+                logging.info("Presidio initialized for content filtering.")
+            except Exception as e:
+                logging.warning(f"Failed to initialize Presidio for content filtering: {e}")
+                self.presidio_enabled = False
+    
+    def _add_presidio_custom_recognizers(self):
+        """Add custom Presidio recognizers for Singapore-specific PII"""
+        assert self.analyzer is not None
+
+        # Singapore phone numbers - AGGRESSIVE: Any 4+ digit number
+        sg_phone_patterns = [
+            # Original Singapore-specific patterns (high confidence)
+            Pattern(name="sg_mobile", regex=r'\b[89]\d{7}\b', score=0.9),
+            Pattern(name="sg_landline", regex=r'\b6\d{7}\b', score=0.9),
+            Pattern(name="sg_formatted", regex=r'\b\d{4}[-.\s]\d{4}\b', score=0.8),
+            Pattern(name="sg_intl", regex=r'\+65[-.\s]?[689]\d{7}\b', score=0.95),
+            
+            # AGGRESSIVE: Any 4+ digit number (lower confidence, needs context)
+            Pattern(name="any_4plus_digits", regex=r'\b\d{4,}\b', score=0.3),
+        ]
+        phone_recognizer = PatternRecognizer(
+            supported_entity="SG_PHONE",
+            patterns=sg_phone_patterns,
+            context=["call", "phone", "number", "contact", "reach", "dial", "me", "at", "whatsapp"],
+            deny_list=[
+                "cost","costs","paid","pay","price","expensive","cheap","buy","bought","sell","sold",
+                "worth","dollars","total","amount","fee","charge","bill","payment","rent","salary",
+                "wage","income","profit","loss","budget","error","code","room","chapter","shares",
+                "traded","score","ratio","temperature","degrees","range","between","tasks","pages"
+            ]
+        )
+
+        # Flexible emails
+        email_patterns = [
+            Pattern(name="email_basic", regex=r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', score=0.9),
+            Pattern(name="email_no_tld", regex=r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\b', score=0.6),
+        ]
+        email_recognizer = PatternRecognizer(
+            supported_entity="EMAIL_FLEXIBLE",
+            patterns=email_patterns,
+            context=["email", "mail", "contact", "@", "send"]
+        )
+
+        # Address patterns - Enhanced for Singapore HDB and addresses
+        address_patterns = [
+            # Singapore postal codes
+            Pattern(name="sg_postal", regex=r'\b\d{6}\b', score=0.7),
+            
+            # Traditional street addresses
+            Pattern(name="street_address", regex=r'\b\d+[A-Za-z]?\s+[A-Za-z\s]+(?:Road|Street|Ave|Avenue|Drive|Lane|Rd|St)\b', score=0.8),
+            
+            # HDB Block addresses - "Block XXX" patterns
+            Pattern(name="hdb_block_simple", regex=r'\bBlock\s+\d+[A-Za-z]?\b', score=0.9),
+            Pattern(name="hdb_block_area", regex=r'\bBlock\s+\d+[A-Za-z]?\s+[A-Za-z\s]+(?:HDB|Estate|Park|Gardens?|Heights?|View|Place|Court|Square|Central|North|South|East|West)\b', score=0.95),
+            
+            # HDB with area names - "Block XXX HDB Area Name"
+            Pattern(name="hdb_with_area", regex=r'\bBlock\s+\d+[A-Za-z]?\s+HDB\s+[A-Za-z\s]+\b', score=0.95),
+            
+            # Blk abbreviation patterns
+            Pattern(name="blk_abbreviation", regex=r'\bBlk\s+\d+[A-Za-z]?\s+[A-Za-z\s]+\b', score=0.9),
+            
+            # Singapore estate/area names with numbers
+            Pattern(name="sg_estate_address", regex=r'\b\d+[A-Za-z]?\s+[A-Za-z\s]*(?:Estate|Park|Gardens?|Heights?|View|Place|Court|Square|Central|North|South|East|West|HDB)\b', score=0.85),
+            
+            # Singapore area patterns using actual seed locations
+            Pattern(name="sg_area_specific", regex=r'\b(?:Ang Mo Kio|Bedok North|Bedok South|Bishan|Bukit Batok|Bukit Merah|Bukit Panjang|Bukit Timah|Central Area|Changi|Changi Bay|Choa Chu Kang|Clementi|Geylang|Hougang|Jurong East|Jurong West|Kallang|Lim Chu Kang|Mandai|Marine Parade|Newton|Novena|Orchard|Outram|Pasir Ris|Paya Lebar|Pioneer|Punggol|Queenstown|River Valley|Rochor|Seletar|Sembawang|Sengkang|Serangoon|Simpang|Southern Islands|Straits View|Sungei Kadut|Tampines|Tanglin|Tengah|Thomson|Toa Payoh|Tuas|Western Islands|Western Water Catchment|Woodlands|Yishun|Boon Lay|Ghim Moh|Gul|Kent Ridge|Nanyang|Pasir Laba|Teban Gardens|Toh Tuck|Tuas South|West Coast)\b', score=0.8),
+        ]
+        address_recognizer = PatternRecognizer(
+            supported_entity="ADDRESS",
+            patterns=address_patterns,
+            context=["address", "street", "road", "avenue", "postal", "block", "blk", "live", "at", "stay", "hdb", "estate", "home", "house"]
+        )
+
+        # Unit numbers
+        unit_patterns = [
+            Pattern(name="hash_unit", regex=r'#\d{2}-\d{2,3}', score=0.9),
+            Pattern(name="dash_unit", regex=r'\b\d{1,2}-\d{1,3}\b', score=0.6),
+            Pattern(name="space_unit", regex=r'\b\d{1,2}\s\d{1,3}\b', score=0.5),
+            Pattern(name="unit_explicit", regex=r'(?:unit|Unit)\s*[#]?\d{1,2}[-\s]?\d{1,3}', score=0.8),
+        ]
+        unit_recognizer = PatternRecognizer(
+            supported_entity="UNIT_NUMBER",
+            patterns=unit_patterns,
+            context=["unit", "apartment", "flat", "suite", "level", "floor", "block", "address", "live", "stay", "room"],
+            deny_list=["cost", "costs", "paid", "pay", "price", "total", "amount", "dollars", "budget", "rent"]
+        )
+
+        # NRIC/FIN (strict)
+        nric_patterns = [
+            Pattern(name="nric_strict", regex=r'\b[STFGstfg]\d{7}[A-Za-z]\b', score=0.9),
+        ]
+        nric_recognizer = PatternRecognizer(
+            supported_entity="SG_NRIC",
+            patterns=nric_patterns,
+            context=["nric", "fin", "id", "identity", "identification", "ic", "card"]
+        )
+
+        # Register all recognizers
+        self.analyzer.registry.add_recognizer(phone_recognizer)
+        self.analyzer.registry.add_recognizer(email_recognizer)
+        self.analyzer.registry.add_recognizer(address_recognizer)
+        self.analyzer.registry.add_recognizer(unit_recognizer)
+        self.analyzer.registry.add_recognizer(nric_recognizer)
+    
+    def _initialize_regex_patterns(self):
+        """Initialize backup regex patterns for obvious PII cases"""
+        # Singapore locations from seed.py
+        singapore_locations = [
+            "Ang Mo Kio", "Bedok North", "Bedok South", "Bishan", "Bukit Batok", "Bukit Merah",
+            "Bukit Panjang", "Bukit Timah", "Central Area", "Changi", "Changi Bay", "Choa Chu Kang",
+            "Clementi", "Geylang", "Hougang", "Jurong East", "Jurong West", "Kallang", "Lim Chu Kang",
+            "Mandai", "Marine Parade", "Newton", "Novena", "Orchard", "Outram", "Pasir Ris",
+            "Paya Lebar", "Pioneer", "Punggol", "Queenstown", "River Valley", "Rochor", "Seletar",
+            "Sembawang", "Sengkang", "Serangoon", "Simpang", "Southern Islands", "Straits View",
+            "Sungei Kadut", "Tampines", "Tanglin", "Tengah", "Thomson", "Toa Payoh", "Tuas",
+            "Western Islands", "Western Water Catchment", "Woodlands", "Yishun", "Boon Lay",
+            "Ghim Moh", "Gul", "Kent Ridge", "Nanyang", "Pasir Laba", "Teban Gardens", "Toh Tuck",
+            "Tuas South", "West Coast"
+        ]
+        
+        # Create regex pattern from actual Singapore locations
+        location_pattern = "|".join(re.escape(loc) for loc in singapore_locations)
+        
+        self.obvious_patterns = {
+            "email": re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
+            "credit_card": re.compile(r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b'),
+            "international_phone": re.compile(r'\+65[-.\s]?[689]\d{7}\b'),
+            "singapore_phone": re.compile(r'\b[689]\d{7}\b'),
+            "aggressive_phone": re.compile(r'\b\d{4,}\b'),  # AGGRESSIVE: Any 4+ digit number
+            "hdb_address": re.compile(rf'\b(?:Block|Blk)\s+\d+[A-Za-z]?\s+(?:HDB\s+)?(?:{location_pattern}|[A-Za-z\s]+(?:Estate|Park|Gardens?|Heights?|View|Place|Court|Square|North|South|East|West|Central))\b', re.IGNORECASE),
+            "singapore_area": re.compile(rf'\b(?:{location_pattern})\b', re.IGNORECASE),
+        }
+    
+    def get_available_providers(self) -> List[LLMProvider]:
+        """Get list of currently available providers"""
+        return [p for p in self.providers if p.is_available]
+    
+    def _create_prompt(self, message: str) -> str:
+        """Create the PII detection prompt"""
+        return f"""
+You are a PII detection system for a Singapore chat application. Analyze this message and detect personally identifiable information (PII), but DO NOT flag dollar amounts or prices.
+
+Message: "{message}"
+
+Types of PII to detect:
+- Phone numbers (Singapore format: 8/9XXXXXXX, 6XXXXXXX, +65XXXXXXXX)
+- Email addresses
+- Home addresses including:
+  * Street addresses (123 Orchard Road)
+  * HDB addresses (Block 408 HDB Bedok North, Blk 123 Tampines East)
+  * Unit numbers (#01-02, Unit 5-10)
+  * Singapore area/estate names with block numbers
+- Full names (when used as personal identifiers, not business names)
+- Postal codes (6-digit Singapore codes when used with addresses)
+- Credit card numbers
+- NRIC/FIN numbers (format: S/T/F/G + 7 digits + letter)
+
+DO NOT flag as PII:
+- Dollar amounts (prices, salaries, costs, payments, rent, etc.)
+- Business names or restaurant names
+- Error codes, room numbers, or system identifiers
+- Sports scores, ratios, or measurements
+- Time ranges or timestamps
+- Task/page numbers
+
+Respond with JSON only:
+{{
+    "has_pii": boolean,
+    "detected_types": ["type1", "type2"],
+    "confidence": 0.0-1.0,
+    "filtered_message": "message with PII replaced with [TYPE] placeholders",
+    "reasoning": "brief explanation of what was detected and why"
+}}
+"""
+    
+    async def _analyze_with_provider(self, provider: LLMProvider, message: str) -> Optional[PIIDetection]:
+        """Analyze message with a specific provider"""
+        if not provider.is_available:
+            return None
+
+        try:
+            prompt = self._create_prompt(message)
+            result = await provider.analyze_pii(message, prompt)
+
+            # Reset availability if successful
+            if not provider.is_available:
+                provider.mark_available()
+
+            return result
+
+        except Exception as e:
+            logging.error(f"Provider {provider.name} failed: {e}")
+            provider.mark_unavailable()
+            return None
+    
+    async def _priority_analysis(self, message: str) -> Optional[PIIDetection]:
+        """Try providers in priority order: OpenAI -> Gemini -> Anthropic"""
+        priority_order = ["openai", "gemini", "anthropic"]
+        
+        available_providers = self.get_available_providers()
+        provider_dict = {p.name: p for p in available_providers}
+        
+        for provider_name in priority_order:
+            if provider_name in provider_dict:
+                provider = provider_dict[provider_name]
+                result = await self._analyze_with_provider(provider, message)
+                if result is not None:
+                    return result
+        
+        return None
+    
+    def _fallback_detection(self, message: str) -> PIIDetection:
+        """Fallback regex-based detection for when all LLMs fail"""
+        detected = []
+        filtered_message = message
+
+        # Apply basic context filtering for aggressive phone detection
+        deny_words = ["cost", "costs", "paid", "pay", "price", "dollars", "total", "amount", "rent", "salary", "error", "code"]
+        message_lower = message.lower()
+        has_deny_context = any(word in message_lower for word in deny_words)
+
+        for pii_type, pattern in self.obvious_patterns.items():
+            matches = pattern.finditer(message)
+            for match in matches:
+                # Special handling for aggressive phone detection
+                if pii_type == "aggressive_phone":
+                    # Skip if it's clearly a price/cost context
+                    if has_deny_context:
+                        continue
+                    # Skip very long numbers (likely not phone numbers)
+                    if len(match.group()) > 12:
+                        continue
+                
+                detected.append(pii_type.upper())
+                filtered_message = pattern.sub(f'[{pii_type.upper()}]', filtered_message)
+                break  # Only process first match per type
+
+        return PIIDetection(
+            has_pii=len(detected) > 0,
+            detected_types=detected,
+            confidence=0.8 if detected else 0.0,
+            filtered_message=filtered_message,
+            reasoning="Fallback regex detection used (aggressive mode for 4+ digit numbers)",
+            provider="regex_fallback"
+        )
+    
+    def _presidio_filter_results(self, text: str, results) -> List:
+        """Apply context heuristics to Presidio detections to reduce false positives"""
+        if not results:
+            return []
+
+        # Only consider these entity types as candidates for blocking
+        allow_entities = {
+            "SG_PHONE", "PHONE_NUMBER",
+            "EMAIL_ADDRESS", "EMAIL_FLEXIBLE",
+            "ADDRESS", "UNIT_NUMBER",
+            "CREDIT_CARD", "IBAN_CODE", "IBAN", "SG_NRIC"
+        }
+
+        # Deny cues indicating non-PII numeric contexts
+        deny_cues = set([
+            "cost","costs","paid","pay","price","expensive","cheap","buy","bought","sell","sold",
+            "worth","dollars","total","amount","fee","charge","bill","payment","rent","salary",
+            "wage","income","profit","loss","budget","error","code","room","chapter","shares",
+            "traded","score","ratio","temperature","degrees","range","between","tasks","pages",
+            "timestamp","time","minutes","mins","pm","am","recipe","ingredients","flour","bake",
+            "workout","fitness","cardio","training","split","steps","goal","averaging","restaurant",
+            "recommendations","business","lunch","heard","reviews","think","better","amazing"
+        ])
+
+        # Allow cues for phones/addresses/units
+        phone_cues = set(["call","phone","number","contact","reach","dial","whatsapp","text","sms","calling","rsvp"])
+        addr_cues = set(["address","street","road","rd","st","ave","avenue","drive","lane","postal","block","unit","#","home","office","place","location","live","stay","moved","moving"])
+        unit_cues = set(["unit","#","apartment","flat","suite","level","floor","blk","block"])
+
+        def context_tokens(span_start: int, span_end: int, window: int = 30) -> List[str]:
+            left = max(0, span_start - window)
+            right = min(len(text), span_end + window)
+            snippet = text[left:right].lower()
+            return re.findall(r"[a-zA-Z0-9#\+]+", snippet)
+
+        filtered = []
+        for r in results:
+            et = r.entity_type
+            if et not in allow_entities:
+                continue
+
+            toks = context_tokens(r.start, r.end)
+            toks_set = set(toks)
+            candidate = text[r.start:r.end]
+
+            # Apply context-based filtering logic
+            if et in ("SG_PHONE", "PHONE_NUMBER"):
+                looks_like_sg = bool(re.search(r'(\+65[-.\s]?[689]\d{7})|\b[689]\d{7}\b', candidate))
+                is_4_4 = bool(re.search(r'\b\d{4}[-.\s]\d{4}\b', candidate))
+                is_4plus_digits = bool(re.search(r'\b\d{4,}\b', candidate))
+                has_phone_cue = len(phone_cues & toks_set) > 0
+                has_deny = len(deny_cues & toks_set) > 0
+                
+                # AGGRESSIVE MODE: Accept any 4+ digit number as potential phone
+                if is_4plus_digits:
+                    # Still apply some basic filtering to reduce obvious false positives
+                    if has_deny and not has_phone_cue:
+                        # Skip if it's clearly a price/cost context without phone cues
+                        if any(word in toks_set for word in ["cost", "costs", "paid", "pay", "price", "dollars", "total", "amount", "rent", "salary"]):
+                            continue
+                    # Allow through - aggressive phone detection
+                    pass
+                elif looks_like_sg or (is_4_4 and has_phone_cue):
+                    # Original logic for clearly Singapore numbers
+                    pass
+                else:
+                    continue
+                
+                # Additional context checks for room numbers, etc.
+                if any(word in toks_set for word in ["room", "using", "wing", "building", "booked", "booking"]) and not has_phone_cue and not looks_like_sg:
+                    continue
+
+            elif et == "UNIT_NUMBER":
+                has_unit_cue = len(unit_cues & toks_set) > 0
+                has_addr_cue = len(addr_cues & toks_set) > 0
+                has_deny = len(deny_cues & toks_set) > 0
+                
+                if not (has_unit_cue or has_addr_cue):
+                    continue
+                if has_deny and not (has_unit_cue or has_addr_cue):
+                    continue
+
+            elif et == "ADDRESS":
+                looks_like_address = bool(re.search(r'\b\d{1,5}\b', candidate)) or bool(re.search(r'(Road|Street|Ave|Avenue|Drive|Lane|Rd|St)\b', candidate, flags=re.I))
+                has_addr_cue = len(addr_cues & toks_set) > 0
+                has_deny = len(deny_cues & toks_set) > 0
+                
+                if not looks_like_address and not has_addr_cue:
+                    continue
+                if has_deny and not has_addr_cue:
+                    continue
+
+            filtered.append(r)
+
+        # Merge duplicates by span/type
+        unique = {}
+        for r in filtered:
+            key = (r.start, r.end, r.entity_type)
+            if key not in unique or r.score > unique[key].score:
+                unique[key] = r
+        return list(unique.values())
+    
+    async def filter_message(self, message: str, threshold: float = 0.7) -> Dict:
+        """
+        Main filtering function with Presidio-first heuristics and LLM confirmation.
+        
+        Args:
+            message: The message to filter
+            threshold: Confidence threshold for blocking (default: 0.7)
+            
+        Returns:
+            Dict with filtering results
+        """
+        pres_results = []
+        
+        # 1) Presidio-first gate with heuristics
+        if self.presidio_enabled and self.analyzer and self.anonymizer:
+            try:
+                raw_results = self.analyzer.analyze(text=message, language='en')
+                pres_results = self._presidio_filter_results(message, raw_results)
+            except Exception as e:
+                logging.warning(f"Presidio analysis failed, deferring to LLMs/regex: {e}")
+                pres_results = []
+
+        # If no vetted Presidio results -> allow without LLM
+        if self.presidio_enabled and pres_results == []:
+            return {
+                "filtered": False,
+                "content": message,
+                "detected": [],
+                "reasoning": "No strong PII detected by Presidio heuristics. Allowed without LLM.",
+                "provider": "presidio"
+            }
+
+        # If Presidio found something -> defer to LLM(s) to confirm
+        if self.presidio_enabled and pres_results:
+            result = await self._priority_analysis(message)
+            
+            if result is None:
+                # If no LLMs are available, use Presidio's original results
+                anonymized = self.anonymizer.anonymize(text=message, analyzer_results=pres_results)
+                detected = sorted({r.entity_type for r in pres_results})
+                return {
+                    "filtered": True,
+                    "content": anonymized.text,
+                    "detected": detected,
+                    "confidence": 0.7,
+                    "reasoning": "Presidio detected PII; no LLM confirmation available",
+                    "provider": "presidio"
+                }
+
+            if result.has_pii and result.confidence >= threshold:
+                # Confirmed by LLM -> block, but anonymize using Presidio's vetted spans
+                anonymized = self.anonymizer.anonymize(text=message, analyzer_results=pres_results)
+                detected = sorted({r.entity_type for r in pres_results})
+                return {
+                    "filtered": True,
+                    "content": anonymized.text,
+                    "detected": detected,
+                    "confidence": result.confidence,
+                    "reasoning": f"Presidio indicated PII; LLM confirmed ({result.provider}).",
+                    "provider": f"presidio+{result.provider}"
+                }
+            else:
+                # LLM did not confirm -> allow
+                return {
+                    "filtered": False,
+                    "content": message,
+                    "detected": [],
+                    "reasoning": f"Presidio indicated possible PII but LLM did not confirm (confidence {result.confidence}).",
+                    "provider": result.provider
+                }
+
+        # Presidio unavailable or errored -> use LLM analysis
+        available_providers = self.get_available_providers()
+        if available_providers:
+            result = await self._priority_analysis(message)
+            if result is None:
+                result = self._fallback_detection(message)
+        else:
+            result = self._fallback_detection(message)
+
+        if result.has_pii and result.confidence >= threshold:
+            return {
+                "filtered": True,
+                "content": result.filtered_message,
+                "detected": result.detected_types,
+                "confidence": result.confidence,
+                "reasoning": result.reasoning,
+                "provider": result.provider
+            }
+        else:
+            return {
+                "filtered": False,
+                "content": message,
+                "detected": [],
+                "reasoning": f"No PII detected or confidence too low ({result.confidence})",
+                "provider": result.provider
+            }
+
+# Singleton instance
+content_filter_service = ContentFilterService()

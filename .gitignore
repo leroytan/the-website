@@ -44,3 +44,5 @@ backend/venv/
 ngrok_config.yml
 
 backend/token.json
+
+**/.DS_Store

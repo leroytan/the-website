@@ -1,11 +1,14 @@
 import asyncio
 import json
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Request
-from api.router.auth_utils import RouterAuthUtils
-from api.storage.models import User
 from typing import Dict, List
 
+from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
+
+from api.router.auth_utils import RouterAuthUtils
+from api.storage.models import User
+
 router = APIRouter()
+
 
 class WebSocketManager:
     mutex = asyncio.Lock()
@@ -41,9 +44,12 @@ class WebSocketManager:
                 for connection in user_connections:
                     await connection.send_text(message)
 
+
 # Route for getting jwt for websocket purposes
 @router.get("/api/ws/jwt")
-async def get_jwt(request: Request, user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def get_jwt(
+    request: Request, user: User = Depends(RouterAuthUtils.get_current_user)
+) -> dict:
     """
     Get JWT for websocket authentication.
 
@@ -56,11 +62,12 @@ async def get_jwt(request: Request, user: User = Depends(RouterAuthUtils.get_cur
         "access_token": RouterAuthUtils.get_jwt(request),
     }
 
+
 @router.websocket("/ws/notifications")
 async def websocket_notifications(websocket: WebSocket, access_token: str = ""):
     user = RouterAuthUtils.get_user_from_jwt(access_token)
     await WebSocketManager.connect(websocket, user.id)
-    
+
     try:
         while True:
             # Keep the connection open and listen for any incoming messages

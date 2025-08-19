@@ -15,6 +15,7 @@ interface UserProfile {
   email: string
   profile_photo_url: string | undefined
   intends_to_be_tutor: boolean
+  email_verified: boolean
   created_at: string
   updated_at: string
 }
@@ -77,7 +78,44 @@ export default function TuteeProfilePage() {
             <div className="flex items-center text-customDarkBlue">
               <Mail className="w-5 h-5 mr-2 text-customOrange" />
               <span>{profile.email}</span>
+              {profile.email_verified ? (
+                <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                  ✓ Verified
+                </span>
+              ) : (
+                <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                  ⚠ Unverified
+                </span>
+              )}
             </div>
+            {!profile.email_verified && !profile.email.endsWith('@example.com') && (
+              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  Please check your email for a confirmation link to verify your account.
+                </p>
+                <button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/auth/resend-confirmation-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: profile.email }),
+                      });
+                      if (response.ok) {
+                        alert('Confirmation email sent! Please check your inbox.');
+                      } else {
+                        alert('Failed to send confirmation email. Please try again.');
+                      }
+                    } catch (error) {
+                      alert('An error occurred. Please try again.');
+                    }
+                  }}
+                  className="mt-2 text-sm text-blue-600 hover:underline"
+                >
+                  Resend confirmation email
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

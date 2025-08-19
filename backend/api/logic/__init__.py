@@ -1,3 +1,9 @@
+import api.logic.assignment_logic
+import api.logic.auth_logic
+import api.logic.chat_logic
+import api.logic.course_logic
 import api.logic.filter_logic
-import api.logic.logic
+import api.logic.payment_logic
+import api.logic.sort_logic
 import api.logic.tutor_logic
+import api.logic.user_logic
