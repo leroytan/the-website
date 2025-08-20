@@ -24,6 +24,8 @@ import { fetchClient } from "@/utils/fetch/fetchClient";
 import { UserImage } from "./userImage";
 import NotificationToast from "./NotificationToast";
 import { useChatNotifications } from "@/hooks/useChatNotifications";
+import TermsDialog from "./TermsDialog/TermsDialog";
+import DataProtectionDialog from "./DataProtectionDialog/DataProtectionDialog";
 
 const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
   return (
@@ -41,6 +43,8 @@ const BurgerMenu = ({ togglesideBar }: { togglesideBar: () => void }) => {
 const UserMenu = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [showDataProtectionDialog, setShowDataProtectionDialog] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, tutor } = useAuth();
   const { setError } = useError();
@@ -70,7 +74,9 @@ const UserMenu = () => {
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
           >
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden">
-              <UserImage user={{ photo_url: user.profile_photo_url, name: user.name }} />
+              <UserImage
+                user={{ photo_url: user.profile_photo_url, name: user.name }}
+              />
             </div>
             <span className="hidden lg:block text-sm font-medium text-gray-700">
               {user?.name}
@@ -101,7 +107,7 @@ const UserMenu = () => {
                 >
                   Profile
                 </button>
-                {user && !tutor && (
+                {/* {user && !tutor && (
                   <button
                     onClick={async () => {
                       try {
@@ -134,7 +140,25 @@ const UserMenu = () => {
                   >
                     Become a Tutor
                   </button>
-                )}
+                )} */}
+                <button
+                  onClick={() => {
+                    setShowTermsDialog(true);
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  View Terms & Conditions
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDataProtectionDialog(true);
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  View Data Protection & Privacy Policy
+                </button>
                 <button
                   onClick={() => {
                     router.push("/logout");
@@ -149,6 +173,15 @@ const UserMenu = () => {
           )}
         </div>
       )}
+      <TermsDialog
+        open={showTermsDialog}
+        onClose={() => setShowTermsDialog(false)}
+        requireAgree={false}
+      />
+      <DataProtectionDialog
+        open={showDataProtectionDialog}
+        onClose={() => setShowDataProtectionDialog(false)}
+      />
     </>
   );
 };
@@ -259,7 +292,6 @@ export default function ComponentLayout({
                         {item.icon}
                         <span className="text-xs md:text-sm">{item.name}</span>
                       </div>
-                      
                     </Button>
                   ))}
                   <div className="h-auto w-0.5 self-stretch bg-neutral-100 mx-2" />
@@ -276,7 +308,7 @@ export default function ComponentLayout({
                       <div className="flex flex-col items-center justify-center relative">
                         {item.icon}
                         <span className="text-xs md:text-sm">{item.name}</span>
-                        {item.path === '/chat' && hasUnreadMessages && (
+                        {item.path === "/chat" && hasUnreadMessages && (
                           <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
                         )}
                       </div>
@@ -359,5 +391,6 @@ function LoadingSkeleton() {
         </Link>
       </motion.button>
     </div>
+    
   );
 }

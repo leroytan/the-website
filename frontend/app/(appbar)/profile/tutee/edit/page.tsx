@@ -4,22 +4,15 @@ import { useAuth } from "@/context/authContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Mail,
-  GraduationCap,
-  School,
-  Upload,
-  Save,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { Mail, GraduationCap, School, Save } from "lucide-react";
 import ProfilePictureUploader from "@/components/ProfilePictureUploader";
 import { fetchClient } from "@/utils/fetch/fetchClient";
+import ToggleSwitch from "@/components/ToggleSwitch";
 
 interface UserProfile {
   id: number;
   name: string;
+  gender: string;
   email: string;
   profile_photo_url: string | undefined;
   intends_to_be_tutor: boolean;
@@ -72,13 +65,16 @@ export default function TuteeProfileEditPage() {
     try {
       const formData = new FormData();
       if (newImage) {
-        formData.append('file', newImage)
-        const uploadResponse = await fetchClient(`/api/me/upload-profile-photo`, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        })
-        if (!uploadResponse.ok) throw new Error('Failed to upload photo')
+        formData.append("file", newImage);
+        const uploadResponse = await fetchClient(
+          `/api/me/upload-profile-photo`,
+          {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          }
+        );
+        if (!uploadResponse.ok) throw new Error("Failed to upload photo");
       }
 
       // Update profile data
@@ -134,6 +130,17 @@ export default function TuteeProfileEditPage() {
               <Mail className="w-5 h-5 mr-2 text-customOrange" />
               <span>{profile.email}</span>
             </div>
+          </div>
+          <div className="space-y-2 mt-4">
+          <ToggleSwitch
+          disabled={true}
+            label="Gender"
+            options={["Male", "Female"]}
+            value={profile.gender}
+            onChange={(value: string) =>
+              setProfile((prev) => (prev ? { ...prev, gender: value } : prev))
+            }
+          />
           </div>
         </div>
       </div>
