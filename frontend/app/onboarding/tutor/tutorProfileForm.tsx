@@ -306,13 +306,13 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
         </div>
 
         <div className="col-span-full flex justify-end gap-4">
-          <Button
+          {/* <Button
             className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-customOrange transition-colors duration-200 flex items-center"
             onClick={handleCancel}
           >
             <X className="w-5 h-5 mr-1" />
             <span>I do not wish to be a tutor</span>
-          </Button>
+          </Button> */}
           <Button
             className="px-4 py-2 bg-customYellow text-white rounded-md hover:bg-customOrange transition-colors duration-200 flex items-center"
             onClick={handleSubmit}

@@ -3,7 +3,7 @@ import "@/app/globals.css";
 import DropDown from "@/components/dropdown";
 import { BASE_URL } from "@/utils/constants";
 import { motion } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, MapPinCheckInside, Square, SquareCheck } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,6 +13,10 @@ import { useAuth } from "@/context/authContext";
 import ErrorMessage from "@/components/ErrorMessage";
 
 import { FcGoogle } from "react-icons/fc";
+import { Check } from "lucide-react";
+import TermsDialog from "@/components/TermsDialog/TermsDialog";
+import DataProtectionDialog from "@/components/DataProtectionDialog/DataProtectionDialog";
+import { Button } from "@/components/button";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,10 +35,22 @@ export default function SignupPage() {
   const [userType, setUserType] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
+
+  // Terms and Conditions dialog state
+  const [tncAgreed, setTncAgreed] = useState(false);
+  const [tncDialogOpen, setTncDialogOpen] = useState(false);
+  // Data Protection Policy dialog state
+  const [dpDialogOpen, setDpDialogOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     //check payload
+    if (!tncAgreed) {
+      setErrorMessage("You must agree to the Terms and Conditions to sign up.");
+      return;
+    }
     if (!userType) {
       setErrorMessage("Please select a user type.");
       return;
@@ -63,15 +79,19 @@ export default function SignupPage() {
     }
     if (res.ok) {
       const resData = await res.json();
-      
       // Check for different success scenarios
-      if (resData.status === "waitlisted" || resData.status === "pending_verification") {
-        alert(resData.message);
-        router.push("/login");
+      if (
+        resData.status === "waitlisted" ||
+        resData.status === "pending_verification"
+      ) {
+        setDialogMessage(resData.message);
+        setShowDialog(true);
       } else {
         // User is verified (example.com), proceed as before
         if (userType === "Tutor") {
-          document.cookie = `intends_to_be_tutor=${userType === "Tutor"}; path=/; SameSite=Lax; Secure`;
+          document.cookie = `intends_to_be_tutor=${
+            userType === "Tutor"
+          }; path=/; SameSite=Lax; Secure`;
           document.cookie = `tutor_profile_complete=${false}; path=/; SameSite=Lax; Secure`;
         }
         await refetch(); // refresh user and tutor data for authcontext
@@ -88,6 +108,26 @@ export default function SignupPage() {
     <div
       className={`min-h-screen bg-[#fff2de] flex flex-col items-center justify-center px-4 py-8 ${inter.className}`}
     >
+      {/* Custom Dialog for waitlisted/pending_verification */}
+      {showDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full flex flex-col items-center">
+            <h3 className="text-lg font-semibold text-[#4a58b5] mb-2">
+              Notice
+            </h3>
+            <p className="text-gray-700 mb-4 text-center">{dialogMessage}</p>
+            <button
+              className="px-4 py-2 bg-[#fabb84] text-white rounded-full hover:bg-[#fc6453] transition-colors duration-200"
+              onClick={() => {
+                setShowDialog(false);
+                router.push("/login");
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -136,7 +176,7 @@ export default function SignupPage() {
               htmlFor="email"
               className="block text-sm font-medium text-[#4a58b5] mb-1"
             >
-              Email
+              {userType === "Tutor" ? "University Email" : "Email"}
             </label>
             <input
               type="email"
@@ -222,10 +262,34 @@ export default function SignupPage() {
               </p>
             )}
           </div>
-          
-          {errorMessage && (
-            <ErrorMessage message={errorMessage} />
-          )}
+          {/* Terms and Conditions notice and dialog */}
+          <div className="mb-6">
+            <div className="flex items-center mt-2">
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm focus:outline-none"
+                onClick={() => setTncDialogOpen(true)}
+                tabIndex={0}
+              >
+                  {tncAgreed ? (
+                    <SquareCheck className="text-green-700 w-5 h-5" />
+                  ) : (
+                    <Square className="text-customYellow w-5 h-5" />
+                  )}
+                <span className={tncAgreed ? "text-green-700" : "text-[#4a58b5] hover:text-[#fc6453] underline"}>
+                  {tncAgreed ? "You have agreed to the Terms and Conditions" : "Agree to the Terms and Conditions"}
+                </span>
+              </button>
+            </div>
+            <TermsDialog
+              open={tncDialogOpen}
+              onClose={() => setTncDialogOpen(false)}
+              onAgree={() => setTncAgreed(true)}
+              agreed={tncAgreed}
+              requireAgree={true}
+            />
+          </div>
+          {errorMessage && <ErrorMessage message={errorMessage} />}
 
           <motion.button
             type="submit"
@@ -238,23 +302,27 @@ export default function SignupPage() {
         </form>
 
         <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
-            </div>
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500">
+              Or continue with
+            </span>
+          </div>
         </div>
 
         <motion.button
-            type="button"
-            onClick={() => { window.location.href = `${BASE_URL}/auth/google/login`; }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+          type="button"
+          onClick={() => {
+            window.location.href = `${BASE_URL}/auth/google/login`;
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors duration-200 shadow-sm"
         >
-            <FcGoogle className="mr-2 h-5 w-5" />
-            Sign up with Google
+          <FcGoogle className="mr-2 h-5 w-5" />
+          Sign up with Google
         </motion.button>
 
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
@@ -270,7 +338,8 @@ export default function SignupPage() {
         transition={{ delay: 0.5, duration: 0.5 }}
         className="mt-8 text-center text-xs text-[#4a58b5]"
       >
-        &copy; {new Date().getFullYear()} Teach . Honour . Excel. All rights reserved.
+        &copy; {new Date().getFullYear()} Teach . Honour . Excel. All rights
+        reserved.
       </motion.p>
     </div>
   );

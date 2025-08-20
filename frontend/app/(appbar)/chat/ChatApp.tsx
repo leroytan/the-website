@@ -1,4 +1,5 @@
 "use client";
+import { createPortal } from "react-dom";
 import { createCheckoutSession } from "@/app/pricing/createCheckoutSession";
 import AssignmentCard from "@/components/assignmentCard";
 import { BASE_URL } from "@/utils/constants";
@@ -11,9 +12,9 @@ import { useError } from "@/context/errorContext";
 import { fetchClient } from "@/utils/fetch/fetchClient";
 import { useWebSocket } from "@/context/WebSocketContext";
 import logger from "@/utils/logger";
+import Image from "next/image";
 
 const ChatApp = () => {
-
   class ChatThread {
     private id: number;
     private isLocked: boolean; // true if the chat is locked, false if unlocked
@@ -26,38 +27,48 @@ const ChatApp = () => {
 
     static fromPreviewDTO(dto: ChatPreviewBackendDTO): ChatThread {
       const messages: Message[] = []; // Initialize with an empty array
-      const preview = dto.has_messages ? {
-        id: dto.id,
-        name: dto.name,
-        lastMessage: dto.last_message,
-        displayTime: timeAgo(dto.last_update),
-        hasUnread: dto.has_unread,
-        isLocked: dto.is_locked,
-        hasMessages: dto.has_messages,
-        lastUpdate: new Date(dto.last_update),
-        lastMessageType: dto.last_message_type === "text_message" ? "textMessage" : "tutorRequest",
-      } : null;
+      const preview = dto.has_messages
+        ? {
+            id: dto.id,
+            name: dto.name,
+            lastMessage: dto.last_message,
+            displayTime: timeAgo(dto.last_update),
+            hasUnread: dto.has_unread,
+            isLocked: dto.is_locked,
+            hasMessages: dto.has_messages,
+            lastUpdate: new Date(dto.last_update),
+            lastMessageType:
+              dto.last_message_type === "text_message"
+                ? "textMessage"
+                : "tutorRequest",
+          }
+        : null;
       return new ChatThread(
         dto.id,
         dto.is_locked,
         dto.name,
-        -1, 
+        -1,
         messages,
-        preview,
+        preview
       );
     }
 
     static fromMessageDTO(dto: MessageBackendDTO): ChatThread {
-      const messages: Message[] = [{
-        id: dto.id,
-        sender: dto.sender,
-        content: dto.content,
-        type: dto.message_type === "text_message" ? "textMessage" : "tutorRequest",
-        createdAt: dto.created_at,
-        updatedAt: dto.updated_at,
-        sentByUser: dto.sent_by_user,
-        isFlagged: dto.is_flagged,
-      }];
+      const messages: Message[] = [
+        {
+          id: dto.id,
+          sender: dto.sender,
+          content: dto.content,
+          type:
+            dto.message_type === "text_message"
+              ? "textMessage"
+              : "tutorRequest",
+          createdAt: dto.created_at,
+          updatedAt: dto.updated_at,
+          sentByUser: dto.sent_by_user,
+          isFlagged: dto.is_flagged,
+        },
+      ];
       // Ideally, these fields should be emitted by the backend when creating a new chat
       // For now, we assume the chat is locked and the sender is the first message's sender
       const isLocked = true; // new chats are locked by default
@@ -65,7 +76,14 @@ const ChatApp = () => {
       return new ChatThread(dto.chat_id, isLocked, sender, -1, messages);
     }
 
-    constructor(id: number, isLocked: boolean, title: string = "Select a chat", indexOfLastTutorRequest: number = -1, messages: Message[] = [], initialPreview: ChatPreview | null = null) {
+    constructor(
+      id: number,
+      isLocked: boolean,
+      title: string = "Select a chat",
+      indexOfLastTutorRequest: number = -1,
+      messages: Message[] = [],
+      initialPreview: ChatPreview | null = null
+    ) {
       this.id = id;
       this.isLocked = isLocked;
       this.title = title;
@@ -102,25 +120,36 @@ const ChatApp = () => {
     }
 
     getLatestMessage(): Message | null {
-      return this.messages.length > 0 ? this.messages[this.messages.length - 1] : null;
+      return this.messages.length > 0
+        ? this.messages[this.messages.length - 1]
+        : null;
     }
 
     getEarliestMessageCreated(): string | null {
-      const earliestMessage = this.messages.length > 0 ? this.messages[0] : null;
+      const earliestMessage =
+        this.messages.length > 0 ? this.messages[0] : null;
       return earliestMessage ? earliestMessage.createdAt : null;
     }
 
     private convertSortMessages(messages: MessageBackendDTO[]): Message[] {
-      return messages.map((msg) => ({
-        id: msg.id,
-        sender: msg.sender,
-        content: msg.content,
-        type: msg.message_type === "text_message" ? "textMessage" : "tutorRequest",
-        createdAt: msg.created_at,
-        updatedAt: msg.updated_at,
-        sentByUser: msg.sent_by_user,
-        isFlagged: msg.is_flagged,
-      })).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      return messages
+        .map((msg) => ({
+          id: msg.id,
+          sender: msg.sender,
+          content: msg.content,
+          type:
+            msg.message_type === "text_message"
+              ? "textMessage"
+              : "tutorRequest",
+          createdAt: msg.created_at,
+          updatedAt: msg.updated_at,
+          sentByUser: msg.sent_by_user,
+          isFlagged: msg.is_flagged,
+        }))
+        .sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
     }
 
     addRecentMessage(message: MessageBackendDTO): void {
@@ -140,7 +169,9 @@ const ChatApp = () => {
       const newMessages = this.convertSortMessages(messages);
       this.messages.unshift(...newMessages);
       // find the index of the last tutor request in the new messages
-      const lastTutorRequestIndex = this.messages.findLastIndex((msg) => msg.type === "tutorRequest");
+      const lastTutorRequestIndex = this.messages.findLastIndex(
+        (msg) => msg.type === "tutorRequest"
+      );
       this.indexOfLastTutorRequest = lastTutorRequestIndex;
     }
 
@@ -148,14 +179,14 @@ const ChatApp = () => {
       const latestMessage = this.getLatestMessage();
       if (latestMessage === null) {
         if (this.initialPreview.lastMessageType === "tutorRequest") {
-          this.initialPreview.lastMessage = (<i>Tutor Request</i>);
+          this.initialPreview.lastMessage = <i>Tutor Request</i>;
         }
         return this.initialPreview;
       }
 
       let lastMessageContent: string | ReactElement = latestMessage.content;
       if (latestMessage.type === "tutorRequest") {
-        lastMessageContent = (<i>Tutor Request</i>);
+        lastMessageContent = <i>Tutor Request</i>;
       }
 
       return {
@@ -204,14 +235,14 @@ const ChatApp = () => {
   }
 
   type ChatPreviewBackendDTO = {
-    id: number;                    // Needed for navigation or fetching full chat
-    name: string;                  // Display name (user or group)
-    last_message: string;          // Plain text version of the latest message
-    last_update: string;           // ISO 8601 string for sorting and display
-    last_message_type: string;     // "text_message" or "tutor_request"
-    has_unread: boolean;          // For notification badge
-    is_locked: boolean;           // Optional security/status flag
-    has_messages: boolean;         // If chat is empty, hide or style differently
+    id: number; // Needed for navigation or fetching full chat
+    name: string; // Display name (user or group)
+    last_message: string; // Plain text version of the latest message
+    last_update: string; // ISO 8601 string for sorting and display
+    last_message_type: string; // "text_message" or "tutor_request"
+    has_unread: boolean; // For notification badge
+    is_locked: boolean; // Optional security/status flag
+    has_messages: boolean; // If chat is empty, hide or style differently
   };
 
   type ChatPreview = {
@@ -236,7 +267,7 @@ const ChatApp = () => {
     updated_at: string; // ISO 8601 format
     sent_by_user: boolean; // true if sent by the user, false if sent by the other party
     is_flagged: boolean;
-  }
+  };
 
   type TutorRequest = {
     type: "tutor_request";
@@ -258,7 +289,7 @@ const ChatApp = () => {
     updatedAt: string; // ISO 8601 format
     sentByUser: boolean; // true if sent by the user, false if sent by the other party
     isFlagged: boolean;
-  }
+  };
 
   type MessageDisplay = {
     sender: string;
@@ -341,7 +372,7 @@ const ChatApp = () => {
       updated_at: new Date(Date.now() - 10800000).toISOString(),
       sent_by_user: false,
       is_flagged: false,
-    }
+    },
   ];
 
   const searchParams = useSearchParams();
@@ -350,6 +381,12 @@ const ChatApp = () => {
   const [newMessage, setNewMessage] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [showDropup, setShowDropup] = useState(false);
+  // Tooltip state for flagged popup
+  const [flaggedTooltip, setFlaggedTooltip] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+  }>({ show: false, x: 0, y: 0 });
 
   const initialChatData: ChatData = {};
   const [chatData, setChatData] = useState<ChatData>(initialChatData);
@@ -357,7 +394,10 @@ const ChatApp = () => {
   const { setOnNewMessage } = useWebSocket();
 
   const chatMessages = chatData[selectedChat]?.getDisplayMessages() || [];
-  const chatPreviews: ChatPreview[] = Object.values(chatData).map((chat) => chat.getPreview()).sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime()).reverse();
+  const chatPreviews: ChatPreview[] = Object.values(chatData)
+    .map((chat) => chat.getPreview())
+    .sort((a, b) => a.lastUpdate.getTime() - b.lastUpdate.getTime())
+    .reverse();
   const lockedChats = chatPreviews.filter((chat) => chat.isLocked);
   const unlockedChats = chatPreviews.filter((chat) => !chat.isLocked);
   const chatName = chatData[selectedChat]?.getTitle() || "Select a chat";
@@ -365,7 +405,7 @@ const ChatApp = () => {
   const socketRef = useRef<WebSocket | null>(null);
 
   const chatJustFetchedRef = useRef(false);
-  
+
   useEffect(() => {
     if (chatJustFetchedRef.current) {
       chatJustFetchedRef.current = false;
@@ -375,8 +415,12 @@ const ChatApp = () => {
         if (chatData[chatId]) {
           handleChatSelection(chatId);
         } else {
-          setError("Chat not found or inaccessible. Please select an existing chat.");
-          const currentPath = window.location.href.split("?")[0].slice(window.location.origin.length); // Get the current URL without query params
+          setError(
+            "Chat not found or inaccessible. Please select an existing chat."
+          );
+          const currentPath = window.location.href
+            .split("?")[0]
+            .slice(window.location.origin.length); // Get the current URL without query params
           router.push(currentPath); // Redirect to base chat URL to clear invalid chatId
         }
       }
@@ -432,7 +476,9 @@ const ChatApp = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setError(errorData.detail || "Failed to fetch chat messages. Please try again.");
+        setError(
+          errorData.detail || "Failed to fetch chat messages. Please try again."
+        );
         return;
       }
 
@@ -451,7 +497,8 @@ const ChatApp = () => {
 
       // Apply update inside setChatData
       setChatData((prevChatData) => {
-        const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
+        const updatedThread =
+          prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
         updatedThread.addHistoricalMessages(data.messages);
         updatedThread.hasMoreMessages = data.has_more;
 
@@ -470,7 +517,9 @@ const ChatApp = () => {
         });
       });
     } catch (error) {
-      setError("An unexpected error occurred while fetching chat messages. Please try again.");
+      setError(
+        "An unexpected error occurred while fetching chat messages. Please try again."
+      );
     }
   };
 
@@ -535,7 +584,9 @@ const ChatApp = () => {
       setChatData((prevChatData: ChatData) => {
         const chatId = parsedData.chat_id;
         lastUpdatedChatRef.current = chatId; // Update the last updated chat reference
-        const chatThread = prevChatData[chatId]?.clone() || ChatThread.fromMessageDTO(parsedData);
+        const chatThread =
+          prevChatData[chatId]?.clone() ||
+          ChatThread.fromMessageDTO(parsedData);
         chatThread.addRecentMessage(parsedData);
         chatThread.hasUnreadMessages = !parsedData.sent_by_user;
         return {
@@ -547,7 +598,7 @@ const ChatApp = () => {
 
     socket.onclose = () => {
       socketRef.current = null;
-    }
+    };
   };
 
   const hasInitializedSocket = useRef(false);
@@ -555,12 +606,16 @@ const ChatApp = () => {
   // Handle notifications from root WebSocket when not actively chatting
   useEffect(() => {
     const handleNewMessageNotification = (notification: any) => {
-      if (notification && notification.type === 'new_message' && notification.chat_id) {
+      if (
+        notification &&
+        notification.type === "new_message" &&
+        notification.chat_id
+      ) {
         // Update chat data with notification info
         setChatData((prevChatData: ChatData) => {
           const chatId = notification.chat_id;
           const existingChat = prevChatData[chatId];
-          
+
           if (existingChat) {
             // Update existing chat with unread status
             const updatedChat = existingChat.clone();
@@ -574,19 +629,26 @@ const ChatApp = () => {
             const newChat = new ChatThread(
               chatId,
               true, // Assume locked for new chats
-              notification.sender_name || 'Unknown User',
+              notification.sender_name || "Unknown User",
               -1,
               [],
               {
                 id: chatId,
-                name: notification.sender_name || 'Unknown User',
-                lastMessage: notification.content_preview || 'New message',
-                displayTime: timeAgo(notification.timestamp || new Date().toISOString()),
+                name: notification.sender_name || "Unknown User",
+                lastMessage: notification.content_preview || "New message",
+                displayTime: timeAgo(
+                  notification.timestamp || new Date().toISOString()
+                ),
                 hasUnread: true,
                 isLocked: true,
                 hasMessages: true,
-                lastUpdate: new Date(notification.timestamp || new Date().toISOString()),
-                lastMessageType: notification.message_type === 'tutor_request' ? 'tutorRequest' : 'textMessage',
+                lastUpdate: new Date(
+                  notification.timestamp || new Date().toISOString()
+                ),
+                lastMessageType:
+                  notification.message_type === "tutor_request"
+                    ? "tutorRequest"
+                    : "textMessage",
               }
             );
             newChat.hasUnreadMessages = true;
@@ -631,7 +693,8 @@ const ChatApp = () => {
       logger.error("Failed to mark chat as read");
     }
     setChatData((prevChatData) => {
-      const updatedThread = prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
+      const updatedThread =
+        prevChatData[chatId]?.clone() || new ChatThread(chatId, false);
       updatedThread.hasUnreadMessages = false; // Mark as read
       return {
         ...prevChatData,
@@ -672,7 +735,11 @@ const ChatApp = () => {
     setShowDropup(false);
   };
 
-  const handleAcceptAssignment = async (assignmentRequestId: number, hourlyRate: number, tutorId: number) => {
+  const handleAcceptAssignment = async (
+    assignmentRequestId: number,
+    hourlyRate: number,
+    tutorId: number
+  ) => {
     try {
       const session: { id: string; url: string } = await createCheckoutSession({
         mode: "payment",
@@ -680,7 +747,7 @@ const ChatApp = () => {
         cancel_url: window.location.origin + "/payment-cancel",
         assignment_request_id: assignmentRequestId,
         tutor_id: tutorId,
-        chat_id: selectedChatRef.current
+        chat_id: selectedChatRef.current,
       });
 
       router.push(session.url);
@@ -699,102 +766,120 @@ const ChatApp = () => {
   };
   return (
     <div className="flex flex-row bg-customLightYellow h-[calc(100vh-56px)]">
-        {/* Sidebar - Shown on mobile */}
-        <aside
-          className={`w-full md:w-1/4  border-r border-gray-200 bg-white shadow-sm ${showChat ? "hidden md:block" : "block"
-            }`}
-        >
-          <div className="flex flex-col flex-grow h-full ">
-            <div className="w-full flex"></div>
-            <div className="mb-4 p-4 ">
-              <input
-                type="text"
-                placeholder="Search"
-                className="w-full px-4 py-2 rounded-3xl border shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
-              />
+      {/* Sidebar - Shown on mobile */}
+      <aside
+        className={`w-full md:w-1/4  border-r border-gray-200 bg-white shadow-sm ${
+          showChat ? "hidden md:block" : "block"
+        }`}
+      >
+        <div className="flex flex-col flex-grow h-full ">
+          <div className="w-full flex"></div>
+          <div className="mb-4 p-4 ">
+            <input
+              type="text"
+              placeholder="Search"
+              className="w-full px-4 py-2 rounded-3xl border shadow-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#fabb84]"
+            />
+          </div>
+          <div className="flex-1 mb-6 overflow-y-auto pb-20">
+            <div className="bg-white p-2 font-bold sticky top-0 z-10">
+              Locked
             </div>
-            <div className="flex-1 mb-6 overflow-y-auto pb-20">
-              <div className="bg-white p-2 font-bold sticky top-0 z-10">
-                Locked
-              </div>
-              <div>
-                {lockedChats.map((preview, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center justify-between p-2 border-b cursor-pointer ${selectedChat === preview.id ? 'md:bg-[#fabb84] md:bg-opacity-30' : ''}`}
-                    onClick={() => handleChatSelection(preview.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                      <div>
-                        <p className="font-medium">{preview.name}</p>
-                        <p className="text-sm text-gray-500">{preview.lastMessage}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">{preview.displayTime}</p>
-                      {preview.hasUnread && (
-                        <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
-                          {/* {preview.unreadCount} */}
-                        </span>
-                      )}
+            <div>
+              {lockedChats.map((preview, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center justify-between p-2 border-b cursor-pointer ${
+                    selectedChat === preview.id
+                      ? "md:bg-[#fabb84] md:bg-opacity-30"
+                      : ""
+                  }`}
+                  onClick={() => handleChatSelection(preview.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                    <div>
+                      <p className="font-medium">{preview.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {preview.lastMessage}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pb-20">
-              <div className="bg-white px-2 py-4 font-bold sticky top-0 z-10">
-                Unlocked
-              </div>
-              <div>
-                {unlockedChats.map((preview, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center justify-between p-2 border-b cursor-pointer ${selectedChat === preview.id ? 'md:bg-[#fabb84] md:bg-opacity-30' : ''}`}
-                    onClick={() => handleChatSelection(preview.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                      <div>
-                        <p className="font-medium">{preview.name}</p>
-                        <p className="text-sm text-gray-500">{preview.lastMessage}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">{preview.displayTime}</p>
-                      {preview.hasUnread && (
-                        <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
-                          {/* {chat.unreadCount} */}
-                        </span>
-                      )}
-                    </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">
+                      {preview.displayTime}
+                    </p>
+                    {preview.hasUnread && (
+                      <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
+                        {/* {preview.unreadCount} */}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
-        </aside>
 
-        {/* Chat Area */}
-        <main
-          className={`flex-1 p-4 min-w-[320px] ${showChat ? "block" : "hidden md:block"
-            }`}
-        >
-          <div className="p-4 bg-white rounded-3xl shadow-md h-full flex flex-col">
-            <div className="flex items-center mb-4">
-              <button
-                className="mr-2 p-2 text-sm md:hidden"
-                onClick={() => setShowChat(false)}
-              >
-                <ArrowLeftToLine size={24} />
-              </button>
-              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-              <div className="ml-4">
-                <p className="text-lg font-semibold">{chatName}</p>
-                {/* <p className="text-sm text-gray-500">Online</p> */}
-                {/* <button
+          <div className="flex-1 overflow-y-auto pb-20">
+            <div className="bg-white px-2 py-4 font-bold sticky top-0 z-10">
+              Unlocked
+            </div>
+            <div>
+              {unlockedChats.map((preview, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center justify-between p-2 border-b cursor-pointer ${
+                    selectedChat === preview.id
+                      ? "md:bg-[#fabb84] md:bg-opacity-30"
+                      : ""
+                  }`}
+                  onClick={() => handleChatSelection(preview.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                    <div>
+                      <p className="font-medium">{preview.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {preview.lastMessage}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">
+                      {preview.displayTime}
+                    </p>
+                    {preview.hasUnread && (
+                      <span className="text-xs text-white bg-customOrange px-2 py-1 rounded-full">
+                        {/* {chat.unreadCount} */}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Chat Area */}
+      <main
+        className={`flex-1 p-4 min-w-[320px] ${
+          showChat ? "block" : "hidden md:block"
+        }`}
+      >
+        <div className="p-4 bg-white rounded-3xl shadow-md h-full flex flex-col">
+          <div className="flex items-center mb-4">
+            <button
+              className="mr-2 p-2 text-sm md:hidden"
+              onClick={() => setShowChat(false)}
+            >
+              <ArrowLeftToLine size={24} />
+            </button>
+            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+            <div className="ml-4">
+              <p className="text-lg font-semibold">{chatName}</p>
+              {/* <p className="text-sm text-gray-500">Online</p> */}
+              {/* <button
                   onClick={async () => {
                     if (newMessage.trim() === "" || isNaN(+newMessage)) {
                       logger.error("New message has to be a valid user ID");
@@ -828,32 +913,58 @@ const ChatApp = () => {
                 >
                   Create Chat
                 </button> */}
-              </div>
             </div>
-            <div onClick={handleOverlayClick} className="flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50">
-              <div ref={scrollRef} className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]">
-                {chatMessages.map((message, index) => (
+          </div>
+          <div
+            onClick={handleOverlayClick}
+            className="relative flex flex-col justify-end flex-1 border rounded-3xl p-4 bg-gray-50"
+          >
+            {chatData[selectedChat]?.getPreview().isLocked && (
+              <Image
+                src="/images/locked-chat.png"
+                alt="Locked Chat Background"
+                width={500}
+                height={500}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-70 z-0 pointer-events-none select-none"
+                priority
+              />
+            )}
+            <div
+              ref={scrollRef}
+              className="flex flex-col gap-2 mb-4 overflow-y-auto max-h-[60vh]"
+            >
+              {chatMessages.map((message, index) => (
+                <div
+                  key={index}
+                  className={message.sentByUser ? "self-end" : "self-start"}
+                >
                   <div
-                    key={index}
-                    className={message.sentByUser ? "self-end" : "self-start"}
-                  >
-                    <div
-                      className={`p-2 rounded-xl ${message.sentByUser
+                    className={`p-2 rounded-xl ${
+                      message.sentByUser
                         ? "bg-customDarkBlue text-white"
                         : "bg-gray-300"
-                        }`}
-                    >
-                      {message.type === "tutorRequest" ? (
-                        (() => {
-                          try {
-                            const tutorRequest: TutorRequest = JSON.parse(message.content as string);
-                            if (tutorRequest.assignmentRequestId === undefined || tutorRequest.tutorId === undefined) {
-                              logger.error("Invalid tutor request message:", message.content);
-                              return <p>Error: Invalid tutor request message.</p>;
-                            }
-                            return (
-                              <div className="max-w-sm mx-auto p-6 bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                                <h2 className="text-xl font-semibold text-gray-800 mb-2">{tutorRequest.assignmentTitle && (
+                    }`}
+                  >
+                    {message.type === "tutorRequest" ? (
+                      (() => {
+                        try {
+                          const tutorRequest: TutorRequest = JSON.parse(
+                            message.content as string
+                          );
+                          if (
+                            tutorRequest.assignmentRequestId === undefined ||
+                            tutorRequest.tutorId === undefined
+                          ) {
+                            logger.error(
+                              "Invalid tutor request message:",
+                              message.content
+                            );
+                            return <p>Error: Invalid tutor request message.</p>;
+                          }
+                          return (
+                            <div className="max-w-sm mx-auto p-6 bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                              <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                                {tutorRequest.assignmentTitle && (
                                   <p className="text-gray-700 mb-2">
                                     <span className="font-medium">📚 </span>{" "}
                                     <Link
@@ -863,51 +974,87 @@ const ChatApp = () => {
                                       {tutorRequest.assignmentTitle}
                                     </Link>
                                   </p>
-                                )}</h2>
-                                
-                                <p className="text-gray-700 mb-1"><span className="font-medium">Rate:</span>  ${tutorRequest.hourlyRate}/hr</p>
-                                <p className="text-gray-700 mb-4"><span className="font-medium">Lesson Duration:</span> {tutorRequest.lessonDuration} min</p>
-                                {tutorRequest.status === "ACCEPTED" && (
-                                  <div className="w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
-                                    Accepted
-                                  </div>
                                 )}
-                                {message.sentByUser && tutorRequest.status === "PENDING" && (
+                              </h2>
+
+                              <p className="text-gray-700 mb-1">
+                                <span className="font-medium">Rate:</span> $
+                                {tutorRequest.hourlyRate}/hr
+                              </p>
+                              <p className="text-gray-700 mb-4">
+                                <span className="font-medium">
+                                  Lesson Duration:
+                                </span>{" "}
+                                {tutorRequest.lessonDuration} min
+                              </p>
+                              {tutorRequest.status === "ACCEPTED" && (
+                                <div className="w-full bg-green-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                  Accepted
+                                </div>
+                              )}
+                              {message.sentByUser &&
+                                tutorRequest.status === "PENDING" && (
                                   <div className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
                                     Pending
                                   </div>
                                 )}
-                                {!message.sentByUser && (tutorRequest.status === "PENDING") && (
-                                <button
-                                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 hover:bg-customYellow"
-                                  onClick={() => handleAcceptAssignment(tutorRequest.assignmentRequestId, tutorRequest.hourlyRate, tutorRequest.tutorId)}
-                                >
-                                  Accept
-                                </button>
+                              {!message.sentByUser &&
+                                tutorRequest.status === "PENDING" && (
+                                  <button
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 hover:bg-customYellow"
+                                    onClick={() =>
+                                      handleAcceptAssignment(
+                                        tutorRequest.assignmentRequestId,
+                                        tutorRequest.hourlyRate,
+                                        tutorRequest.tutorId
+                                      )
+                                    }
+                                  >
+                                    Accept
+                                  </button>
                                 )}
-                                {tutorRequest.status === "EXPIRED" && (
-                                  <div className="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
-                                    Expired
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          } catch (e) {
-                            logger.error("Failed to parse tutor request content:", e);
-                            return <p>{message.content}</p>; // Fallback to plain text if parsing fails
-                          }
-                        })()
-                      ) : (
-                        <p>{message.content}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-end mt-1">
-                      {message.isFlagged && message.sentByUser && (
+                              {tutorRequest.status === "EXPIRED" && (
+                                <div className="w-full bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg text-center">
+                                  Expired
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } catch (e) {
+                          logger.error(
+                            "Failed to parse tutor request content:",
+                            e
+                          );
+                          return <p>{message.content}</p>; // Fallback to plain text if parsing fails
+                        }
+                      })()
+                    ) : (
+                      <p>{message.content}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-end mt-1">
+                    {message.isFlagged && message.sentByUser && (
+                      <div
+                        className="relative mr-1 inline-block"
+                        onMouseEnter={(e) => {
+                          const rect = (
+                            e.currentTarget as HTMLElement
+                          ).getBoundingClientRect();
+                          setFlaggedTooltip({
+                            show: true,
+                            x: rect.left - 420,
+                            y: rect.top + rect.height / 2,
+                          });
+                        }}
+                        onMouseLeave={() =>
+                          setFlaggedTooltip({ ...flaggedTooltip, show: false })
+                        }
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
                           fill="orange"
-                          className="w-4 h-4 mr-1"
+                          className="w-4 h-4"
                         >
                           <path
                             fillRule="evenodd"
@@ -915,54 +1062,140 @@ const ChatApp = () => {
                             clipRule="evenodd"
                           />
                         </svg>
+                      </div>
+                    )}
+                    {/* Portal for flagged tooltip */}
+                    {typeof window !== "undefined" &&
+                      flaggedTooltip.show &&
+                      createPortal(
+                        (() => {
+                          // Responsive width and position
+                          const screenWidth = window.innerWidth;
+                          const tooltipWidth = Math.min(400, screenWidth * 0.9);
+                          // Clamp left to at least 8px, and at most (screenWidth - tooltipWidth - 8)
+                          let left = flaggedTooltip.x;
+                          if (left < 8) left = 8;
+                          if (left + tooltipWidth > screenWidth - 8) left = screenWidth - tooltipWidth - 8;
+                          // On very small screens, center above the icon
+                          if (screenWidth < 500) {
+                            left = Math.max(8, Math.min(screenWidth / 2 - tooltipWidth / 2, screenWidth - tooltipWidth - 8));
+                          }
+                          return (
+                            <div
+                              style={{
+                                position: "fixed",
+                                left,
+                                top: flaggedTooltip.y,
+                                zIndex: 9999,
+                                transform: "translateY(-50%)",
+                                width: tooltipWidth,
+                                maxWidth: '90vw',
+                                pointerEvents: "auto",
+                              }}
+                              className="p-4 bg-white rounded-xl border border-gray-200 text-sm drop-shadow-sm"
+                            >
+                              <div className="flex items-start gap-2 mb-1">
+                                {/* Warning icon */}
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="orange"
+                                  className="w-10 h-10"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.752a3.25 3.25 0 01-2.598 4.875H4.644a3.25 3.25 0 01-2.598-4.875L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <span className="font-semibold text-customDarkBlue text-justify">
+                                  For your safety and to comply with our policy
+                                </span>
+                              </div>
+                              <div className="text-gray-700 mb-2">
+                                Sharing personal contact details (like phone numbers
+                                or addresses) is only allowed after a transaction is
+                                confirmed through our platform.
+                                <br />
+                                <br />
+                                This helps protect both clients and tutors from
+                                scams and ensures secure transactions.
+                              </div>
+                              <div className="flex items-start gap-2 mt-2">
+                                {/* Check icon */}
+                                <svg
+                                  className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                                <span className="text-green-700">
+                                  You can continue chatting here or{" "}
+                                  <span className="font-semibold">
+                                    complete your transaction to unlock direct
+                                    contact sharing.
+                                  </span>
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })(),
+                        document.body
                       )}
-                      <p className="text-xs text-gray-400">{message.time}</p>
-                    </div>
+                    <p className="text-xs text-gray-400">{message.time}</p>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
 
-              <div className="flex items-center gap-2 mt-auto">
-                <button
-                  className="p-2 bg-gray-300 rounded-full"
-                  onClick={() => setShowDropup(!showDropup)}
-                >
-                  <BookPlusIcon size={24} />
-                </button>
-                {showDropup && (
-                  <div className="absolute mb-28 bg-white shadow-md rounded-lg p-2 w-48">
-                    <button
-                      className="w-full text-left p-2 hover:bg-gray-100"
-                      onClick={handleSendAssignment}
-                    >
-                      P5 Math
-                    </button>
-                  </div>
-                )}
-                <input
-                  type="text"
-                  ref={inputRef}
-                  placeholder="Type your message here..."
-                  className="flex-1 px-4 py-2 rounded-3xl border border-gray-300"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
-                >
-                  Send
-                </button>
-              </div>
+            <div className="flex items-center gap-2 mt-auto">
+              <button
+                className="p-2 bg-gray-300 rounded-full"
+                onClick={() => setShowDropup(!showDropup)}
+              >
+                <BookPlusIcon size={24} />
+              </button>
+              {showDropup && (
+                <div className="absolute mb-28 bg-white shadow-md rounded-lg p-2 w-48">
+                  <button
+                    className="w-full text-left p-2 hover:bg-gray-100"
+                    onClick={handleSendAssignment}
+                  >
+                    P5 Math
+                  </button>
+                </div>
+              )}
+              <input
+                type="text"
+                ref={inputRef}
+                placeholder="Type your message here..."
+                className="flex-1 px-4 py-2 rounded-3xl border border-gray-300"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <button
+                onClick={handleSendMessage}
+                className="p-2 bg-customDarkBlue text-white rounded-3xl hidden md:block"
+              >
+                Send
+              </button>
             </div>
           </div>
-        </main>
+        </div>
+      </main>
     </div>
   );
 };
