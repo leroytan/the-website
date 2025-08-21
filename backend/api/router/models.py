@@ -2,7 +2,7 @@ import enum
 import re
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from api.storage.models import AssignmentRequestStatus, ChatMessageType
 
@@ -301,7 +301,8 @@ class ForgotPasswordRequest(BaseModel):
 
     email: EmailStr
 
-    @validator("email")
+    @field_validator("email")
+    @classmethod
     def normalize_email(cls, email):
         """
         Normalize email for consistent handling
@@ -324,7 +325,8 @@ class EmailConfirmationRequest(BaseModel):
 
     confirmation_token: str
 
-    @validator("confirmation_token")
+    @field_validator("confirmation_token")
+    @classmethod
     def validate_token(cls, token):
         """
         Validate confirmation token is not empty
@@ -346,7 +348,8 @@ class ResetPasswordRequest(BaseModel):
         ..., description="New account password", min_length=8, max_length=128
     )
 
-    @validator("new_password")
+    @field_validator("new_password")
+    @classmethod
     def validate_password_strength(cls, password):
         """
         Comprehensive password strength validation

@@ -29,7 +29,10 @@ async def google_login(request: Request):
     """
     # Get the origin from the request
     origin = request.headers.get("origin") or request.headers.get("referer")
-    origin = origin.rstrip("/")
+    if origin:
+        origin = origin.rstrip("/")
+    else:
+        origin = settings.frontend_domain
 
     # Create state parameter with origin information
     state_data = {

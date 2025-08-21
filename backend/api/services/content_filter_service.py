@@ -64,6 +64,9 @@ class ContentFilterService:
             r"#\d{2,}-\d{2,}|unit#\d{2,}-\d{2,}", normalized_message, re.IGNORECASE
         ):
             return {"filtered": True, "reason": "UNIT_NUMBER"}
+        # NRIC (more specific than postal code)
+        if re.search(r"[STFGstfg]\d{7}[A-Za-z]", normalized_message):
+            return {"filtered": True, "reason": "SG_NRIC"}
         # Postal code with context
         if re.search(r"(singapore|s)\d{6}", normalized_message, re.IGNORECASE):
             return {"filtered": True, "reason": "POSTAL_CODE"}
@@ -78,9 +81,6 @@ class ContentFilterService:
             r"\b(road|rd|blk|block|street|st)\b", message, re.IGNORECASE
         ) and re.search(r"\d", message):
             return {"filtered": True, "reason": "ADDRESS"}
-        # NRIC
-        if re.search(r"[STFGstfg]\d{7}[A-Za-z]", normalized_message):
-            return {"filtered": True, "reason": "SG_NRIC"}
         return {"filtered": False}
 
     async def filter_message(self, message: str, threshold: float = 0.7) -> Dict:

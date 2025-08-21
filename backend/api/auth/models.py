@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 
 class TokenData(BaseModel):
-    email: str
+    email: EmailStr
     token_version: int = Field(default=0)
 
 
