@@ -1,0 +1,20 @@
+repos:
+  - repo: local
+    hooks:
+      - id: backend-tests
+        name: Backend Tests
+        entry: bash -c 'cd backend && poetry run ./scripts/run_tests.sh'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        description: Run backend tests before commit
+        
+      - id: export-requirements
+        name: Export Requirements
+        entry: bash -c 'cd backend && poetry run ./scripts/export-requirements.sh'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        description: Export Poetry dependencies to requirements.txt
