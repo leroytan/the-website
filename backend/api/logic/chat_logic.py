@@ -192,8 +192,22 @@ class ChatLogic:
         if chat.is_locked:
             # Apply content filtering for locked chats
             try:
+                # Get the last 20 messages
+                last_20_messages = (
+                    session.query(ChatMessage)
+                    .filter(
+                        ChatMessage.chat_id == chat_id, ChatMessage.is_flagged == False
+                    )
+                    .order_by(ChatMessage.created_at.desc())
+                    .limit(20)
+                    .all()
+                )
+                # Prepend the new message to the list of messages to be filtered
+                all_messages = [new_chat_message.content] + [
+                    message.content for message in last_20_messages
+                ]
                 filter_result = await content_filter_service.filter_message(
-                    new_chat_message.content
+                    " ".join(all_messages)
                 )
 
                 if filter_result["filtered"]:

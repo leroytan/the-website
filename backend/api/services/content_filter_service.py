@@ -129,28 +129,30 @@ class ContentFilterService:
     async def _groq_provider(self, message: str, threshold: float) -> Dict:
         client = Groq(api_key=settings.groq_api_key)
         return self._get_llm_response(
-            client, message, "llama-3.1-8b-instant", threshold
+            client, message, "llama-3.1-8b-instant", threshold, message
         )
 
     async def _gemini_provider(self, message: str, threshold: float) -> Dict:
         genai.configure(api_key=settings.gemini_api_key)
         model = genai.GenerativeModel("gemini-1.5-flash")
-        return self._get_llm_response(model, message, "gemini-1.5-flash", threshold)
+        return self._get_llm_response(
+            model, message, "gemini-1.5-flash", threshold, message
+        )
 
     async def _huggingface_provider(self, message: str, threshold: float) -> Dict:
         client = InferenceClient(token=settings.hf_token)
         return self._get_llm_response(
-            client, message, "meta-llama/Llama-3.1-8B-Instruct", threshold
+            client, message, "meta-llama/Llama-3.1-8B-Instruct", threshold, message
         )
 
     async def _mistral_provider(self, message: str, threshold: float) -> Dict:
         client = Mistral(api_key=settings.mistral_api_key)
         return self._get_llm_response(
-            client, message, "mistral-small-latest", threshold
+            client, message, "mistral-small-latest", threshold, message
         )
 
     def _get_llm_response(
-        self, client, message: str, model: str, threshold: float
+        self, client, message: str, model: str, threshold: float, new_message: str
     ) -> Dict:
         prompt = self._build_prompt(message)
 
@@ -178,11 +180,12 @@ class ContentFilterService:
         else:
             raise Exception("Unknown LLM client type.")
 
-        return self._parse_llm_output(content, message, model, threshold)
+        return self._parse_llm_output(content, new_message, model, threshold)
 
     def _build_prompt(self, message: str) -> str:
         return f"""
-        Analyze the following message for PII (Personally Identifiable Information) based on a Singaporean context.
+        Analyze the following conversation for PII (Personally Identifiable Information) based on a Singaporean context.
+        The user's message is the first in the string, and the rest are the past 20 messages in the conversation.
         Be extra vigilant for common shorthands and abbreviations, such as 'blk' for 'Block', 'Rd' for 'Road', and incomplete addresses.
         The PII types to detect are: EMAIL_ADDRESS, PHONE_NUMBER, ADDRESS, POSTAL_CODE, UNIT_NUMBER, SG_NRIC.
         If an address is mentioned, even if incomplete, it should be flagged.
