@@ -96,7 +96,7 @@ async def update_assignment(
     id: int,
     assignment: NewAssignment,
     user: User = Depends(RouterAuthUtils.get_current_user),
-) -> AssignmentPublicView:
+) -> AssignmentOwnerView:
     if settings.is_use_mock:
         return mock.get_assignments()[0]
 
@@ -112,7 +112,7 @@ async def request_assignment(
     assignment_request: NewAssignmentRequest,
     request: Request,
     user: User = Depends(RouterAuthUtils.get_current_user),
-) -> Response:
+) -> dict[str, str]:
     if settings.is_use_mock:
         return Response(200)
 
@@ -150,7 +150,7 @@ async def update_assignment_request(
 @router.put("/api/assignment-requests/{id}/change-status")
 async def change_assignment_request_status(
     id: int, status: str, user: User = Depends(RouterAuthUtils.get_current_user)
-) -> Response:
+) -> dict[str, str]:
     if settings.is_use_mock:
         return Response(200)
 
@@ -160,7 +160,7 @@ async def change_assignment_request_status(
 
 
 @router.post("/test/api/accept-assignment/{id}")
-async def accept_assignment(id: int) -> Response:
+async def accept_assignment(id: int) -> dict[str, str]:
     if settings.is_use_mock:
         return Response(200)
 

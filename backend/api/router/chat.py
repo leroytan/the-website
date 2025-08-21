@@ -27,7 +27,7 @@ router = APIRouter()
 @router.get("/api/chat/jwt")
 async def get_jwt(
     request: Request, user: User = Depends(RouterAuthUtils.get_current_user)
-) -> dict:
+) -> dict[str, str]:
     """
     Get JWT for websocket authentication.
 
@@ -119,7 +119,7 @@ async def get_chat_messages(
     user: User = Depends(RouterAuthUtils.get_current_user),
     created_before: str = None,
     limit: int = 50,
-) -> dict:
+) -> dict[str, list | int | bool]:
     return ChatLogic.get_private_chat_history(id, user.id, created_before, limit)
 
 
@@ -127,7 +127,7 @@ async def get_chat_messages(
 @router.post("/api/chat/{id}/read")
 async def mark_chat_as_read(
     id: int, user: User = Depends(RouterAuthUtils.get_current_user)
-) -> dict:
+) -> dict[str, str]:
     """
     Mark a chat as read for the current user.
 
@@ -142,7 +142,7 @@ async def mark_chat_as_read(
 
 
 @router.get("/api/chats")
-async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict[str, list]:
     """
     Get all chats for the current user.
 
@@ -158,7 +158,7 @@ async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> d
 async def send_message_to_user(
     message_packet: MessagePacket,
     user: User = Depends(RouterAuthUtils.get_current_user),
-) -> dict:
+) -> dict[str, str]:
     """
     Send a message to another user.
 

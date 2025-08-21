@@ -76,7 +76,7 @@ async def new_tutor(
 @router.get("/api/tutors/{id}")
 async def get_tutor_profile(
     id: int, request: Request, response: Response
-) -> TutorPublicSummary | TutorProfile | None:
+) -> TutorPublicSummary | TutorProfile:
     if settings.is_use_mock:
         return mock.get_tutor_profile()
 

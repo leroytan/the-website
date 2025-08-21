@@ -119,7 +119,7 @@ async def login(
     request: Request,
     response: Response,
     _=Depends(RouterAuthUtils.assert_logged_out),
-):
+) -> dict:
     """
     Handles user login by validating the provided credentials and generating
     an authentication token. The token is then set as an HTTP-only cookie in
@@ -152,7 +152,7 @@ async def signup(
     request: Request,
     response: Response,
     _=Depends(RouterAuthUtils.assert_logged_out),
-):
+) -> dict:
     """
     Handles user registration by processing the provided signup data,
     creating a new user account, and generating an authentication token.
@@ -194,7 +194,7 @@ async def logout(
     request: Request,
     response: Response,
     _=Depends(RouterAuthUtils.assert_not_logged_out),
-):
+) -> dict:
     origin = (
         request.headers.get("origin")
         or request.headers.get("referer")
@@ -205,13 +205,13 @@ async def logout(
 
 
 @router.get("/api/protected")
-async def protected_route(user: User = Depends(RouterAuthUtils.get_current_user)):
+async def protected_route(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     # Test route for authentication
     return {"message": "This is a protected route", "user_id": user.id}
 
 
 @router.post("/api/auth/refresh")
-async def refresh(request: Request, response: Response):
+async def refresh(request: Request, response: Response) -> dict:
     refresh_token = request.cookies.get("refresh_token")
 
     tokens = AuthLogic.refresh_tokens(refresh_token)
@@ -226,12 +226,12 @@ async def refresh(request: Request, response: Response):
 
 
 @router.get("/api/auth/check")
-async def check(_: User = Depends(RouterAuthUtils.get_current_user)):
+async def check(_: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     return {"message": "Valid token"}
 
 
 @router.get("/api/auth/me")
-async def me(user: User = Depends(RouterAuthUtils.get_current_user)):
+async def me(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
     return {
         "id": user.id,
         "email": user.email,
@@ -243,7 +243,7 @@ async def me(user: User = Depends(RouterAuthUtils.get_current_user)):
 async def forgot_password(
     request: Request,
     forgot_password_request: ForgotPasswordRequest,
-):
+) -> dict:
     """
     Initiate password reset process by sending a reset link to the user's email.
 
@@ -266,7 +266,7 @@ async def forgot_password(
 @router.post("/api/auth/reset-password")
 async def reset_password(
     reset_password_request: ResetPasswordRequest,
-):
+) -> dict:
     """
     Complete password reset by validating the reset token and updating the password.
 
@@ -283,7 +283,7 @@ async def reset_password(
 @router.post("/api/auth/verify-password-reset-token")
 async def verify_password_reset_token(
     verify_password_reset_token_request: VerifyPasswordResetTokenRequest,
-):
+) -> dict:
     """
     Verify a password reset token for validation purposes.
 
@@ -299,7 +299,7 @@ async def verify_password_reset_token(
 @router.post("/api/auth/confirm-email")
 async def confirm_email(
     confirmation_request: EmailConfirmationRequest,
-):
+) -> dict:
     """
     Confirm user email by validating the confirmation token.
 
@@ -316,7 +316,7 @@ async def confirm_email(
 async def resend_confirmation_email(
     request: Request,
     email: str,
-):
+) -> dict:
     """
     Resend email confirmation link to the user's email address.
 

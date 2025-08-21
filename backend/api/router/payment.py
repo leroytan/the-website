@@ -13,14 +13,14 @@ router = APIRouter()
 async def create_checkout_session(
     payment_request: PaymentRequest,
     user: User = Depends(RouterAuthUtils.get_current_user),
-) -> dict:
+) -> dict[str, str]:
     assert_user_authorized = AuthLogic.create_assert_user_authorized(user.id)
 
     return PaymentLogic.handle_payment_request(payment_request, assert_user_authorized)
 
 
 @router.post("/webhook/stripe")
-async def stripe_webhook(request: Request):
+async def stripe_webhook(request: Request) -> dict:
     payload = await request.body()
     sig_header = request.headers.get("Stripe-Signature")
 

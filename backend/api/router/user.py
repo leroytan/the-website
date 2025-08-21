@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.get("/api/user/{id}")
-async def get_user(id: int, request: Request, response: Response) -> dict:
+async def get_user(id: int, request: Request, response: Response) -> dict[str, UserView | TutorProfile | None]:
     is_self = False
 
     try:
