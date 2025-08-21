@@ -21,3 +21,12 @@ class UserAlreadyExistsError(Exception):
         )
         self.email = email
         self.userType = userType
+
+
+class ConsecutiveMessageError(Exception):
+    """Exception raised when a user sends more than 3 consecutive messages."""
+
+    def __init__(self):
+        super().__init__(
+            "You cannot send more than 3 consecutive messages in a locked chat."
+        )

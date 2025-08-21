@@ -1,9 +1,11 @@
 import json
+from datetime import datetime, timezone
 
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRouter
 
+from api.exceptions import ConsecutiveMessageError
 from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (
@@ -58,7 +60,36 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
                 content=content, chat_id=chat_id, message_type=message_type
             )
 
-            await ChatLogic.handle_private_message(message, user.id, origin)
+            try:
+                await ChatLogic.handle_private_message(message, user.id, origin)
+            except ConsecutiveMessageError as e:
+                error_message = {
+                    "id": -1,
+                    "chat_id": chat_id,
+                    "sender": "System",
+                    "content": str(e),
+                    "message_type": "text_message",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "sent_by_user": False,
+                    "is_flagged": False,
+                    "is_error": True
+                }
+                await websocket.send_text(json.dumps(error_message))
+            except Exception as e:
+                error_message = {
+                    "id": -1,
+                    "chat_id": chat_id,
+                    "sender": "System",
+                    "content": f"An error occurred: {str(e)}",
+                    "message_type": "text_message",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "sent_by_user": False,
+                    "is_flagged": False,
+                    "is_error": True
+                }
+                await websocket.send_text(json.dumps(error_message))
     except WebSocketDisconnect:
         async with ChatLogic.mutex:
             if user.id in ChatLogic.active_connections:

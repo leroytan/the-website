@@ -64,3 +64,5 @@ class TestCourseRouter:
         result = asyncio.run(result)
         
         assert result is None
+
+
