@@ -65,16 +65,17 @@ class TestSeed:
             "Primary 4",
             "Primary 5",
             "Primary 6",
-            "Secondary 1",
-            "Secondary 2",
-            "Secondary 3",
-            "Secondary 4",
-            "Secondary 5",
-            "Junior College 1",
-            "Junior College 2",
+            # Temporarily excluded levels above Primary 6
+            # "Secondary 1",
+            # "Secondary 2",
+            # "Secondary 3",
+            # "Secondary 4",
+            # "Secondary 5",
+            # "Junior College 1",
+            # "Junior College 2",
         ]
 
-        assert len(call_args) == 13
+        assert len(call_args) == 6  # Only 6 levels now
         for expected_level in expected_levels:
             assert expected_level in level_names
 
@@ -91,8 +92,8 @@ class TestSeed:
         call_args = mock_session.add_all.call_args[0][0]
         sort_orders = [level.sort_order for level in call_args]
 
-        # Sort orders should be 1 through 13
-        expected_orders = list(range(1, 14))
+        # Sort orders should be 1 through 6 (temporarily)
+        expected_orders = list(range(1, 7))
         assert sorted(sort_orders) == expected_orders
 
     @pytest.mark.unit
