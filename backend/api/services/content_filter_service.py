@@ -9,6 +9,7 @@ from huggingface_hub import InferenceClient
 from mistralai import Mistral
 
 from api.config import settings
+from api.services.social_media_filter import extract_social_shares
 
 
 class PIIDetection:
@@ -51,6 +52,16 @@ class ContentFilterService:
 
     def _manual_filter(self, message: str) -> Dict:
         normalized_message = "".join(message.split())
+
+        # Social media filtering
+        social_result = extract_social_shares(message, use_phone_guard=True)
+        if social_result.blocked:
+            evidence_types = [e.kind for e in social_result.evidence]
+            return {
+                "filtered": True,
+                "reason": f"SOCIAL_MEDIA_SHARE ({', '.join(evidence_types)})",
+            }
+
         # Email
         if re.search(
             r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}", normalized_message
@@ -187,8 +198,9 @@ class ContentFilterService:
         Analyze the following conversation for PII (Personally Identifiable Information) based on a Singaporean context.
         The user's message is the first in the string, and the rest are the past 20 messages in the conversation.
         Be extra vigilant for common shorthands and abbreviations, such as 'blk' for 'Block', 'Rd' for 'Road', and incomplete addresses.
-        The PII types to detect are: EMAIL_ADDRESS, PHONE_NUMBER, ADDRESS, POSTAL_CODE, UNIT_NUMBER, SG_NRIC.
+        The PII types to detect are: EMAIL_ADDRESS, PHONE_NUMBER, ADDRESS, POSTAL_CODE, UNIT_NUMBER, SG_NRIC, SOCIAL_MEDIA_SHARE.
         If an address is mentioned, even if incomplete, it should be flagged.
+        Also detect social media handles, URLs, and platform-specific sharing attempts.
 
         Respond with a JSON object with the following structure:
         {{
