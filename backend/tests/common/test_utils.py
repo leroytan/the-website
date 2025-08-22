@@ -68,18 +68,14 @@ class TestUtils:
             name="test",
             email="test@example.com",
             items=[1, 2, 3],
-            data={"key": "value"}
+            data={"key": "value"},
         )
 
     @pytest.mark.unit
     def test_validate_non_empty_multiple_invalid(self):
         """Test validation with multiple values where one is invalid"""
         with pytest.raises(ValueError, match="email cannot be an empty string"):
-            Utils.validate_non_empty(
-                name="test",
-                email="",
-                items=[1, 2, 3]
-            )
+            Utils.validate_non_empty(name="test", email="", items=[1, 2, 3])
 
     @pytest.mark.unit
     def test_validate_non_empty_zero_number(self):
@@ -94,4 +90,4 @@ class TestUtils:
     @pytest.mark.unit
     def test_validate_non_empty_empty_tuple(self):
         """Test validation with empty tuple (should be valid as it's not in the check)"""
-        Utils.validate_non_empty(items=(), name="test") 
+        Utils.validate_non_empty(items=(), name="test")

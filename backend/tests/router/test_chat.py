@@ -1,5 +1,4 @@
 import json
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -170,22 +169,29 @@ class TestChatRouter:
                     "sender": "System",
                     "content": "You cannot send more than 3 consecutive messages in a locked chat.",
                     "message_type": "text_message",
-                    "created_at": mock_websocket.send_text.call_args[0][0],  # We'll check this dynamically
-                    "updated_at": mock_websocket.send_text.call_args[0][0],  # We'll check this dynamically
+                    "created_at": mock_websocket.send_text.call_args[0][
+                        0
+                    ],  # We'll check this dynamically
+                    "updated_at": mock_websocket.send_text.call_args[0][
+                        0
+                    ],  # We'll check this dynamically
                     "sent_by_user": False,
                     "is_flagged": False,
-                    "is_error": True
+                    "is_error": True,
                 }
-                
+
                 # Get the actual call and parse the JSON
                 actual_call = mock_websocket.send_text.call_args[0][0]
                 actual_error = json.loads(actual_call)
-                
+
                 # Check that the error message has the correct structure
                 assert actual_error["id"] == -1
                 assert actual_error["chat_id"] == 1
                 assert actual_error["sender"] == "System"
-                assert actual_error["content"] == "You cannot send more than 3 consecutive messages in a locked chat."
+                assert (
+                    actual_error["content"]
+                    == "You cannot send more than 3 consecutive messages in a locked chat."
+                )
                 assert actual_error["message_type"] == "text_message"
                 assert actual_error["sent_by_user"] == False
                 assert actual_error["is_flagged"] == False

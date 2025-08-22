@@ -1,10 +1,20 @@
 import pytest
-from pydantic import ValidationError
 from api.router.models import (
-    LoginRequest, SignupRequest, ForgotPasswordRequest, ResetPasswordRequest,
-    VerifyPasswordResetTokenRequest, EmailConfirmationRequest, TutorPublicSummary,
-    NewTutorProfile, TutorProfile, CoursePublicSummary, CourseModule, Reviewer, Review, Module
+    CourseModule,
+    CoursePublicSummary,
+    EmailConfirmationRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+    Module,
+    NewTutorProfile,
+    ResetPasswordRequest,
+    Review,
+    Reviewer,
+    SignupRequest,
+    TutorPublicSummary,
+    VerifyPasswordResetTokenRequest,
 )
+
 
 class TestRouterModels:
     """Test cases for Pydantic router models"""
@@ -13,13 +23,10 @@ class TestRouterModels:
     @pytest.mark.models
     def test_login_request_valid(self):
         """Test valid LoginRequest"""
-        login_data = {
-            "email": "test@example.com",
-            "password": "testpassword123"
-        }
-        
+        login_data = {"email": "test@example.com", "password": "testpassword123"}
+
         login_request = LoginRequest(**login_data)
-        
+
         assert login_request.email == "test@example.com"
         assert login_request.password == "testpassword123"
 
@@ -27,17 +34,11 @@ class TestRouterModels:
     @pytest.mark.models
     def test_login_request_invalid_email(self):
         """Test LoginRequest with invalid email"""
-        login_data = {
-            "email": "invalid-email",
-            "password": "testpassword123"
-        }
-        
+        login_data = {"email": "invalid-email", "password": "testpassword123"}
+
         # The email validation might be more lenient, so we'll test with a clearly invalid format
-        login_data = {
-            "email": "not-an-email-at-all",
-            "password": "testpassword123"
-        }
-        
+        login_data = {"email": "not-an-email-at-all", "password": "testpassword123"}
+
         # This should still pass as the email validation might be more lenient
         login_request = LoginRequest(**login_data)
         assert login_request.email == "not-an-email-at-all"
@@ -50,11 +51,11 @@ class TestRouterModels:
             "email": "test@example.com",
             "password": "testpassword123",
             "name": "Test User",
-            "intends_to_be_tutor": False
+            "intends_to_be_tutor": False,
         }
-        
+
         signup_request = SignupRequest(**signup_data)
-        
+
         assert signup_request.email == "test@example.com"
         assert signup_request.password == "testpassword123"
         assert signup_request.name == "Test User"
@@ -67,23 +68,21 @@ class TestRouterModels:
         signup_data = {
             "email": "test@example.com",
             "password": "testpassword123",
-            "name": "Test User"
+            "name": "Test User",
         }
-        
+
         signup_request = SignupRequest(**signup_data)
-        
+
         assert signup_request.intends_to_be_tutor is False
 
     @pytest.mark.unit
     @pytest.mark.models
     def test_forgot_password_request_valid(self):
         """Test valid ForgotPasswordRequest"""
-        forgot_password_data = {
-            "email": "test@example.com"
-        }
-        
+        forgot_password_data = {"email": "test@example.com"}
+
         forgot_password_request = ForgotPasswordRequest(**forgot_password_data)
-        
+
         assert forgot_password_request.email == "test@example.com"
 
     @pytest.mark.unit
@@ -92,12 +91,15 @@ class TestRouterModels:
         """Test valid ResetPasswordRequest"""
         reset_password_data = {
             "reset_token": "valid_reset_token_that_is_long_enough_for_validation_32_chars",
-            "new_password": "newpassword123"
+            "new_password": "newpassword123",
         }
-        
+
         reset_password_request = ResetPasswordRequest(**reset_password_data)
-        
-        assert reset_password_request.reset_token == "valid_reset_token_that_is_long_enough_for_validation_32_chars"
+
+        assert (
+            reset_password_request.reset_token
+            == "valid_reset_token_that_is_long_enough_for_validation_32_chars"
+        )
         assert reset_password_request.new_password == "newpassword123"
 
     @pytest.mark.unit
@@ -107,21 +109,22 @@ class TestRouterModels:
         verify_token_data = {
             "reset_token": "valid_reset_token_that_is_long_enough_for_validation_32_chars"
         }
-        
+
         verify_token_request = VerifyPasswordResetTokenRequest(**verify_token_data)
-        
-        assert verify_token_request.reset_token == "valid_reset_token_that_is_long_enough_for_validation_32_chars"
+
+        assert (
+            verify_token_request.reset_token
+            == "valid_reset_token_that_is_long_enough_for_validation_32_chars"
+        )
 
     @pytest.mark.unit
     @pytest.mark.models
     def test_email_confirmation_request_valid(self):
         """Test valid EmailConfirmationRequest"""
-        confirmation_data = {
-            "confirmation_token": "valid_confirmation_token"
-        }
-        
+        confirmation_data = {"confirmation_token": "valid_confirmation_token"}
+
         confirmation_request = EmailConfirmationRequest(**confirmation_data)
-        
+
         assert confirmation_request.confirmation_token == "valid_confirmation_token"
 
     @pytest.mark.unit
@@ -142,11 +145,11 @@ class TestRouterModels:
             "special_skills": ["Online Teaching"],
             "resume_url": "https://example.com/resume.pdf",
             "experience": "5 years",
-            "availability": "Weekends"
+            "availability": "Weekends",
         }
-        
+
         tutor_summary = TutorPublicSummary(**tutor_data)
-        
+
         assert tutor_summary.id == 1
         assert tutor_summary.name == "John Doe"
         assert tutor_summary.photo_url == "https://example.com/photo.jpg"
@@ -177,11 +180,11 @@ class TestRouterModels:
             "experience": "3 years",
             "subjects_teachable": ["Chemistry", "Biology"],
             "levels_teachable": ["Secondary", "JC"],
-            "special_skills": ["Lab Safety"]
+            "special_skills": ["Lab Safety"],
         }
-        
+
         profile = NewTutorProfile(**profile_data)
-        
+
         assert profile.highest_education == "Masters"
         assert profile.availability == "Evenings"
         assert profile.resume_url == "https://example.com/resume.pdf"
@@ -203,11 +206,11 @@ class TestRouterModels:
             "name": "Introduction to Computer Science",
             "description": "Basic programming concepts",
             "progress": 75.5,
-            "file_link": "https://example.com/course.pdf"
+            "file_link": "https://example.com/course.pdf",
         }
-        
+
         course_summary = CoursePublicSummary(**course_data)
-        
+
         assert course_summary.id == "CS101"
         assert course_summary.name == "Introduction to Computer Science"
         assert course_summary.description == "Basic programming concepts"
@@ -225,11 +228,11 @@ class TestRouterModels:
             "name": "Object-Oriented Programming",
             "completed": False,
             "locked": False,
-            "videoUrl": "https://example.com/video.mp4"
+            "videoUrl": "https://example.com/video.mp4",
         }
-        
+
         module = CourseModule(**module_data)
-        
+
         assert module.course_overview == "Advanced programming concepts"
         assert module.progress == 60.0
         assert module.id == 1
@@ -245,11 +248,11 @@ class TestRouterModels:
         reviewer_data = {
             "year": 2023,
             "course": "Computer Science",
-            "specialization": "Software Engineering"
+            "specialization": "Software Engineering",
         }
-        
+
         reviewer = Reviewer(**reviewer_data)
-        
+
         assert reviewer.year == 2023
         assert reviewer.course == "Computer Science"
         assert reviewer.specialization == "Software Engineering"
@@ -267,12 +270,12 @@ class TestRouterModels:
             "reviewer": {
                 "year": 2023,
                 "course": "Computer Science",
-                "specialization": "Software Engineering"
-            }
+                "specialization": "Software Engineering",
+            },
         }
-        
+
         review = Review(**review_data)
-        
+
         assert review.year_sem == "2023-1"
         assert review.workload == "Moderate"
         assert review.difficulty == 3
@@ -297,14 +300,14 @@ class TestRouterModels:
                     "reviewer": {
                         "year": 2023,
                         "course": "Computer Science",
-                        "specialization": "Software Engineering"
-                    }
+                        "specialization": "Software Engineering",
+                    },
                 }
-            ]
+            ],
         }
-        
+
         module = Module(**module_data)
-        
+
         assert module.code == "CS1010"
         assert module.name == "Programming Methodology"
         assert len(module.reviews) == 1
@@ -314,7 +317,9 @@ class TestRouterModels:
     @pytest.mark.models
     def test_reset_password_request_password_validation_no_lowercase(self):
         """Test password validation without lowercase letter"""
-        with pytest.raises(ValueError, match="Password must contain at least one lowercase letter"):
+        with pytest.raises(
+            ValueError, match="Password must contain at least one lowercase letter"
+        ):
             ResetPasswordRequest.validate_password_strength("UPPERCASE123!")
 
     @pytest.mark.unit
@@ -322,4 +327,4 @@ class TestRouterModels:
     def test_reset_password_request_password_validation_with_lowercase(self):
         """Test password validation with lowercase letter"""
         result = ResetPasswordRequest.validate_password_strength("lowercase123!")
-        assert result == "lowercase123!" 
+        assert result == "lowercase123!"

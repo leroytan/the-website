@@ -1,11 +1,10 @@
 import os
 
-ENV = os.getenv("APP_ENV")
-
-print(f"Current environment: {ENV}")
-
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
+
+ENV = os.getenv("APP_ENV")
+print(f"Current environment: {ENV}")
 
 # Load environment variables from .env file
 match ENV:

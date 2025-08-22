@@ -1,14 +1,19 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone
-from fastapi import HTTPException
+from unittest.mock import Mock, patch
 
+import pytest
 from api.logic.assignment_logic import AssignmentLogic, ViewType
 from api.storage.models import (
-    Assignment, AssignmentStatus, AssignmentRequest, AssignmentRequestStatus,
-    AssignmentSlot, Subject, Level, Location, User, Tutor
+    Assignment,
+    AssignmentRequest,
+    AssignmentRequestStatus,
+    AssignmentSlot,
+    AssignmentStatus,
+    Level,
+    Location,
+    Subject,
 )
-from api.router.models import AssignmentSlotView
+from fastapi import HTTPException
 
 
 class TestAssignmentLogicSimple:
@@ -311,25 +316,31 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_assignment_by_id_success(self):
         """Test getting assignment by ID successfully"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
-                with patch('api.logic.assignment_logic.StorageService.find') as mock_find:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
+                with patch(
+                    "api.logic.assignment_logic.StorageService.find"
+                ) as mock_find:
                     # Mock assignment
                     mock_assignment = Mock(spec=Assignment)
                     mock_assignment.id = 1
                     mock_assignment.owner_id = 123
                     mock_find.return_value = mock_assignment
-                    
+
                     # Mock session
                     mock_session = Mock()
-                    mock_session_class.return_value.__enter__.return_value = mock_session
-                    
+                    mock_session_class.return_value.__enter__.return_value = (
+                        mock_session
+                    )
+
                     # Mock convert_assignment_to_view
-                    with patch('api.logic.assignment_logic.AssignmentLogic.convert_assignment_to_view') as mock_convert:
+                    with patch(
+                        "api.logic.assignment_logic.AssignmentLogic.convert_assignment_to_view"
+                    ) as mock_convert:
                         mock_convert.return_value = Mock()
-                        
+
                         result = AssignmentLogic.get_assignment_by_id(1, user_id=123)
-                        
+
                         assert result is not None
                         mock_find.assert_called_once()
 
@@ -337,19 +348,23 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_assignment_by_id_not_found(self):
         """Test getting assignment by ID when not found"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
-                with patch('api.logic.assignment_logic.StorageService.find') as mock_find:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
+                with patch(
+                    "api.logic.assignment_logic.StorageService.find"
+                ) as mock_find:
                     # Mock assignment not found
                     mock_find.return_value = None
-                    
+
                     # Mock session
                     mock_session = Mock()
-                    mock_session_class.return_value.__enter__.return_value = mock_session
-                    
+                    mock_session_class.return_value.__enter__.return_value = (
+                        mock_session
+                    )
+
                     with pytest.raises(HTTPException) as exc_info:
                         AssignmentLogic.get_assignment_by_id(999)
-                    
+
                     assert exc_info.value.status_code == 404
                     assert exc_info.value.detail == "Assignment not found"
 
@@ -357,26 +372,32 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_created_assignments(self):
         """Test getting assignments created by user"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
-                with patch('api.logic.assignment_logic.StorageService.find') as mock_find:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
+                with patch(
+                    "api.logic.assignment_logic.StorageService.find"
+                ) as mock_find:
                     # Mock assignments
                     mock_assignment1 = Mock(spec=Assignment)
                     mock_assignment1.id = 1
                     mock_assignment2 = Mock(spec=Assignment)
                     mock_assignment2.id = 2
                     mock_find.return_value = [mock_assignment1, mock_assignment2]
-                    
+
                     # Mock session
                     mock_session = Mock()
-                    mock_session_class.return_value.__enter__.return_value = mock_session
-                    
+                    mock_session_class.return_value.__enter__.return_value = (
+                        mock_session
+                    )
+
                     # Mock convert_assignment_to_view
-                    with patch('api.logic.assignment_logic.AssignmentLogic.convert_assignment_to_view') as mock_convert:
+                    with patch(
+                        "api.logic.assignment_logic.AssignmentLogic.convert_assignment_to_view"
+                    ) as mock_convert:
                         mock_convert.return_value = Mock()
-                        
+
                         result = AssignmentLogic.get_created_assignments(123)
-                        
+
                         assert len(result) == 2
                         mock_find.assert_called_once()
 
@@ -384,49 +405,55 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_created_assignments_empty(self):
         """Test getting assignments created by user when none exist"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
-                with patch('api.logic.assignment_logic.StorageService.find') as mock_find:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
+                with patch(
+                    "api.logic.assignment_logic.StorageService.find"
+                ) as mock_find:
                     # Mock no assignments
                     mock_find.return_value = None
-                    
+
                     # Mock session
                     mock_session = Mock()
-                    mock_session_class.return_value.__enter__.return_value = mock_session
-                    
+                    mock_session_class.return_value.__enter__.return_value = (
+                        mock_session
+                    )
+
                     result = AssignmentLogic.get_created_assignments(123)
-                    
+
                     assert result == []
 
     @pytest.mark.unit
     @pytest.mark.logic
     def test_get_applied_assignments(self):
         """Test getting assignments applied by user"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session and query
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock assignments
                 mock_assignment1 = Mock(spec=Assignment)
                 mock_assignment1.id = 1
                 mock_assignment2 = Mock(spec=Assignment)
                 mock_assignment2.id = 2
-                
+
                 # Mock query chain
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.join.return_value = mock_query
                 mock_query.filter.return_value = mock_query
                 mock_query.all.return_value = [mock_assignment1, mock_assignment2]
-                
+
                 # Mock convert_assignment_to_view
-                with patch('api.logic.assignment_logic.AssignmentLogic.convert_assignment_to_view') as mock_convert:
+                with patch(
+                    "api.logic.assignment_logic.AssignmentLogic.convert_assignment_to_view"
+                ) as mock_convert:
                     mock_convert.return_value = Mock()
-                    
+
                     result = AssignmentLogic.get_applied_assignments(123)
-                    
+
                     assert len(result) == 2
                     mock_query.all.assert_called_once()
 
@@ -434,39 +461,39 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_applied_assignments_empty(self):
         """Test getting assignments applied by user when none exist"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session and query
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock query chain
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.join.return_value = mock_query
                 mock_query.filter.return_value = mock_query
                 mock_query.all.return_value = []
-                
+
                 result = AssignmentLogic.get_applied_assignments(123)
-                
+
                 assert result == []
 
     @pytest.mark.unit
     @pytest.mark.logic
     def test_accept_assignment_request_success(self):
         """Test accepting assignment request successfully"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock assignment request
                 mock_request = Mock(spec=AssignmentRequest)
                 mock_request.id = 1
                 mock_request.status = AssignmentRequestStatus.PENDING
                 mock_request.tutor_id = 456
-                
+
                 # Mock assignment
                 mock_assignment = Mock(spec=Assignment)
                 mock_assignment.id = 1
@@ -474,15 +501,15 @@ class TestAssignmentLogicSimple:
                 mock_assignment.status = AssignmentStatus.OPEN
                 mock_assignment.assignment_requests = [mock_request]
                 mock_request.assignment = mock_assignment
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.filter_by.return_value = mock_query
                 mock_query.first.return_value = mock_request
-                
+
                 result = AssignmentLogic.accept_assignment_request(1)
-                
+
                 assert result == (123, 456)
                 assert mock_assignment.status == AssignmentStatus.FILLED
                 assert mock_assignment.tutor_id == 456
@@ -493,21 +520,21 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_accept_assignment_request_not_found(self):
         """Test accepting assignment request when not found"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.filter_by.return_value = mock_query
                 mock_query.first.return_value = None
-                
+
                 with pytest.raises(HTTPException) as exc_info:
                     AssignmentLogic.accept_assignment_request(999)
-                
+
                 assert exc_info.value.status_code == 404
                 assert exc_info.value.detail == "Assignment request not found"
 
@@ -515,26 +542,26 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_accept_assignment_request_not_pending(self):
         """Test accepting assignment request that is not pending"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock assignment request
                 mock_request = Mock(spec=AssignmentRequest)
                 mock_request.id = 1
                 mock_request.status = AssignmentRequestStatus.ACCEPTED
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.filter_by.return_value = mock_query
                 mock_query.first.return_value = mock_request
-                
+
                 with pytest.raises(HTTPException) as exc_info:
                     AssignmentLogic.accept_assignment_request(1)
-                
+
                 assert exc_info.value.status_code == 409
                 assert "not pending" in exc_info.value.detail
 
@@ -542,52 +569,52 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_assignment_owner_id(self):
         """Test getting assignment owner ID"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock assignment request
                 mock_request = Mock(spec=AssignmentRequest)
                 mock_request.id = 1
-                
+
                 # Mock assignment
                 mock_assignment = Mock(spec=Assignment)
                 mock_assignment.owner_id = 123
                 mock_request.assignment = mock_assignment
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.options.return_value = mock_query
                 mock_query.filter_by.return_value = mock_query
                 mock_query.first.return_value = mock_request
-                
+
                 result = AssignmentLogic.get_assignment_owner_id(1)
-                
+
                 assert result == 123
 
     @pytest.mark.unit
     @pytest.mark.logic
     def test_get_assignment_owner_id_request_not_found(self):
         """Test getting assignment owner ID when request not found"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.options.return_value = mock_query
                 mock_query.filter_by.return_value = mock_query
                 mock_query.first.return_value = None
-                
+
                 with pytest.raises(HTTPException) as exc_info:
                     AssignmentLogic.get_assignment_owner_id(999)
-                
+
                 assert exc_info.value.status_code == 404
                 assert exc_info.value.detail == "Assignment request not found"
 
@@ -595,53 +622,53 @@ class TestAssignmentLogicSimple:
     @pytest.mark.logic
     def test_get_lesson_duration(self):
         """Test getting lesson duration"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock assignment request
                 mock_request = Mock(spec=AssignmentRequest)
                 mock_request.id = 1
-                
+
                 # Mock assignment
                 mock_assignment = Mock(spec=Assignment)
                 mock_assignment.lesson_duration = 60
                 mock_request.assignment = mock_assignment
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.options.return_value = mock_query
                 mock_query.filter.return_value = mock_query
                 mock_query.first.return_value = mock_request
-                
+
                 result = AssignmentLogic.get_lesson_duration(1)
-                
+
                 assert result == 60
 
     @pytest.mark.unit
     @pytest.mark.logic
     def test_get_request_hourly_rate(self):
         """Test getting request hourly rate"""
-        with patch('api.logic.assignment_logic.StorageService.engine') as mock_engine:
-            with patch('api.logic.assignment_logic.Session') as mock_session_class:
+        with patch("api.logic.assignment_logic.StorageService.engine") as mock_engine:
+            with patch("api.logic.assignment_logic.Session") as mock_session_class:
                 # Mock session
                 mock_session = Mock()
                 mock_session_class.return_value.__enter__.return_value = mock_session
-                
+
                 # Mock assignment request
                 mock_request = Mock(spec=AssignmentRequest)
                 mock_request.id = 1
                 mock_request.requested_rate_hourly = 50
-                
+
                 # Mock query
                 mock_query = Mock()
                 mock_session.query.return_value = mock_query
                 mock_query.filter_by.return_value = mock_query
                 mock_query.first.return_value = mock_request
-                
+
                 result = AssignmentLogic.get_request_hourly_rate(1)
-                
+
                 assert result == 50

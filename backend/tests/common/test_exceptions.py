@@ -1,5 +1,5 @@
 import pytest
-from api.exceptions import TableEmptyError, UserNotFoundError, UserAlreadyExistsError
+from api.exceptions import TableEmptyError, UserAlreadyExistsError, UserNotFoundError
 
 
 class TestExceptions:
@@ -11,7 +11,7 @@ class TestExceptions:
         """Test TableEmptyError exception"""
         table_name = "users"
         error = TableEmptyError(table_name)
-        
+
         assert str(error) == f"Table '{table_name}' is empty."
         assert isinstance(error, Exception)
 
@@ -22,7 +22,7 @@ class TestExceptions:
         query = {"email": "test@example.com"}
         user_type = "Student"
         error = UserNotFoundError(query, user_type)
-        
+
         expected_message = f"{user_type} with the following details not found: {query}"
         assert str(error) == expected_message
         assert isinstance(error, Exception)
@@ -34,8 +34,10 @@ class TestExceptions:
         email = "test@example.com"
         user_type = "Tutor"
         error = UserAlreadyExistsError(email, user_type)
-        
-        expected_message = f"User with email '{email}' and type '{user_type}' already exists."
+
+        expected_message = (
+            f"User with email '{email}' and type '{user_type}' already exists."
+        )
         assert str(error) == expected_message
         assert error.email == email
         assert error.userType == user_type
@@ -48,7 +50,7 @@ class TestExceptions:
         table_error = TableEmptyError("test_table")
         not_found_error = UserNotFoundError({"email": "test"}, "Student")
         exists_error = UserAlreadyExistsError("test@example.com", "Tutor")
-        
+
         assert isinstance(table_error, Exception)
         assert isinstance(not_found_error, Exception)
         assert isinstance(exists_error, Exception)
@@ -61,8 +63,8 @@ class TestExceptions:
         email = "test@example.com"
         user_type = "Student"
         error = UserAlreadyExistsError(email, user_type)
-        
-        assert hasattr(error, 'email')
-        assert hasattr(error, 'userType')
+
+        assert hasattr(error, "email")
+        assert hasattr(error, "userType")
         assert error.email == email
         assert error.userType == user_type

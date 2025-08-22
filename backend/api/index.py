@@ -26,9 +26,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    docs_url="/api/py/docs", 
-    openapi_url="/api/py/openapi.json",
-    lifespan=lifespan
+    docs_url="/api/py/docs", openapi_url="/api/py/openapi.json", lifespan=lifespan
 )
 
 
@@ -97,7 +95,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.websocket("/ws/protected")
-async def websocket_endpoint(
+async def websocket_endpoint_protected(
     pair: tuple[User, WebSocket] = Depends(RouterAuthUtils.get_current_user_ws),
 ):
     user, websocket = pair

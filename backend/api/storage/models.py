@@ -76,17 +76,17 @@ class User(Base, SerializerMixin):
     password_reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     tutor_role = relationship("Tutor", back_populates="user", uselist=False)
-    
+
     def to_dict(self):
         """Override to_dict to exclude sensitive fields"""
         data = super().to_dict()
         # Remove sensitive fields
         sensitive_fields = [
-            'password_hash', 
-            'password_reset_token', 
-            'password_reset_token_expires_at', 
-            'email_confirmation_token', 
-            'email_confirmation_token_expires_at'
+            "password_hash",
+            "password_reset_token",
+            "password_reset_token_expires_at",
+            "email_confirmation_token",
+            "email_confirmation_token_expires_at",
         ]
         for field in sensitive_fields:
             data.pop(field, None)

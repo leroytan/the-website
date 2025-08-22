@@ -13,26 +13,26 @@ class TestPopulate:
     def test_utc_now(self):
         """Test utc_now function returns current UTC datetime"""
         result = utc_now()
-        
+
         assert isinstance(result, datetime)
         assert result.tzinfo == timezone.utc
         assert result.tzinfo is not None
 
     @pytest.mark.unit
     @pytest.mark.storage
-    @patch('api.storage.populate.random')
+    @patch("api.storage.populate.random")
     def test_generate_bulk_assignments_basic(self, mock_random):
         """Test generate_bulk_assignments with basic setup"""
         # Mock session
         mock_session = Mock()
-        
+
         # Mock data
         mock_users = [Mock(), Mock()]
         mock_tutors = [Mock(), Mock()]
         mock_subjects = [Mock(name="Math"), Mock(name="Science")]
         mock_levels = [Mock(), Mock()]
         mock_locations = [Mock(), Mock()]
-        
+
         # Mock random choices - need more calls for the full function
         mock_random.choice.side_effect = [
             mock_users[0],  # requester
@@ -47,7 +47,7 @@ class TestPopulate:
             ("Wednesday", "18:00", "20:00"),  # time_slot
             ("Saturday", "10:00", "12:00"),  # time_slot
         ]
-        
+
         # Call function
         result = generate_bulk_assignments(
             session=mock_session,
@@ -57,11 +57,11 @@ class TestPopulate:
             levels=mock_levels,
             locations=mock_locations,
             count=1,
-            seed=42
+            seed=42,
         )
-        
+
         # Verify random.seed was called
         mock_random.seed.assert_called_once_with(42)
-        
+
         # Verify random.choice was called multiple times
         assert mock_random.choice.call_count >= 6

@@ -1,8 +1,6 @@
 import pytest
-from unittest.mock import Mock, patch
-
 from api.logic.sort_logic import SortLogic
-from api.router.models import SortChoice, SortOrder, AssignmentSortField
+from api.router.models import AssignmentSortField, SortChoice, SortOrder
 from api.storage.models import Assignment, Tutor
 
 
@@ -118,9 +116,10 @@ class TestSortLogic:
     @pytest.mark.logic
     def test_get_sorting_unsupported_table(self):
         """Test getting sorting for unsupported table"""
+
         class UnsupportedTable:
             pass
-        
+
         with pytest.raises(ValueError, match="Unsupported TableClass"):
             SortLogic.get_sorting(UnsupportedTable, "created_at_desc")
 
@@ -186,12 +185,12 @@ class TestSortLogic:
         """Test getting choices for created_at field"""
         result = SortLogic.get_choices(AssignmentSortField.CREATED_AT)
         assert len(result) == 2
-        
+
         # Check for asc choice
         asc_choice = next((c for c in result if c.id == "created_at_asc"), None)
         assert asc_choice is not None
         assert asc_choice.name == "Created at (Asc)"
-        
+
         # Check for desc choice
         desc_choice = next((c for c in result if c.id == "created_at_desc"), None)
         assert desc_choice is not None
@@ -203,7 +202,7 @@ class TestSortLogic:
         """Test getting choices for relevance field"""
         result = SortLogic.get_choices(AssignmentSortField.RELEVANCE)
         assert len(result) == 1
-        
+
         # Check for desc choice only
         desc_choice = result[0]
         assert desc_choice.id == "relevance_desc"
@@ -215,7 +214,7 @@ class TestSortLogic:
         """Test getting sorts for Tutor table"""
         result = SortLogic.get_sorts(Tutor)
         assert len(result) == 3
-        
+
         expected_ids = ["name", "rating", "price"]
         for choice in result:
             assert choice.id in expected_ids
@@ -226,7 +225,7 @@ class TestSortLogic:
         """Test getting sorts for Assignment table"""
         result = SortLogic.get_sorts(Assignment)
         assert len(result) > 0
-        
+
         # Should have choices for all AssignmentSortField values
         for choice in result:
             assert isinstance(choice, SortChoice)
@@ -237,8 +236,9 @@ class TestSortLogic:
     @pytest.mark.logic
     def test_get_sorts_unsupported_table(self):
         """Test getting sorts for unsupported table"""
+
         class UnsupportedTable:
             pass
-        
+
         result = SortLogic.get_sorts(UnsupportedTable)
-        assert result == [] 
+        assert result == []

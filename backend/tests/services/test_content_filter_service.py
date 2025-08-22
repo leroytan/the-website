@@ -165,18 +165,27 @@ class TestContentFilterService:
     @pytest.mark.unit
     @pytest.mark.asyncio
     @patch("api.services.content_filter_service.ContentFilterService._mistral_provider")
-    @patch("api.services.content_filter_service.ContentFilterService._huggingface_provider")
+    @patch(
+        "api.services.content_filter_service.ContentFilterService._huggingface_provider"
+    )
     @patch("api.services.content_filter_service.ContentFilterService._groq_provider")
     @patch("api.services.content_filter_service.ContentFilterService._gemini_provider")
     @patch("random.shuffle")
-    async def test_filter_message_llm_provider_success(self, mock_shuffle, mock_groq_provider, mock_gemini_provider, mock_huggingface_provider, mock_mistral_provider):
+    async def test_filter_message_llm_provider_success(
+        self,
+        mock_shuffle,
+        mock_groq_provider,
+        mock_gemini_provider,
+        mock_huggingface_provider,
+        mock_mistral_provider,
+    ):
         """Test filter_message with successful LLM provider"""
         # Disable shuffle to keep providers in order
         mock_shuffle.return_value = None
-        
+
         service = ContentFilterService()
         test_message = "This is a longer message that requires LLM processing"
-        
+
         # Make groq provider succeed
         mock_groq_provider.return_value = {
             "filtered": False,
@@ -186,7 +195,7 @@ class TestContentFilterService:
             "reasoning": "No PII detected or confidence below threshold.",
             "provider": "llama-3.1-8b-instant",
         }
-        
+
         # Make other providers fail
         mock_gemini_provider.side_effect = Exception("Provider error")
         mock_huggingface_provider.side_effect = Exception("Provider error")
@@ -197,7 +206,12 @@ class TestContentFilterService:
         assert result["detected"] == []
         assert result["confidence"] == 0.0
         assert result["reasoning"] == "No PII detected or confidence below threshold."
-        assert result["provider"] in ["llama-3.1-8b-instant", "gemini-1.5-flash", "mistral-7b-instruct", "microsoft/DialoGPT-medium"]
+        assert result["provider"] in [
+            "llama-3.1-8b-instant",
+            "gemini-1.5-flash",
+            "mistral-7b-instruct",
+            "microsoft/DialoGPT-medium",
+        ]
         assert result["content"] == test_message
 
     @pytest.mark.unit
@@ -206,17 +220,17 @@ class TestContentFilterService:
         """Test filter_message with provider fallback"""
         # Create a fresh instance for testing
         service = ContentFilterService()
-        
+
         # Create mock providers
         async def mock_groq_fail(*args, **kwargs):
             raise Exception("Provider error")
-            
+
         async def mock_huggingface_fail(*args, **kwargs):
             raise Exception("Provider error")
-            
+
         async def mock_mistral_fail(*args, **kwargs):
             raise Exception("Provider error")
-            
+
         async def mock_gemini_success(*args, **kwargs):
             return {
                 "filtered": False,
@@ -226,7 +240,7 @@ class TestContentFilterService:
                 "reasoning": "No PII detected or confidence below threshold.",
                 "provider": "gemini-1.5-flash",
             }
-        
+
         # Replace the provider list with our mocks
         service.llm_providers = [
             mock_groq_fail,
@@ -253,16 +267,16 @@ class TestContentFilterService:
         # Create mock providers that all fail
         async def mock_groq_fail(*args, **kwargs):
             raise Exception("LLaMA provider error")
-            
+
         async def mock_gemini_fail(*args, **kwargs):
             raise Exception("Gemini provider error")
-            
+
         async def mock_huggingface_fail(*args, **kwargs):
             raise Exception("Hugging Face provider error")
-            
+
         async def mock_mistral_fail(*args, **kwargs):
             raise Exception("Mistral provider error")
-        
+
         # Replace the provider list with our failing mocks
         service.llm_providers = [
             mock_groq_fail,
@@ -278,12 +292,15 @@ class TestContentFilterService:
 
         # Should raise an exception from one of the providers
         error_message = str(exc_info.value)
-        assert any(error in error_message for error in [
-            "LLaMA provider error",
-            "Gemini provider error", 
-            "Hugging Face provider error",
-            "Mistral provider error"
-        ])
+        assert any(
+            error in error_message
+            for error in [
+                "LLaMA provider error",
+                "Gemini provider error",
+                "Hugging Face provider error",
+                "Mistral provider error",
+            ]
+        )
 
     @pytest.mark.unit
     @pytest.mark.asyncio

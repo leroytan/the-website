@@ -1,5 +1,4 @@
 import pytest
-
 from api.common.utils import Utils
 
 
@@ -110,7 +109,7 @@ class TestUtilsValidation:
             name="John Doe",
             email="john@example.com",
             items=[1, 2, 3],
-            config={"debug": True}
+            config={"debug": True},
         )
 
     @pytest.mark.unit
@@ -122,7 +121,7 @@ class TestUtilsValidation:
                 name="John Doe",
                 email="",  # This should cause the error
                 items=[1, 2, 3],
-                config={"debug": True}
+                config={"debug": True},
             )
 
     @pytest.mark.unit
@@ -134,7 +133,7 @@ class TestUtilsValidation:
             string_field="valid string",
             list_field=[1, 2],
             dict_field={"key": "value"},
-            set_field={1, 2, 3}
+            set_field={1, 2, 3},
         )
 
     @pytest.mark.unit
@@ -145,7 +144,7 @@ class TestUtilsValidation:
         Utils.validate_non_empty(
             count=0,  # Zero should be valid
             price=10.5,
-            negative_value=-1
+            negative_value=-1,
         )
 
     @pytest.mark.unit
@@ -153,10 +152,7 @@ class TestUtilsValidation:
     def test_validate_non_empty_boolean_values(self):
         """Test validation with boolean values (should pass)"""
         # Boolean values should be valid
-        Utils.validate_non_empty(
-            is_active=True,
-            is_disabled=False
-        )
+        Utils.validate_non_empty(is_active=True, is_disabled=False)
 
     @pytest.mark.unit
     @pytest.mark.common
@@ -164,7 +160,7 @@ class TestUtilsValidation:
         """Test that error messages contain the correct field name"""
         with pytest.raises(ValueError) as exc_info:
             Utils.validate_non_empty(custom_field_name=None)
-        
+
         assert "custom_field_name cannot be None" in str(exc_info.value)
 
     @pytest.mark.unit
@@ -175,12 +171,12 @@ class TestUtilsValidation:
         with pytest.raises(ValueError) as exc_info:
             Utils.validate_non_empty(my_list=[])
         assert "cannot be an empty list" in str(exc_info.value)
-        
+
         # Test dict error message
         with pytest.raises(ValueError) as exc_info:
             Utils.validate_non_empty(my_dict={})
         assert "cannot be an empty dict" in str(exc_info.value)
-        
+
         # Test set error message
         with pytest.raises(ValueError) as exc_info:
             Utils.validate_non_empty(my_set=set())

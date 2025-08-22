@@ -4,15 +4,15 @@ import pytest
 from api.storage.models import (
     Assignment,
     AssignmentStatus,
+    ChatMessage,
     EmailVerificationStatus,
-    Tutor,
-    User,
-    SpecialSkill,
-    Subject,
     Level,
     Location,
     PrivateChat,
-    ChatMessage,
+    SpecialSkill,
+    Subject,
+    Tutor,
+    User,
 )
 
 
@@ -224,14 +224,17 @@ class TestStorageModels:
     def test_special_skill_filter_id_hybrid_property(self):
         """Test SpecialSkill filter_id hybrid property"""
         skill = SpecialSkill(name="Advanced Mathematics")
-        
+
         # Test the hybrid property (instance method)
         assert skill.filter_id == "special_skill_advanced_mathematics"
-        
+
         # Test the hybrid property expression (class method)
         # This covers the @filter_id.expression decorator
         from sqlalchemy import select
-        query = select(SpecialSkill).where(SpecialSkill.filter_id == "special_skill_advanced_mathematics")
+
+        query = select(SpecialSkill).where(
+            SpecialSkill.filter_id == "special_skill_advanced_mathematics"
+        )
         # The query should contain the concat and replace functions
         query_str = str(query)
         assert "concat" in query_str
@@ -243,13 +246,14 @@ class TestStorageModels:
     def test_subject_filter_id_hybrid_property(self):
         """Test Subject filter_id hybrid property"""
         subject = Subject(name="Physics")
-        
+
         # Test the hybrid property (instance method)
         assert subject.filter_id == "subject_physics"
-        
+
         # Test the hybrid property expression (class method)
         # This covers the @filter_id.expression decorator
         from sqlalchemy import select
+
         query = select(Subject).where(Subject.filter_id == "subject_physics")
         # The query should contain the concat and replace functions
         query_str = str(query)
@@ -262,13 +266,14 @@ class TestStorageModels:
     def test_level_filter_id_hybrid_property(self):
         """Test Level filter_id hybrid property"""
         level = Level(name="Primary 6")
-        
+
         # Test the hybrid property (instance method)
         assert level.filter_id == "level_primary_6"
-        
+
         # Test the hybrid property expression (class method)
         # This covers the @filter_id.expression decorator
         from sqlalchemy import select
+
         query = select(Level).where(Level.filter_id == "level_primary_6")
         # The query should contain the concat and replace functions
         query_str = str(query)
@@ -281,13 +286,14 @@ class TestStorageModels:
     def test_location_filter_id_hybrid_property(self):
         """Test Location filter_id hybrid property"""
         location = Location(name="Central Area")
-        
+
         # Test the hybrid property (instance method)
         assert location.filter_id == "location_central_area"
-        
+
         # Test the hybrid property expression (class method)
         # This covers the @filter_id.expression decorator
         from sqlalchemy import select
+
         query = select(Location).where(Location.filter_id == "location_central_area")
         # The query should contain the concat and replace functions
         query_str = str(query)
@@ -302,20 +308,16 @@ class TestStorageModels:
         # Create a chat with two users
         user1 = User(name="User 1", email="user1@example.com")
         user2 = User(name="User 2", email="user2@example.com")
-        
+
         chat = PrivateChat(user1_id=1, user2_id=2)
         chat.user1 = user1
         chat.user2 = user2
-        
+
         # Create a message from user1 to user2
-        message = ChatMessage(
-            content="Hello",
-            sender_id=1,
-            chat_id=1
-        )
+        message = ChatMessage(content="Hello", sender_id=1, chat_id=1)
         message.chat = chat
         message.sender = user1
-        
+
         # Test the hybrid property
         assert message.receiver_id == 2
 
@@ -326,20 +328,16 @@ class TestStorageModels:
         # Create a chat with two users
         user1 = User(name="User 1", email="user1@example.com")
         user2 = User(name="User 2", email="user2@example.com")
-        
+
         chat = PrivateChat(user1_id=1, user2_id=2)
         chat.user1 = user1
         chat.user2 = user2
-        
+
         # Create a message from user1 to user2
-        message = ChatMessage(
-            content="Hello",
-            sender_id=1,
-            chat_id=1
-        )
+        message = ChatMessage(content="Hello", sender_id=1, chat_id=1)
         message.chat = chat
         message.sender = user1
-        
+
         # Test the hybrid property
         assert message.receiver == user2
 
@@ -350,25 +348,17 @@ class TestStorageModels:
         # Create a chat with two users
         user1 = User(name="User 1", email="user1@example.com")
         user2 = User(name="User 2", email="user2@example.com")
-        
+
         chat = PrivateChat(user1_id=1, user2_id=2)
         chat.user1 = user1
         chat.user2 = user2
-        
+
         # Create a message from user1 to user2
-        message = ChatMessage(
-            content="Hello",
-            sender_id=1,
-            chat_id=1
-        )
-        
+        message = ChatMessage(content="Hello", sender_id=1, chat_id=1)
+
         # Test the method directly
         assert message.receiver_id_from_chat(chat) == 2
-        
+
         # Test with message from user2 to user1
-        message2 = ChatMessage(
-            content="Reply",
-            sender_id=2,
-            chat_id=1
-        )
+        message2 = ChatMessage(content="Reply", sender_id=2, chat_id=1)
         assert message2.receiver_id_from_chat(chat) == 1

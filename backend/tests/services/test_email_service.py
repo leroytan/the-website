@@ -113,7 +113,9 @@ class TestEmailService:
     @patch("api.services.email_service.GmailEmailService._read_template")
     @patch("api.services.email_service.GmailEmailService._get_gmail_service")
     @patch("api.services.email_service.GmailEmailService._get_credentials")
-    def test_send_assignment_request_email(self, mock_get_creds, mock_get_service, mock_read_template):
+    def test_send_assignment_request_email(
+        self, mock_get_creds, mock_get_service, mock_read_template
+    ):
         """Test sending assignment request email"""
         # Mock the Gmail service
         mock_service = MagicMock()
@@ -162,9 +164,10 @@ class TestEmailService:
         """Test email service error handling"""
         # Mock the Gmail service to raise an HttpError
         from googleapiclient.errors import HttpError
+
         mock_get_service.side_effect = HttpError(
             resp=MagicMock(status=400),
-            content=b'{"error": {"message": "Email service error"}}'
+            content=b'{"error": {"message": "Email service error"}}',
         )
 
         # Test sending invalid email
@@ -185,13 +188,14 @@ class TestEmailService:
         """Test email validation in service methods"""
         # Mock the Gmail service to simulate an HttpError
         from googleapiclient.errors import HttpError
+
         mock_service = MagicMock()
         mock_get_service.return_value = mock_service
         mock_service.users().messages().send().execute.side_effect = HttpError(
             resp=MagicMock(status=400),
-            content=b'{"error": {"message": "Invalid email"}}'
+            content=b'{"error": {"message": "Invalid email"}}',
         )
-        
+
         # Test with invalid email - should return error response, not raise exception
         result = GmailEmailService.send_email_confirmation_email(
             recipient_email="invalid-email",

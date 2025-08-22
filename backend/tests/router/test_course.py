@@ -1,7 +1,9 @@
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, Mock
-from fastapi.testclient import TestClient
 from api.router.course import router
+from fastapi.testclient import TestClient
+
 
 class TestCourseRouter:
     """Test cases for course router endpoints"""
@@ -10,13 +12,15 @@ class TestCourseRouter:
     @pytest.mark.router
     def test_get_courses_success(self):
         """Test successful courses retrieval"""
-        with patch('api.logic.course_logic.CourseLogic.get_public_summaries') as mock_get:
+        with patch(
+            "api.logic.course_logic.CourseLogic.get_public_summaries"
+        ) as mock_get:
             mock_get.return_value = []
-            
+
             client = TestClient(router)
-            
+
             response = client.get("/api/courses")
-            
+
             assert response.status_code == 200
             assert response.json() == []
 
@@ -26,13 +30,14 @@ class TestCourseRouter:
         """Test successful course about retrieval"""
         # Test the function directly
         from api.router.course import get_course_about
-        
+
         result = get_course_about("CS1010")
-        
+
         # Since it's async, we need to await it
         import asyncio
+
         result = asyncio.run(result)
-        
+
         assert result is None
 
     @pytest.mark.unit
@@ -41,13 +46,14 @@ class TestCourseRouter:
         """Test successful course modules retrieval"""
         # Test the function directly
         from api.router.course import get_course_modules
-        
+
         result = get_course_modules("CS1010")
-        
+
         # Since it's async, we need to await it
         import asyncio
+
         result = asyncio.run(result)
-        
+
         assert result == []
 
     @pytest.mark.unit
@@ -56,13 +62,12 @@ class TestCourseRouter:
         """Test successful course module content retrieval"""
         # Test the function directly
         from api.router.course import get_course_module_content
-        
+
         result = get_course_module_content("CS1010", 1)
-        
+
         # Since it's async, we need to await it
         import asyncio
+
         result = asyncio.run(result)
-        
+
         assert result is None
-
-
