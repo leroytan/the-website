@@ -72,7 +72,7 @@ export default function TutorProfile({ tutor }: { tutor: Tutor }) {
           )}
         </div>
         <div>
-          <UserImage user={{ photo_url: tutor.photo_url, name: tutor.name }} width={140} height={140} />
+          <UserImage user={{ photo_url: tutor.photo_url, name: tutor.name, gender: tutor.gender }} width={140} height={140} />
         </div>
 
         <div className="flex flex-col justify-center">

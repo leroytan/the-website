@@ -32,7 +32,7 @@ type TutorProfileFormData = {
 function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: () => void }) {
   const { setError } = useError();
   const router = useRouter();
-  const { refetch } = useAuth();
+  const { refetch, user } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const oldAvatarUrl = useRef<string>("");
   const [formData, setFormData] = useState<TutorProfileFormData>({
@@ -155,7 +155,7 @@ function TutorProfileForm({ nextStep, cancel }: { nextStep: () => void, cancel: 
           Create a Tutor Profile
         </h1>
 
-        <ProfilePictureUploader/>
+        <ProfilePictureUploader photoUrl={user?.profile_photo_url} gender={user?.gender} />
         <div className="flex flex-col gap-2">
           <label className="font-semibold text-customDarkBlue">
             <span className="text-customOrange">* </span>

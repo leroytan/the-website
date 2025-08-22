@@ -75,7 +75,7 @@ const UserMenu = () => {
           >
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden">
               <UserImage
-                user={{ photo_url: user.profile_photo_url, name: user.name }}
+                user={{ photo_url: user.profile_photo_url, name: user.name, gender: user.gender }}
               />
             </div>
             <span className="hidden lg:block text-sm font-medium text-gray-700">

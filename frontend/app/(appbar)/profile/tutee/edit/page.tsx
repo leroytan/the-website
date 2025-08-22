@@ -111,9 +111,8 @@ export default function TuteeProfileEditPage() {
         </div>
         <div className="relative">
           <ProfilePictureUploader
-            photoUrl={
-              profile.profile_photo_url || "/images/THE-guyprofilephoto.png"
-            }
+            photoUrl={profile.profile_photo_url}
+            gender={profile.gender}
           />
         </div>
 

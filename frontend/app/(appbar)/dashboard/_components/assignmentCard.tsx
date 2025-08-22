@@ -73,7 +73,8 @@ export default function AssignmentCard({
                     assignment.requests?.find(r => r.status === "ACCEPTED")
                       ? {
                           name: assignment.requests.find(r => r.status === "ACCEPTED")!.tutor_name,
-                          photo_url: assignment.requests.find(r => r.status === "ACCEPTED")!.tutor_profile_photo_url
+                          photo_url: assignment.requests.find(r => r.status === "ACCEPTED")!.tutor_profile_photo_url,
+                          gender: assignment.requests.find(r => r.status === "ACCEPTED")!.tutor_gender
                         }
                       : { name: "Not Assigned" }
                   }

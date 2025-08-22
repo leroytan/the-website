@@ -23,7 +23,7 @@ repos:
         
       - id: export_requirements
         name: Export Requirements
-        entry: bash -c 'cd backend && poetry run ./scripts/export_requirements.sh'
+        entry: bash -c 'cd backend && ./scripts/export_requirements.sh'
         language: system
         pass_filenames: false
         always_run: true

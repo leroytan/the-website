@@ -138,6 +138,7 @@ class TestRouterModels:
             "id": 1,
             "name": "John Doe",
             "photo_url": "https://example.com/photo.jpg",
+            "gender": "MALE",
             "highest_education": "PhD",
             "min_rate": 50.0,
             "max_rate": 100.0,
@@ -156,6 +157,7 @@ class TestRouterModels:
         assert tutor_summary.id == 1
         assert tutor_summary.name == "John Doe"
         assert tutor_summary.photo_url == "https://example.com/photo.jpg"
+        assert tutor_summary.gender == "MALE"
         assert tutor_summary.highest_education == "PhD"
         assert tutor_summary.min_rate == 50.0
         assert tutor_summary.max_rate == 100.0

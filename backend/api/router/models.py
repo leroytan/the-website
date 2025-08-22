@@ -25,6 +25,7 @@ class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photo_url: str | None
+    gender: str | None
     highest_education: str
     min_rate: float | None
     max_rate: float | None
@@ -58,6 +59,7 @@ class TutorProfile(BaseModel):
     name: str
     email: str
     photo_url: str | None
+    gender: str | None
     highest_education: str | None
     min_rate: float | None
     max_rate: float | None
@@ -131,6 +133,7 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    tutor_gender: str | None
     requested_rate_hourly: int  # in dollars
     requested_duration: int  # in minutes
     available_slots: list[AssignmentSlotView]

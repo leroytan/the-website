@@ -27,6 +27,8 @@ class TestTutorLogic:
         mock_tutor = Mock()
         mock_tutor.id = 1
         mock_tutor.user.name = "Test Tutor"
+        mock_tutor.user.gender = Mock()
+        mock_tutor.user.gender.value = "MALE"
         mock_tutor.highest_education = "Bachelor's"
         mock_tutor.min_rate = 30
         mock_tutor.max_rate = 50
@@ -72,6 +74,7 @@ class TestTutorLogic:
             assert isinstance(result, TutorPublicSummary)
             assert result.id == 1
             assert result.name == "Test Tutor"
+            assert result.gender == "MALE"
             assert result.highest_education == "Bachelor's"
             assert result.min_rate == 30
             assert result.max_rate == 50
@@ -92,6 +95,8 @@ class TestTutorLogic:
         mock_tutor.id = 1
         mock_tutor.user.name = "Test Tutor"
         mock_tutor.user.email = "tutor@example.com"
+        mock_tutor.user.gender = Mock()
+        mock_tutor.user.gender.value = "FEMALE"
         mock_tutor.highest_education = "Bachelor's"
         mock_tutor.min_rate = 30
         mock_tutor.max_rate = 50
@@ -133,6 +138,7 @@ class TestTutorLogic:
             assert result.id == 1
             assert result.name == "Test Tutor"
             assert result.email == "tutor@example.com"
+            assert result.gender == "FEMALE"
             assert result.location == "Singapore"
             assert result.subjects_teachable == ["Mathematics"]
             assert result.levels_teachable == ["Primary"]
@@ -194,6 +200,7 @@ class TestTutorLogic:
                     id=1,
                     name="Math Tutor",
                     photo_url="",
+                    gender="MALE",
                     highest_education="",
                     min_rate=0,
                     max_rate=0,
@@ -279,6 +286,7 @@ class TestTutorLogic:
                     contact="",
                     email="",
                     photo_url="",
+                    gender="MALE",
                     highest_education="Bachelor's",
                     min_rate=30,
                     max_rate=50,
@@ -437,6 +445,7 @@ class TestTutorLogic:
                     id=1,
                     name="Test Tutor",
                     photo_url="",
+                    gender="MALE",
                     highest_education="",
                     min_rate=0,
                     max_rate=0,
@@ -487,6 +496,7 @@ class TestTutorLogic:
                     contact="",
                     email="",
                     photo_url="",
+                    gender="MALE",
                     highest_education="",
                     min_rate=0,
                     max_rate=0,
@@ -596,6 +606,7 @@ class TestTutorLogic:
                     contact="",
                     email="",
                     photo_url="",
+                    gender="MALE",
                     highest_education="Master's",
                     min_rate=40,
                     max_rate=60,
