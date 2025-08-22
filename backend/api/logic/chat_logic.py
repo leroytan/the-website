@@ -191,10 +191,10 @@ class ChatLogic:
             message_type=new_chat_message.message_type,
         )
         if chat.is_locked:
-            # Check for consecutive messages
+            # Check for consecutive messages (excluding flagged/error messages)
             last_3_messages = (
                 session.query(ChatMessage)
-                .filter(ChatMessage.chat_id == chat_id)
+                .filter(ChatMessage.chat_id == chat_id, ChatMessage.is_flagged == False)
                 .order_by(ChatMessage.created_at.desc())
                 .limit(3)
                 .all()
