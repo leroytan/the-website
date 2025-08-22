@@ -38,7 +38,7 @@ def upgrade() -> None:
     if not enum_exists:
         # Create the Gender enum type
         gender_enum = postgresql.ENUM(
-            "male", "female", "other", "prefer_not_to_say", name="gender"
+            "MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY", name="gender"
         )
         gender_enum.create(connection)
         print("✅ Created gender enum type")
@@ -46,7 +46,7 @@ def upgrade() -> None:
         # Drop and recreate the enum to ensure it has the correct values
         connection.execute(sa.text("DROP TYPE IF EXISTS gender CASCADE"))
         gender_enum = postgresql.ENUM(
-            "male", "female", "other", "prefer_not_to_say", name="gender"
+            "MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY", name="gender"
         )
         gender_enum.create(connection)
         print("✅ Recreated gender enum type with correct values")
@@ -67,7 +67,7 @@ def upgrade() -> None:
             "User",
             sa.Column(
                 "gender",
-                sa.Enum("male", "female", "other", "prefer_not_to_say", name="gender"),
+                sa.Enum("MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY", name="gender"),
                 nullable=True,
             ),
         )
@@ -79,7 +79,7 @@ def upgrade() -> None:
             "User",
             sa.Column(
                 "gender",
-                sa.Enum("male", "female", "other", "prefer_not_to_say", name="gender"),
+                sa.Enum("MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY", name="gender"),
                 nullable=True,
             ),
         )
@@ -98,7 +98,7 @@ def upgrade() -> None:
         print(f"Found {len(users)} users without gender fields, updating...")
 
         # Define gender choices
-        gender_choices = ["male", "female", "other", "prefer_not_to_say"]
+        gender_choices = ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]
 
         for user in users:
             # Use user ID to deterministically assign gender
@@ -153,7 +153,7 @@ def downgrade() -> None:
     if enum_exists:
         # Drop the Gender enum type
         gender_enum = postgresql.ENUM(
-            "male", "female", "other", "prefer_not_to_say", name="gender"
+            "MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY", name="gender"
         )
         gender_enum.drop(connection)
         print("✅ Removed gender enum type")

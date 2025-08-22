@@ -76,7 +76,7 @@ export default function SignupPage() {
         email,
         password,
         intends_to_be_tutor: userType === "Tutor",
-        gender: gender.toLowerCase().replace(" ", "_"),
+        gender: gender.toUpperCase().replace(" ", "_"),
       }),
     });
 
