@@ -147,7 +147,14 @@ def insert_test_data(engine: object) -> bool:
         return session.query(model).count() > 0
 
     # Only add data if the following (non-seeded) tables are empty
-    if any([table_has_data(User), table_has_data(Tutor), table_has_data(Assignment)]):
+    if any(
+        [
+            table_has_data(User),
+            table_has_data(Tutor),
+            table_has_data(Assignment),
+            table_has_data(SpecialSkill),
+        ]
+    ):
         print("Database already contains data. Skipping test data insertion.")
         return False
 

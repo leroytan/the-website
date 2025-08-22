@@ -6,6 +6,11 @@ from api.storage.models import Level, Subject
 
 
 def seed_subjects(db: Session):
+    # Check if subjects already exist
+    if db.query(Subject).count() > 0:
+        print("Subjects already exist. Skipping subject seeding.")
+        return
+
     subjects = [
         Subject(name="Mathematics"),
         Subject(name="Physics"),
@@ -20,9 +25,15 @@ def seed_subjects(db: Session):
     ]
     db.add_all(subjects)
     db.commit()
+    print("Subjects seeded successfully.")
 
 
 def seed_levels(db: Session):
+    # Check if levels already exist
+    if db.query(Level).count() > 0:
+        print("Levels already exist. Skipping level seeding.")
+        return
+
     # Create test levels (temporarily excluding levels above Primary 6)
     levels = [
         Level(name="Primary 1", sort_order=1),
@@ -42,9 +53,17 @@ def seed_levels(db: Session):
     ]
     db.add_all(levels)
     db.commit()
+    print("Levels seeded successfully.")
 
 
 def seed_locations(db: Session):
+    from api.storage.models import Location
+
+    # Check if locations already exist
+    if db.query(Location).count() > 0:
+        print("Locations already exist. Skipping location seeding.")
+        return
+
     locations = [
         "Ang Mo Kio",
         "Bedok North",
@@ -108,10 +127,9 @@ def seed_locations(db: Session):
         "West Coast",
     ]
 
-    from api.storage.models import Location
-
     db.add_all([Location(name=location) for location in locations])
     db.commit()
+    print("Locations seeded successfully.")
 
 
 def seed_database(db: Session):

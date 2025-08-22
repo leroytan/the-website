@@ -6,12 +6,9 @@ from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy_utils import create_database, database_exists
 
 from api.common.utils import Utils
-from api.config import settings
 from api.exceptions import TableEmptyError
 from api.storage.connection import engine as default_engine
 from api.storage.models import Base, User
-from api.storage.populate import insert_test_data
-from api.storage.seed import seed_database
 
 
 class StorageService:
@@ -27,19 +24,11 @@ class StorageService:
                 create_database(db_engine.url)
                 print("Database created")
             # SQLAlchemy automatically creates tables from the Base metadata
+            # Seeding and populating are now handled by init_db.sh during build
             Base.metadata.create_all(db_engine)
-            print("Tables created")
-            with Session(db_engine) as session:
-                print("Seeding database")
-                seed_database(session)
-                print("Database seeded")
-            if settings.db_populate_check:
-                print("Inserting test data")
-                success = insert_test_data(db_engine)
-                # check_data(db_engine)
-                print("Test data inserted")
+            print("Tables created (if needed)")
         StorageService.engine = db_engine
-        print("Database initialized")
+        print("Database connection initialized")
 
     @staticmethod
     def find(
