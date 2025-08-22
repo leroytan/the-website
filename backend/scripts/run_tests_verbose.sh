@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Test runner script for the backend
-# This script runs all tests with proper configuration
+# Verbose test runner script for the backend
+# This script runs all tests with maximum progress visibility
 
-echo "🧪 Running Backend Tests"
-echo "========================="
+echo "🧪 Running Backend Tests (Verbose Mode)"
+echo "======================================="
 
 # Set environment variables for testing
 export TESTING=true
 
-# Run tests with real-time progress indicators
-echo "Running all tests with coverage and progress indicators..."
+# Run tests with maximum progress visibility
+echo "Running all tests with maximum progress indicators..."
 poetry run pytest tests/ \
     --tb=short \
     --cov=api \
@@ -20,7 +20,9 @@ poetry run pytest tests/ \
     --durations=10 \
     --maxfail=5 \
     --color=yes \
-    --verbose
+    --verbose \
+    --capture=no \
+    --disable-warnings
 
 # Capture the exit code from pytest
 TEST_EXIT_CODE=$?
