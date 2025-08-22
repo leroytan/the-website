@@ -73,7 +73,7 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "sent_by_user": False,
                     "is_flagged": False,
-                    "is_error": True
+                    "is_error": True,
                 }
                 await websocket.send_text(json.dumps(error_message))
             except Exception as e:
@@ -87,7 +87,7 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "sent_by_user": False,
                     "is_flagged": False,
-                    "is_error": True
+                    "is_error": True,
                 }
                 await websocket.send_text(json.dumps(error_message))
     except WebSocketDisconnect:
@@ -142,7 +142,9 @@ async def mark_chat_as_read(
 
 
 @router.get("/api/chats")
-async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict[str, list]:
+async def get_chats(
+    user: User = Depends(RouterAuthUtils.get_current_user),
+) -> dict[str, list]:
     """
     Get all chats for the current user.
 

@@ -205,7 +205,9 @@ async def logout(
 
 
 @router.get("/api/protected")
-async def protected_route(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def protected_route(
+    user: User = Depends(RouterAuthUtils.get_current_user),
+) -> dict:
     # Test route for authentication
     return {"message": "This is a protected route", "user_id": user.id}
 
