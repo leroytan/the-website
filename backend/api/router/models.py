@@ -18,6 +18,7 @@ class SignupRequest(BaseModel):
     password: str
     name: str
     intends_to_be_tutor: bool = False
+    gender: str | None = None
 
 
 class TutorPublicSummary(BaseModel):
@@ -265,6 +266,7 @@ class UserView(BaseModel):
     email: str
     profile_photo_url: str | None
     intends_to_be_tutor: bool
+    gender: str | None
     created_at: str
     updated_at: str
 

@@ -21,6 +21,7 @@ import { Button } from "@/components/button";
 const inter = Inter({ subsets: ["latin"] });
 
 const ROLES = ["Tutor", "Tutee/Parent"] as const;
+const GENDERS = ["Male", "Female", "Other", "Prefer not to say"] as const;
 
 export default function SignupPage() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [userType, setUserType] = useState("");
+  const [gender, setGender] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");
@@ -59,6 +61,10 @@ export default function SignupPage() {
       setErrorMessage("Please fill in all fields.");
       return;
     }
+    if (!gender) {
+      setErrorMessage("Please select your gender.");
+      return;
+    }
     if (password !== confirmPassword) {
       return;
     }
@@ -70,6 +76,7 @@ export default function SignupPage() {
         email,
         password,
         intends_to_be_tutor: userType === "Tutor",
+        gender: gender.toLowerCase().replace(" ", "_"),
       }),
     });
 
@@ -171,6 +178,13 @@ export default function SignupPage() {
               aria-required="true"
             />
           </div>
+          <DropDown
+            placeholder="Select your gender..."
+            stringOnDisplay={gender}
+            stateController={setGender}
+            iterable={[...GENDERS]}
+            className="mb-4"
+          />
           <div className="mb-4">
             <label
               htmlFor="email"

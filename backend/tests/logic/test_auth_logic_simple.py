@@ -69,6 +69,7 @@ class TestAuthLogicSimple:
             password="password123",
             name="Existing User",
             intends_to_be_tutor=False,
+            gender="male",
         )
 
         # Create mock existing user

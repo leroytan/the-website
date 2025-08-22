@@ -258,6 +258,7 @@ class TestLogic:
                 password=sample_user_data["password"],
                 name=sample_user_data["name"],
                 intends_to_be_tutor=False,
+                gender="male",
             )
 
             # Test the method
@@ -295,6 +296,7 @@ class TestLogic:
                 password=sample_user_data["password"],
                 name=sample_user_data["name"],
                 intends_to_be_tutor=False,
+                gender="male",
             )
 
             # Test the method
@@ -331,6 +333,7 @@ class TestLogic:
                 password=sample_user_data["password"],
                 name=sample_user_data["name"],
                 intends_to_be_tutor=False,
+                gender="male",
             )
 
             # Test the method

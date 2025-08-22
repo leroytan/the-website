@@ -36,6 +36,17 @@ class SortableMixin:
         return Column(Integer, nullable=False)
 
 
+class Gender(enum.Enum):
+    """
+    Enum for user gender
+    """
+
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"
+
+
 class EmailVerificationStatus(enum.Enum):
     """
     Enum for email verification status
@@ -63,6 +74,7 @@ class User(Base, SerializerMixin):
     )  # New field for Google ID
     token_version = Column(Integer, default=0)
     intends_to_be_tutor = Column(Boolean, default=False)
+    gender = Column(ENUM(Gender), nullable=True)  # New gender field
 
     # Email confirmation fields
     email_verification_status = Column(

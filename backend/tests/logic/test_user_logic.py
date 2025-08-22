@@ -22,6 +22,8 @@ class TestUserLogic:
         mock_user.name = "Test User"
         mock_user.email = "test@example.com"
         mock_user.intends_to_be_tutor = True
+        mock_user.gender = Mock()
+        mock_user.gender.value = "male"
         mock_user.created_at = datetime.now(timezone.utc)
         mock_user.updated_at = datetime.now(timezone.utc)
 
@@ -195,6 +197,7 @@ class TestUserLogic:
                 email="test@example.com",
                 profile_photo_url="",
                 intends_to_be_tutor=False,
+                gender="male",
                 created_at="",
                 updated_at="",
             )
@@ -259,6 +262,7 @@ class TestUserLogic:
                 email="test@example.com",
                 profile_photo_url="",
                 intends_to_be_tutor=True,
+                gender="male",
                 created_at="",
                 updated_at="",
             )
@@ -330,6 +334,7 @@ class TestUserLogic:
                 email="test@example.com",
                 profile_photo_url="",
                 intends_to_be_tutor=False,
+                gender="male",
                 created_at="",
                 updated_at="",
             )

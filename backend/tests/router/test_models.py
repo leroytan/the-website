@@ -52,6 +52,7 @@ class TestRouterModels:
             "password": "testpassword123",
             "name": "Test User",
             "intends_to_be_tutor": False,
+            "gender": "male",
         }
 
         signup_request = SignupRequest(**signup_data)
@@ -60,6 +61,7 @@ class TestRouterModels:
         assert signup_request.password == "testpassword123"
         assert signup_request.name == "Test User"
         assert signup_request.intends_to_be_tutor is False
+        assert signup_request.gender == "male"
 
     @pytest.mark.unit
     @pytest.mark.models
@@ -74,6 +76,7 @@ class TestRouterModels:
         signup_request = SignupRequest(**signup_data)
 
         assert signup_request.intends_to_be_tutor is False
+        assert signup_request.gender is None
 
     @pytest.mark.unit
     @pytest.mark.models
