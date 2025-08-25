@@ -5,7 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 
 import { useRouter } from "next/navigation";
 import { BASE_URL } from "@/utils/constants";
@@ -15,6 +15,7 @@ import ErrorMessage from "@/components/ErrorMessage";
 import logger from "@/utils/logger";
 
 import { FcGoogle } from "react-icons/fc";
+import { Button } from "@/components/button";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,8 +25,8 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<ReactNode>("");
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
   // Helper function to ensure error message is always a string
@@ -48,18 +49,19 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       });
 
       if (res.ok) {
-        setErrorMessageSafe("Confirmation email sent! Please check your inbox.");
+        setErrorMessageSafe(<div>Confirmation email sent! Please check your inbox. (If you don’t see it, please check your junk or spam folder)</div>);
         setNeedsEmailVerification(false);
       } else {
-        setErrorMessageSafe("Failed to send confirmation email. Please try again.");
+        setErrorMessageSafe(<div>Failed to send confirmation email. Please try again.</div>);
       }
     } catch (error) {
-      setErrorMessageSafe("An error occurred. Please try again.");
+      setErrorMessageSafe(<div>An error occurred. Please try again.</div>);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     const res = await fetch(`/api/auth/login`, {
       method: "POST",
@@ -80,10 +82,11 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       document.cookie = `intends_to_be_tutor=${!!user.intends_to_be_tutor}; path=/; SameSite=Lax; Secure`;
       document.cookie = `tutor_profile_complete=${!!tutor}; path=/; SameSite=Lax; Secure`;
       }
-      
+      setLoading(false);
       router.replace(redirectTo);
       // router.refresh();
     } else {
+      setLoading(false);
       const errorData = await res.json();
       
       // Handle email verification error specifically
@@ -206,35 +209,11 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
               Forgot Password?
             </Link>
           </div>
-          <motion.button
-            type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200"
-          >
+          <Button className="w-full bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200" type="submit" loading={loading}>
             Log In
-          </motion.button>
+          </Button>
         </form>
 
-        <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
-            </div>
-        </div>
-
-        <motion.button
-            type="button"
-            onClick={() => { window.location.href = `${BASE_URL}/auth/google/login`; }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors duration-200 shadow-sm"
-        >
-            <FcGoogle className="mr-2 h-5 w-5" />
-            Sign in with Google
-        </motion.button>
 
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
           Don't have an account?{" "}
