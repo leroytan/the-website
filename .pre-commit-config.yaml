@@ -1,0 +1,32 @@
+repos:
+  - repo: local
+    hooks:
+      - id: format_python
+        name: Format Python Files
+        entry: bash -c 'cd backend && poetry run ./scripts/format_python.sh'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        description: Format all Python files with Ruff before commit
+        verbose: true
+        
+      - id: backend_tests
+        name: Backend Tests
+        entry: bash -c 'cd backend && poetry run ./scripts/run_tests_fast.sh'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        description: Run backend tests before commit
+        verbose: true
+        
+      - id: export_requirements
+        name: Export Requirements
+        entry: bash -c 'cd backend && ./scripts/export_requirements.sh'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        description: Export Poetry dependencies to requirements.txt
+        verbose: true

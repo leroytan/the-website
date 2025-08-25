@@ -4,3 +4,7 @@ set -e
 
 # Install dependencies and run database migrations
 pip install -r requirements.txt && alembic upgrade head
+
+# Initialize database after migrations
+chmod +x scripts/init_db.sh
+./scripts/init_db.sh

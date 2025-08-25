@@ -7,6 +7,7 @@ from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (
     AssignmentOwnerView,
     AssignmentPublicView,
+    TutorProfile,
     UserUpdateRequest,
     UserView,
 )
@@ -18,7 +19,7 @@ router = APIRouter()
 @router.post("/api/me/upload-profile-photo")
 async def upload_profile_photo(
     file: UploadFile = File(...), user: User = Depends(RouterAuthUtils.get_current_user)
-):
+) -> dict[str, str]:
     if file.content_type not in [
         "image/jpeg",
         "image/png",
@@ -51,7 +52,9 @@ async def get_applied_assignments(
 
 
 @router.get("/api/me")
-async def get_user_info(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def get_user_info(
+    user: User = Depends(RouterAuthUtils.get_current_user),
+) -> dict[str, UserView | TutorProfile | None]:
     try:
         tutor = TutorLogic.find_profile_by_id(user.id, is_self=True)
     except HTTPException as e:

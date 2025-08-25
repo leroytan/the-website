@@ -1,4 +1,5 @@
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,16 +15,19 @@ from api.storage.storage_service import StorageService
 
 StorageService.init_db()
 
-app = FastAPI(docs_url="/api/py/docs", openapi_url="/api/py/openapi.json")
 
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    Perform startup tasks, including sending a notification email.
-    """
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     send_startup_notification_email()
+    yield
+    # Shutdown
     pass
+
+
+app = FastAPI(
+    docs_url="/api/py/docs", openapi_url="/api/py/openapi.json", lifespan=lifespan
+)
 
 
 @app.middleware("http")
@@ -91,7 +95,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.websocket("/ws/protected")
-async def websocket_endpoint(
+async def websocket_endpoint_protected(
     pair: tuple[User, WebSocket] = Depends(RouterAuthUtils.get_current_user_ws),
 ):
     user, websocket = pair

@@ -24,9 +24,10 @@ const MIN_DIMENSION = 150;
 
 interface ProfilePictureUploaderProps {
   photoUrl?: string;
+  gender?: string | null;
 }
 
-const ProfilePictureUploader = ({ photoUrl }: ProfilePictureUploaderProps) => {
+const ProfilePictureUploader = ({ photoUrl, gender }: ProfilePictureUploaderProps) => {
   const { setError } = useError();
   const { refetch } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string>(photoUrl || "");
@@ -34,6 +35,14 @@ const ProfilePictureUploader = ({ photoUrl }: ProfilePictureUploaderProps) => {
   const oldAvatarUrl = useRef<string>("");
   const params = useParams();
   const tutorId = params.id;
+
+  // Determine default profile picture based on gender
+  const getDefaultProfilePicture = () => {
+    if (gender === "FEMALE") {
+      return "/images/THE-girlprofilephoto.png";
+    }
+    return "/images/THE-guyprofilephoto.png";
+  };
 
   const updateAvatar = async (avatarDataUrl: string | null) => {
     if (!avatarDataUrl) return;
@@ -71,7 +80,7 @@ const ProfilePictureUploader = ({ photoUrl }: ProfilePictureUploaderProps) => {
   return (
       <div className="flex flex-col items-center gap-2">
         <Image
-          src={avatarUrl || "/images/THE-guyprofilephoto.png"}
+          src={avatarUrl || getDefaultProfilePicture()}
           alt="Avatar"
           width={140}
           height={140}

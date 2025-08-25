@@ -2,7 +2,7 @@ import enum
 import re
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from api.storage.models import AssignmentRequestStatus, ChatMessageType
 
@@ -18,12 +18,14 @@ class SignupRequest(BaseModel):
     password: str
     name: str
     intends_to_be_tutor: bool = False
+    gender: str | None = None
 
 
 class TutorPublicSummary(BaseModel):
     id: int
     name: str
     photo_url: str | None
+    gender: str | None
     highest_education: str
     min_rate: float | None
     max_rate: float | None
@@ -57,6 +59,7 @@ class TutorProfile(BaseModel):
     name: str
     email: str
     photo_url: str | None
+    gender: str | None
     highest_education: str | None
     min_rate: float | None
     max_rate: float | None
@@ -130,6 +133,7 @@ class AssignmentRequestView(BaseModel):
     tutor_id: int
     tutor_name: str
     tutor_profile_photo_url: str | None
+    tutor_gender: str | None
     requested_rate_hourly: int  # in dollars
     requested_duration: int  # in minutes
     available_slots: list[AssignmentSlotView]
@@ -265,6 +269,7 @@ class UserView(BaseModel):
     email: str
     profile_photo_url: str | None
     intends_to_be_tutor: bool
+    gender: str | None
     created_at: str
     updated_at: str
 
@@ -301,7 +306,8 @@ class ForgotPasswordRequest(BaseModel):
 
     email: EmailStr
 
-    @validator("email")
+    @field_validator("email")
+    @classmethod
     def normalize_email(cls, email):
         """
         Normalize email for consistent handling
@@ -324,7 +330,8 @@ class EmailConfirmationRequest(BaseModel):
 
     confirmation_token: str
 
-    @validator("confirmation_token")
+    @field_validator("confirmation_token")
+    @classmethod
     def validate_token(cls, token):
         """
         Validate confirmation token is not empty
@@ -346,7 +353,8 @@ class ResetPasswordRequest(BaseModel):
         ..., description="New account password", min_length=8, max_length=128
     )
 
-    @validator("new_password")
+    @field_validator("new_password")
+    @classmethod
     def validate_password_strength(cls, password):
         """
         Comprehensive password strength validation

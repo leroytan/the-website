@@ -14,6 +14,7 @@ interface UserProfile {
   name: string
   email: string
   profile_photo_url: string | undefined
+  gender: string | null
   intends_to_be_tutor: boolean
   email_verified: boolean
   created_at: string
@@ -68,7 +69,7 @@ export default function TuteeProfilePage() {
           </Link>
         </div>
         <div className="relative">
-          <UserImage user={{ photo_url: profile.profile_photo_url, name: profile.name }} width={140} height={140} />
+          <UserImage user={{ photo_url: profile.profile_photo_url, name: profile.name, gender: profile.gender }} width={140} height={140} />
         
         </div>
 

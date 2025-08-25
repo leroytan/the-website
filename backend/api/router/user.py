@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from api.logic.tutor_logic import TutorLogic
 from api.logic.user_logic import UserLogic
 from api.router.auth_utils import RouterAuthUtils
+from api.router.models import TutorProfile, UserView
 
 # Removed redundant import
 
@@ -10,7 +11,9 @@ router = APIRouter()
 
 
 @router.get("/api/user/{id}")
-async def get_user(id: int, request: Request, response: Response) -> dict:
+async def get_user(
+    id: int, request: Request, response: Response
+) -> dict[str, UserView | TutorProfile | None]:
     is_self = False
 
     try:

@@ -65,7 +65,7 @@ export default function AppliedTutorsModal({
                 {/* Tutor Info */}
                 <div className="flex items-center gap-3">
                   <div className="flex-[30%]">
-                    <UserImage user={{ photo_url: request.tutor_profile_photo_url, name: request.tutor_name }} />
+                    <UserImage user={{ photo_url: request.tutor_profile_photo_url, name: request.tutor_name, gender: request.tutor_gender }} />
                   </div>
                   <div className="flex-[70%]">
                     <p className="font-semibold text-customDarkBlue">

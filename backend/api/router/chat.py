@@ -1,9 +1,11 @@
 import json
+from datetime import datetime, timezone
 
 from fastapi import Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRouter
 
+from api.exceptions import ConsecutiveMessageError
 from api.logic.chat_logic import ChatLogic
 from api.router.auth_utils import RouterAuthUtils
 from api.router.models import (
@@ -25,7 +27,7 @@ router = APIRouter()
 @router.get("/api/chat/jwt")
 async def get_jwt(
     request: Request, user: User = Depends(RouterAuthUtils.get_current_user)
-) -> dict:
+) -> dict[str, str]:
     """
     Get JWT for websocket authentication.
 
@@ -58,7 +60,36 @@ async def websocket_endpoint(websocket: WebSocket, access_token: str = ""):
                 content=content, chat_id=chat_id, message_type=message_type
             )
 
-            await ChatLogic.handle_private_message(message, user.id, origin)
+            try:
+                await ChatLogic.handle_private_message(message, user.id, origin)
+            except ConsecutiveMessageError as e:
+                error_message = {
+                    "id": -1,
+                    "chat_id": chat_id,
+                    "sender": "System",
+                    "content": str(e),
+                    "message_type": "text_message",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "sent_by_user": False,
+                    "is_flagged": False,
+                    "is_error": True,
+                }
+                await websocket.send_text(json.dumps(error_message))
+            except Exception as e:
+                error_message = {
+                    "id": -1,
+                    "chat_id": chat_id,
+                    "sender": "System",
+                    "content": f"An error occurred: {str(e)}",
+                    "message_type": "text_message",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "sent_by_user": False,
+                    "is_flagged": False,
+                    "is_error": True,
+                }
+                await websocket.send_text(json.dumps(error_message))
     except WebSocketDisconnect:
         async with ChatLogic.mutex:
             if user.id in ChatLogic.active_connections:
@@ -88,7 +119,7 @@ async def get_chat_messages(
     user: User = Depends(RouterAuthUtils.get_current_user),
     created_before: str = None,
     limit: int = 50,
-) -> dict:
+) -> dict[str, list | int | bool]:
     return ChatLogic.get_private_chat_history(id, user.id, created_before, limit)
 
 
@@ -96,7 +127,7 @@ async def get_chat_messages(
 @router.post("/api/chat/{id}/read")
 async def mark_chat_as_read(
     id: int, user: User = Depends(RouterAuthUtils.get_current_user)
-) -> dict:
+) -> dict[str, str]:
     """
     Mark a chat as read for the current user.
 
@@ -111,7 +142,9 @@ async def mark_chat_as_read(
 
 
 @router.get("/api/chats")
-async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> dict:
+async def get_chats(
+    user: User = Depends(RouterAuthUtils.get_current_user),
+) -> dict[str, list]:
     """
     Get all chats for the current user.
 
@@ -127,7 +160,7 @@ async def get_chats(user: User = Depends(RouterAuthUtils.get_current_user)) -> d
 async def send_message_to_user(
     message_packet: MessagePacket,
     user: User = Depends(RouterAuthUtils.get_current_user),
-) -> dict:
+) -> dict[str, str]:
     """
     Send a message to another user.
 

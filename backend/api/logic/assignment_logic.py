@@ -633,6 +633,7 @@ class AssignmentLogic:
                 tutor_profile_photo_url=UserLogic.get_profile_photo_url(
                     assignment_request.tutor_id
                 ),
+                tutor_gender=assignment_request.tutor.user.gender.value,
                 requested_rate_hourly=assignment_request.requested_rate_hourly,
                 requested_duration=assignment_request.requested_duration,
                 available_slots=[

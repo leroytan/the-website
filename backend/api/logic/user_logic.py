@@ -25,6 +25,7 @@ class UserLogic:
             email=user.email,
             profile_photo_url=photo_url,
             intends_to_be_tutor=user.intends_to_be_tutor,
+            gender=user.gender.value if user.gender else None,
             created_at=user.created_at.isoformat(),
             updated_at=user.updated_at.isoformat(),
         )

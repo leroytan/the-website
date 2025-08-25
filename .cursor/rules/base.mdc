@@ -1,0 +1,22 @@
+---
+description: Python backend using FastAPI, SQLAlchemy, Stripe, OAuth, WebSockets, Cloudflare R2, with all commands run via Poetry.
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# Python Backend Stack Rules
+
+- Use **Poetry** as the dependency and environment manager.
+- For running scripts, commands, or entry points—such as starting the server, running migrations, or invoking workers—**always prepend with `poetry run python`**.
+  - **Examples**:
+    - `poetry run python main.py`
+    - `poetry run python manage.py migrate`
+    - `poetry run python -m uvicorn app:app --reload`
+
+- Use **FastAPI** and define routes via `@app.get`, `@app.post`, etc.
+- Structure database models using **SQLAlchemy** with `Base`, `sessionmaker`, and declarative classes.
+- Integrate **Stripe** for payment flows, ensuring proper error handling and idempotency.
+- Implement **OAuth** login flows using secure redirect patterns and environment-managed secrets.
+- Enable real-time features using WebSocket routes (e.g., `@app.websocket`) or FastAPI’s native support.
+- Handle file uploads/downloads via **Cloudflare R2**, using async clients or compatible libraries.
+

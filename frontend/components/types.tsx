@@ -24,6 +24,7 @@ export interface TuitionListing {
     tutor_id: number;
     tutor_name: string;
     tutor_profile_photo_url?: string;
+    tutor_gender?: string | null;
     status: string;
     created_at: string;
     updated_at: string;
@@ -59,6 +60,7 @@ export interface User {
   name: string;
   email: string;
   profile_photo_url: string;
+  gender: string | null;
   intends_to_be_tutor: boolean;
   created_at: string;
   updated_at: string;
@@ -68,6 +70,7 @@ export interface Tutor {
   name: string;
   email: string;
   photo_url: string;
+  gender: string | null;
   highest_education: string;
   min_rate: number;
   max_rate: number;

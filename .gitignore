@@ -6,7 +6,14 @@ frontend/.pnp
 frontend/.pnp.js
 
 # testing
-/coverage
+backend/.coverage
+backend/.coverage.*
+backend/htmlcov/
+backend/coverage.xml
+backend/coverage.json
+backend/.pytest_cache/
+backend/test.db
+backend/test_*.db
 
 # next.js
 frontend/.next/

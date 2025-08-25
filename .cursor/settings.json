@@ -1,0 +1,18 @@
+{
+    "python.defaultInterpreterPath": "./backend/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit",
+            "source.addMissingImports.ruff": "explicit",
+            "source.removeUnusedImports.ruff": "explicit",
+            "source.sortImports.ruff": "explicit"
+        }
+    },
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true
+}
+

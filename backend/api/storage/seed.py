@@ -6,6 +6,11 @@ from api.storage.models import Level, Subject
 
 
 def seed_subjects(db: Session):
+    # Check if subjects already exist
+    if db.query(Subject).count() > 0:
+        print("Subjects already exist. Skipping subject seeding.")
+        return
+
     subjects = [
         Subject(name="Mathematics"),
         Subject(name="Physics"),
@@ -20,10 +25,16 @@ def seed_subjects(db: Session):
     ]
     db.add_all(subjects)
     db.commit()
+    print("Subjects seeded successfully.")
 
 
 def seed_levels(db: Session):
-    # Create test levels
+    # Check if levels already exist
+    if db.query(Level).count() > 0:
+        print("Levels already exist. Skipping level seeding.")
+        return
+
+    # Create test levels (temporarily excluding levels above Primary 6)
     levels = [
         Level(name="Primary 1", sort_order=1),
         Level(name="Primary 2", sort_order=2),
@@ -31,19 +42,28 @@ def seed_levels(db: Session):
         Level(name="Primary 4", sort_order=4),
         Level(name="Primary 5", sort_order=5),
         Level(name="Primary 6", sort_order=6),
-        Level(name="Secondary 1", sort_order=7),
-        Level(name="Secondary 2", sort_order=8),
-        Level(name="Secondary 3", sort_order=9),
-        Level(name="Secondary 4", sort_order=10),
-        Level(name="Secondary 5", sort_order=11),
-        Level(name="Junior College 1", sort_order=12),
-        Level(name="Junior College 2", sort_order=13),
+        # Temporarily commented out levels above Primary 6
+        # Level(name="Secondary 1", sort_order=7),
+        # Level(name="Secondary 2", sort_order=8),
+        # Level(name="Secondary 3", sort_order=9),
+        # Level(name="Secondary 4", sort_order=10),
+        # Level(name="Secondary 5", sort_order=11),
+        # Level(name="Junior College 1", sort_order=12),
+        # Level(name="Junior College 2", sort_order=13),
     ]
     db.add_all(levels)
     db.commit()
+    print("Levels seeded successfully.")
 
 
 def seed_locations(db: Session):
+    from api.storage.models import Location
+
+    # Check if locations already exist
+    if db.query(Location).count() > 0:
+        print("Locations already exist. Skipping location seeding.")
+        return
+
     locations = [
         "Ang Mo Kio",
         "Bedok North",
@@ -107,10 +127,9 @@ def seed_locations(db: Session):
         "West Coast",
     ]
 
-    from api.storage.models import Location
-
     db.add_all([Location(name=location) for location in locations])
     db.commit()
+    print("Locations seeded successfully.")
 
 
 def seed_database(db: Session):

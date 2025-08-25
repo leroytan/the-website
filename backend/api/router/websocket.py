@@ -49,7 +49,7 @@ class WebSocketManager:
 @router.get("/api/ws/jwt")
 async def get_jwt(
     request: Request, user: User = Depends(RouterAuthUtils.get_current_user)
-) -> dict:
+) -> dict[str, str]:
     """
     Get JWT for websocket authentication.
 

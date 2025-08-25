@@ -22,14 +22,22 @@ cd "$(dirname "$0")/backend" || {
   exit 1
 }
 
-# Install project dependencies
+# Set app environment
+export APP_ENV=${APP_ENV:-development}
+export PORT=${PORT:-8000}
+
+# Install project dependencies with Poetry
+echo "📦 Installing project dependencies..."
 poetry install
 
-# Set app environment and run the server
-export APP_ENV=${APP_ENV:-development}
+# Activate Poetry virtual environment
+echo "🔧 Activating Poetry virtual environment..."
+source $(poetry env info --path)/bin/activate
 
-# Apply database migrations
-poetry run alembic upgrade head
+# Run build script (installs dependencies, runs migrations, initializes database)
+echo "🔨 Running build script..."
+./scripts/build.sh
 
-# Run the server
-poetry run python -m uvicorn api.index:app --reload
+# Run start script (starts the server)
+echo "🚀 Running start script..."
+./scripts/start.sh
