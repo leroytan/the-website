@@ -3,4 +3,4 @@
 set -e
 
 # Start the application
-uvicorn api.index:app --host 0.0.0.0 --port $PORT
+poetry run python -m uvicorn api.index:app --host 0.0.0.0 --port $PORT

@@ -1,21 +1,17 @@
 "use client";
 import "@/app/globals.css";
 import DropDown from "@/components/dropdown";
-import { BASE_URL } from "@/utils/constants";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, MapPinCheckInside, Square, SquareCheck } from "lucide-react";
+import { Eye, EyeOff, Square, SquareCheck } from "lucide-react";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { useAuth } from "@/context/authContext";
 import ErrorMessage from "@/components/ErrorMessage";
 
-import { FcGoogle } from "react-icons/fc";
-import { Check } from "lucide-react";
 import TermsDialog from "@/components/TermsDialog/TermsDialog";
-import DataProtectionDialog from "@/components/DataProtectionDialog/DataProtectionDialog";
 import { Button } from "@/components/button";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -37,35 +33,44 @@ export default function SignupPage() {
   const [gender, setGender] = useState("");
 
   const [errorMessage, setErrorMessage] = useState("");
-  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogMessage, setDialogMessage] = useState<ReactNode>("");
   const [showDialog, setShowDialog] = useState(false);
 
   // Terms and Conditions dialog state
   const [tncAgreed, setTncAgreed] = useState(false);
   const [tncDialogOpen, setTncDialogOpen] = useState(false);
-  // Data Protection Policy dialog state
-  const [dpDialogOpen, setDpDialogOpen] = useState(false);
+  
+  const [loading, setLoading] = useState(false);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+  
+    setLoading(true);
     //check payload
     if (!tncAgreed) {
       setErrorMessage("You must agree to the Terms and Conditions to sign up.");
+      setLoading(false);
       return;
     }
     if (!userType) {
       setErrorMessage("Please select a user type.");
+      setLoading(false);
       return;
     }
     if (!name || !email || !password || !confirmPassword) {
       setErrorMessage("Please fill in all fields.");
+      setLoading(false);
       return;
     }
     if (!gender) {
       setErrorMessage("Please select your gender.");
+      setLoading(false);
       return;
     }
     if (password !== confirmPassword) {
+      setErrorMessage("");
+      setLoading(false);
       return;
     }
     const res = await fetch(`/api/auth/signup`, {
@@ -82,16 +87,19 @@ export default function SignupPage() {
 
     if (res.status === 400) {
       setErrorMessage("User with the same email already exists.");
+      setLoading(false);
       return;
     }
     if (res.ok) {
       const resData = await res.json();
       // Check for different success scenarios
       if (
-        resData.status === "waitlisted" ||
-        resData.status === "pending_verification"
+        resData.status === "waitlisted"
       ) {
-        setDialogMessage(resData.message);
+        setDialogMessage(<div>It looks like your university isn't included in our current sign-up list yet. You have been added to our waitlist and we'll notify you as soon as we open registrations for more universities!</div>);
+        setShowDialog(true);
+      } else if (resData.status === "pending_verification") {
+        setDialogMessage(<div>Account created successfully! Please check your email for a confirmation link to verify your account. <br/> (If you don’t see it, please check your junk or spam folder)</div>);
         setShowDialog(true);
       } else {
         // User is verified (example.com), proceed as before
@@ -104,10 +112,12 @@ export default function SignupPage() {
         await refetch(); // refresh user and tutor data for authcontext
         router.push("/login");
       }
+      setLoading(false);
       router.refresh();
     } else {
       const resData = await res.json();
       setErrorMessage(resData.message || "Sign up failed");
+      setLoading(false);
     }
   };
 
@@ -122,7 +132,7 @@ export default function SignupPage() {
             <h3 className="text-lg font-semibold text-[#4a58b5] mb-2">
               Notice
             </h3>
-            <p className="text-gray-700 mb-4 text-center">{dialogMessage}</p>
+            <div className="text-gray-700 mb-4 text-center">{dialogMessage}</div>
             <button
               className="px-4 py-2 bg-[#fabb84] text-white rounded-full hover:bg-[#fc6453] transition-colors duration-200"
               onClick={() => {
@@ -304,40 +314,10 @@ export default function SignupPage() {
             />
           </div>
           {errorMessage && <ErrorMessage message={errorMessage} />}
-
-          <motion.button
-            type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200"
-          >
+          <Button className="w-full bg-[#fabb84] text-white py-2 px-4 rounded-md hover:bg-[#fc6453] transition-colors duration-200" type="submit" loading={loading}>
             Sign Up
-          </motion.button>
+          </Button>
         </form>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-500">
-              Or continue with
-            </span>
-          </div>
-        </div>
-
-        <motion.button
-          type="button"
-          onClick={() => {
-            window.location.href = `${BASE_URL}/auth/google/login`;
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors duration-200 shadow-sm"
-        >
-          <FcGoogle className="mr-2 h-5 w-5" />
-          Sign up with Google
-        </motion.button>
 
         <p className="mt-4 text-center text-sm text-[#4a58b5]">
           Already have an account?{" "}
